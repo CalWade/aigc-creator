@@ -42,5 +42,8 @@ playwright/.cache/
 .DS_Store
 Thumbs.db
 
-# ---------- Claude Code 本地设置（团队分享 settings.json，本地覆盖不入库）----------
-.claude/settings.local.json
+# ---------- 课题原文 / 外部参考资料（不入库，本地参考用）----------
+*.pdf
+
+# ---------- Claude Code 个人配置（不入库）----------
+.claude/
