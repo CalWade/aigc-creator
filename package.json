@@ -1,0 +1,20 @@
+{
+  "name": "bytedance-aigc",
+  "version": "0.0.0",
+  "private": true,
+  "description": "AI 创作者辅助生产与分发平台 — 字节头条 AI 前端训练营项目",
+  "license": "MIT",
+  "author": "CalvinWade",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=10.0.0"
+  },
+  "packageManager": "pnpm@10.33.4",
+  "scripts": {
+    "build": "pnpm -r --parallel build",
+    "dev": "pnpm -r --parallel dev",
+    "lint": "pnpm -r --parallel lint",
+    "test": "pnpm -r --parallel test",
+    "typecheck": "pnpm -r --parallel typecheck"
+  }
+}
