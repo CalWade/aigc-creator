@@ -2,7 +2,12 @@ packages:
   - "apps/*"
   - "packages/*"
 
-# Native 依赖在 pnpm v10 严格模式下需显式批准编译,这里跳过避免 install 报警告
+# pnpm 10 默认会因 postinstall 脚本权限弹警告。
+# ignoredBuiltDependencies = 已审核确认安全跳过的包(白名单形式登记,警告消失)。
+# - @nestjs/core: postinstall 是 opencollective 募捐提示,纯输出文字,无构建
+# - sharp: next/image 的图片优化可选 native,本项目用不到运行时图片处理
+# - unrs-resolver: next 的可选 swc resolver native,跳过 fallback 到 JS 实现
 ignoredBuiltDependencies:
+  - "@nestjs/core"
   - sharp
   - unrs-resolver
