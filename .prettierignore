@@ -1,0 +1,31 @@
+# 依赖与锁文件
+node_modules
+pnpm-lock.yaml
+
+# 构建产物
+dist
+build
+.next
+out
+coverage
+
+# 生成的类型声明
+*.tsbuildinfo
+next-env.d.ts
+
+# 环境变量与机密
+.env
+.env.*
+!.env.example
+
+# IDE / OS
+.vscode
+.idea
+.DS_Store
+
+# 项目素材
+*.pdf
+LICENSE
+
+# 记录与原始资料(不需要 prettier 介入)
+docs/PRD.md

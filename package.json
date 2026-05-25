@@ -15,6 +15,11 @@
     "dev": "pnpm -r --parallel dev",
     "lint": "pnpm -r --parallel lint",
     "test": "pnpm -r --parallel test",
-    "typecheck": "pnpm -r --parallel typecheck"
+    "typecheck": "pnpm -r --parallel typecheck",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "prettier": "^3.8.3"
   }
 }
