@@ -8,6 +8,8 @@ build/
 .next/
 out/
 *.tsbuildinfo
+next-env.d.ts
+.vercel
 
 # ---------- 环境变量 / 密钥 ----------
 .env

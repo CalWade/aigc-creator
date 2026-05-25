@@ -1,3 +1,8 @@
 packages:
   - "apps/*"
   - "packages/*"
+
+# Native 依赖在 pnpm v10 严格模式下需显式批准编译,这里跳过避免 install 报警告
+ignoredBuiltDependencies:
+  - sharp
+  - unrs-resolver
