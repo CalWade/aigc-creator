@@ -7,7 +7,7 @@
 ## 文档
 
 - 产品需求文档（PRD）：[`docs/PRD.md`](./docs/PRD.md)
-- 架构决策记录（ADR）：`docs/decisions/`（待建）
+- 架构决策记录（ADR）：[`docs/decisions/`](./docs/decisions/)（已收录 ADR-0001 后端框架选型）
 - 系统架构草稿：`docs/architecture.md`（Phase 0 Step 7 产出）
 
 ## 核心能力（PRD 摘要）
@@ -23,8 +23,8 @@
 | 层 | 选型 |
 |---|---|
 | Monorepo | pnpm workspace |
-| 前端 | Next.js（`apps/web`） |
-| 后端 | NestJS / Koa（`apps/api`） |
+| 前端 | Next.js 16 + React 19 + Tailwind v4 + App Router（`apps/web`） |
+| 后端 | NestJS 11（`apps/api`） |
 | 共享 | TypeScript 类型 / 常量 / 工具（`packages/shared`） |
 | 数据 | PostgreSQL + Redis（本地 Docker Compose） |
 | 测试 | Vitest（单元）+ Playwright（端到端） |
