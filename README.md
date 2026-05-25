@@ -20,15 +20,15 @@
 
 ## 技术栈
 
-| 层 | 选型 |
-|---|---|
-| Monorepo | pnpm workspace |
-| 前端 | Next.js 16 + React 19 + Tailwind v4 + App Router（`apps/web`） |
-| 后端 | NestJS 11（`apps/api`） |
-| 共享 | TypeScript 类型 / 常量 / 工具（`packages/shared`） |
-| 数据 | PostgreSQL + Redis（本地 Docker Compose） |
-| 测试 | Vitest（单元）+ Playwright（端到端） |
-| CI | GitHub Actions（lint / typecheck / test / build 四关） |
+| 层       | 选型                                                           |
+| -------- | -------------------------------------------------------------- |
+| Monorepo | pnpm workspace                                                 |
+| 前端     | Next.js 16 + React 19 + Tailwind v4 + App Router（`apps/web`） |
+| 后端     | NestJS 11（`apps/api`）                                        |
+| 共享     | TypeScript 类型 / 常量 / 工具（`packages/shared`）             |
+| 数据     | PostgreSQL + Redis（本地 Docker Compose）                      |
+| 测试     | Vitest（单元）+ Playwright（端到端）                           |
+| CI       | GitHub Actions（lint / typecheck / test / build 四关）         |
 
 ## 本地开发（Phase 0 完成后填充）
 
