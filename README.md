@@ -1,5 +1,7 @@
 # AI 创作者辅助生产与分发平台
 
+[![CI](https://github.com/CalWade/bytedance-aigc/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/CalWade/bytedance-aigc/actions/workflows/ci.yml)
+
 字节头条 AI 前端训练营课题：面向创作者的 AI 辅助生产与分发平台，覆盖**得力助手 / 守门员 / 导航员**三角色叙事，专注中长图文（头条资讯形态）。
 
 > 本仓库为训练营 3 周交付项目，处于 Phase 0 工程化基建阶段。
