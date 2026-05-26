@@ -9,6 +9,11 @@ build
 out
 coverage
 
+# Playwright 产物
+test-results
+playwright-report
+playwright/.cache
+
 # 生成的类型声明
 *.tsbuildinfo
 next-env.d.ts
