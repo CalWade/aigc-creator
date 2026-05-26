@@ -1,0 +1,56 @@
+// bytedance-aigc · apps/api · Prisma schema
+// Phase 1.1 初始数据建模:User / Draft / DraftVersion
+// 演化路线见 docs/architecture.md §4.1
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum DraftMode {
+  FAST
+  FINE
+}
+
+model User {
+  id        String   @id @default(cuid())
+  handle    String   @unique
+  createdAt DateTime @default(now())
+
+  drafts Draft[]
+
+  @@map("users")
+}
+
+model Draft {
+  id        String    @id @default(cuid())
+  authorId  String
+  mode      DraftMode @default(FAST)
+  title     String
+  body      Json
+  version   Int       @default(1)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  author   User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  versions DraftVersion[]
+
+  @@index([authorId])
+  @@map("drafts")
+}
+
+model DraftVersion {
+  id        String   @id @default(cuid())
+  draftId   String
+  snapshot  Json
+  createdAt DateTime @default(now())
+
+  draft Draft @relation(fields: [draftId], references: [id], onDelete: Cascade)
+
+  @@index([draftId])
+  @@map("draft_versions")
+}

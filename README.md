@@ -59,6 +59,31 @@ pnpm dev
 
 数据持久化：使用 docker named volume（`pg_data` / `redis_data`），不映射到宿主机文件系统。`pnpm db:down` 不会丢数据，只有 `pnpm db:reset` 会。
 
+### 数据层（Prisma）
+
+`apps/api` 使用 Prisma 5 作为 ORM，schema 单一事实源在 [`apps/api/prisma/schema.prisma`](./apps/api/prisma/schema.prisma)。
+
+| 命令                   | 作用                                                    |
+| ---------------------- | ------------------------------------------------------- |
+| `pnpm prisma:generate` | 根据 schema 重新生成 `@prisma/client` 类型              |
+| `pnpm prisma:migrate`  | 开发态迁移（修改 schema 后生成 + 应用 SQL，需 PG 在跑） |
+| `pnpm prisma:studio`   | 打开 Prisma Studio 浏览数据                             |
+
+首次接入 / 拉新代码后：
+
+```bash
+pnpm db:up                 # 起 PG
+pnpm prisma:migrate        # 应用最新迁移到本地库
+pnpm dev                   # 启动 web + api
+```
+
+`apps/api` e2e 测试（`/drafts` 端点）依赖真实 PG，运行：
+
+```bash
+pnpm db:up
+pnpm --filter @bytedance-aigc/api test:e2e
+```
+
 ## 交付物清单
 
 - [x] PRD 终稿

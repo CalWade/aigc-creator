@@ -24,7 +24,17 @@
     "db:down": "docker compose down",
     "db:reset": "docker compose down -v && docker compose up -d",
     "db:logs": "docker compose logs -f",
+    "prisma:generate": "pnpm --filter @bytedance-aigc/api exec prisma generate",
+    "prisma:migrate": "pnpm --filter @bytedance-aigc/api exec prisma migrate dev",
+    "prisma:studio": "pnpm --filter @bytedance-aigc/api exec prisma studio",
     "prepare": "husky"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "prisma"
+    ]
   },
   "devDependencies": {
     "@commitlint/cli": "21.0.1",
