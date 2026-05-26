@@ -9,8 +9,10 @@
 ## 文档
 
 - 产品需求文档（PRD）：[`docs/PRD.md`](./docs/PRD.md)
-- 架构决策记录（ADR）：[`docs/decisions/`](./docs/decisions/)（已收录 ADR-0001 后端框架选型）
-- 系统架构草稿：`docs/architecture.md`（Phase 0 Step 7 产出）
+- 系统架构草稿：[`docs/architecture.md`](./docs/architecture.md)（Phase 0 Step 7 产出）
+- 架构决策记录（ADR）：[`docs/decisions/`](./docs/decisions/)
+  - [ADR-0001](./docs/decisions/0001-api-framework.md) 后端框架——NestJS
+  - [ADR-0002](./docs/decisions/0002-data-layer.md) 数据层 ORM——Prisma
 
 ## 核心能力（PRD 摘要）
 
