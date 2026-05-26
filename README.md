@@ -32,12 +32,30 @@
 | 测试     | Vitest（单元）+ Playwright（端到端）                           |
 | CI       | GitHub Actions（lint / typecheck / test / build 四关）         |
 
-## 本地开发（Phase 0 完成后填充）
+## 本地开发
+
+> 需要：Node ≥ 22、pnpm ≥ 10、Docker（含 Compose v2，docker engine ≥ 20.10）
 
 ```bash
+# 一次性
+cp .env.example .env
 pnpm install
+
+# 启动数据基建（PostgreSQL + Redis，后台运行）
+pnpm db:up
+
+# 启动应用（apps/web + apps/api 并行 dev 模式）
 pnpm dev
 ```
+
+| 命令            | 作用                                   |
+| --------------- | -------------------------------------- |
+| `pnpm db:up`    | 启动 Postgres + Redis（后台）          |
+| `pnpm db:down`  | 停止容器（保留数据）                   |
+| `pnpm db:reset` | 停止并删除数据卷（谨慎，全部数据丢失） |
+| `pnpm db:logs`  | 查看容器日志                           |
+
+数据持久化：使用 docker named volume（`pg_data` / `redis_data`），不映射到宿主机文件系统。`pnpm db:down` 不会丢数据，只有 `pnpm db:reset` 会。
 
 ## 交付物清单
 

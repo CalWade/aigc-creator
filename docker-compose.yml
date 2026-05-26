@@ -1,0 +1,43 @@
+# 本地开发数据基建：PostgreSQL 16 + Redis 7
+# 用法：
+#   1) 复制环境变量模板：cp .env.example .env
+#   2) 启动：pnpm db:up   （等价于 docker compose up -d）
+#   3) 停止：pnpm db:down （保留数据）
+#   4) 重置：pnpm db:reset（删除 volume，谨慎）
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: bytedance-aigc-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-bytedance_aigc}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-bytedance_aigc}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: bytedance-aigc-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pg_data:
+  redis_data:
