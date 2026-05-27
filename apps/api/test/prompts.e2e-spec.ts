@@ -1,11 +1,11 @@
 import { INestApplication, ValidationPipe } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
-import { Prisma } from "@prisma/client";
 import request from "supertest";
 import { App } from "supertest/types";
 
 import { AppModule } from "./../src/app.module";
 import { PrismaService } from "./../src/prisma/prisma.service";
+import { applyAllFixtures, cleanupAllFixtures, PROMPT_STARTERS } from "./../prisma/fixtures";
 
 interface PromptResponse {
   id: string;
@@ -18,7 +18,6 @@ interface PromptResponse {
 describe("PromptsController (e2e)", () => {
   let app: INestApplication<App>;
   let prisma: PrismaService;
-  let seededIds: string[] = [];
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -36,35 +35,11 @@ describe("PromptsController (e2e)", () => {
     await app.init();
 
     prisma = app.get(PrismaService);
-    await prisma.prompt.deleteMany({ where: { owner: "PLATFORM" } });
-
-    const fixtures: Prisma.PromptCreateManyInput[] = [
-      {
-        owner: "PLATFORM",
-        tool: "REWRITE_FLUENT",
-        name: "e2e-默认·改写更通顺",
-        systemPrompt: "test rewrite",
-        params: { temperature: 0.4 },
-        fewShots: [],
-        isStarter: true,
-      },
-      {
-        owner: "PLATFORM",
-        tool: "EXPAND",
-        name: "e2e-默认·扩写",
-        systemPrompt: "test expand",
-        params: { temperature: 0.6 },
-        fewShots: [],
-        isStarter: true,
-      },
-    ];
-    await prisma.prompt.createMany({ data: fixtures });
-    const all = await prisma.prompt.findMany({ where: { owner: "PLATFORM" } });
-    seededIds = all.map((p) => p.id);
+    await applyAllFixtures(prisma);
   });
 
   afterAll(async () => {
-    await prisma.prompt.deleteMany({ where: { owner: "PLATFORM" } });
+    await cleanupAllFixtures(prisma);
     await app.close();
   });
 
@@ -73,8 +48,9 @@ describe("PromptsController (e2e)", () => {
     const list = res.body as PromptResponse[];
 
     expect(Array.isArray(list)).toBe(true);
-    expect(list.length).toBeGreaterThanOrEqual(2);
+    expect(list.length).toBe(PROMPT_STARTERS.length);
     expect(list.every((p) => p.owner === "PLATFORM")).toBe(true);
+    expect(list.every((p) => p.isStarter === true)).toBe(true);
   });
 
   it("GET /prompts?tool=REWRITE_FLUENT -> 200 returns filtered list", async () => {
@@ -93,7 +69,9 @@ describe("PromptsController (e2e)", () => {
   });
 
   it("GET /prompts/:id -> 200 returns one prompt", async () => {
-    const targetId = seededIds[0];
+    const all = await prisma.prompt.findMany({ where: { owner: "PLATFORM" } });
+    const targetId = all[0].id;
+
     const res = await request(app.getHttpServer()).get(`/prompts/${targetId}`).expect(200);
     const found = res.body as PromptResponse;
 

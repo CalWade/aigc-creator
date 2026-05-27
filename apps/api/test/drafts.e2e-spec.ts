@@ -5,6 +5,7 @@ import { App } from "supertest/types";
 
 import { AppModule } from "./../src/app.module";
 import { PrismaService } from "./../src/prisma/prisma.service";
+import { applyAllFixtures, cleanupAllFixtures, DEMO_AUTHOR_ID } from "./../prisma/fixtures";
 
 interface DraftResponse {
   id: string;
@@ -17,7 +18,6 @@ interface DraftResponse {
 describe("DraftsController (e2e)", () => {
   let app: INestApplication<App>;
   let prisma: PrismaService;
-  let authorId: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -35,20 +35,11 @@ describe("DraftsController (e2e)", () => {
     await app.init();
 
     prisma = app.get(PrismaService);
-    await prisma.draftVersion.deleteMany();
-    await prisma.draft.deleteMany();
-    await prisma.user.deleteMany();
-
-    const user = await prisma.user.create({
-      data: { handle: `e2e-${Date.now()}` },
-    });
-    authorId = user.id;
+    await applyAllFixtures(prisma);
   });
 
   afterAll(async () => {
-    await prisma.draftVersion.deleteMany();
-    await prisma.draft.deleteMany();
-    await prisma.user.deleteMany();
+    await cleanupAllFixtures(prisma);
     await app.close();
   });
 
@@ -56,7 +47,7 @@ describe("DraftsController (e2e)", () => {
     const res = await request(app.getHttpServer())
       .post("/drafts")
       .send({
-        authorId,
+        authorId: DEMO_AUTHOR_ID,
         title: "Hello Draft",
         body: { type: "doc", content: [] },
       })
@@ -64,7 +55,7 @@ describe("DraftsController (e2e)", () => {
 
     const body = res.body as DraftResponse;
     expect(body).toMatchObject({
-      authorId,
+      authorId: DEMO_AUTHOR_ID,
       title: "Hello Draft",
       mode: "FAST",
       version: 1,
@@ -73,19 +64,20 @@ describe("DraftsController (e2e)", () => {
     expect(body.id.length).toBeGreaterThan(10);
   });
 
-  it("GET /drafts -> 200 returns array including the created draft", async () => {
+  it("GET /drafts -> 200 returns array including demo + created drafts", async () => {
     const res = await request(app.getHttpServer()).get("/drafts").expect(200);
     const list = res.body as DraftResponse[];
 
     expect(Array.isArray(list)).toBe(true);
-    expect(list.length).toBeGreaterThanOrEqual(1);
+    // 2 demo drafts(FAST + FINE)+ 至少 1 篇上一用例 POST 出来的
+    expect(list.length).toBeGreaterThanOrEqual(3);
   });
 
   it("GET /drafts/:id -> 200 returns one draft", async () => {
     const created = await request(app.getHttpServer())
       .post("/drafts")
       .send({
-        authorId,
+        authorId: DEMO_AUTHOR_ID,
         title: "Findable",
         body: {},
       })
@@ -100,7 +92,10 @@ describe("DraftsController (e2e)", () => {
   });
 
   it("POST /drafts -> 400 when title missing", async () => {
-    await request(app.getHttpServer()).post("/drafts").send({ authorId, body: {} }).expect(400);
+    await request(app.getHttpServer())
+      .post("/drafts")
+      .send({ authorId: DEMO_AUTHOR_ID, body: {} })
+      .expect(400);
   });
 
   it("GET /drafts/:id -> 404 when not found", async () => {
