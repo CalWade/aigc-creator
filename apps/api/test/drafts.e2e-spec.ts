@@ -123,4 +123,55 @@ describe("DraftsController (e2e)", () => {
       .set("Authorization", `Bearer ${token}`)
       .expect(404);
   });
+
+  it("PATCH /drafts/:id -> 200 author updates and version increments", async () => {
+    const created = await request(app.getHttpServer())
+      .post("/drafts")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ title: "Original", body: { type: "doc", content: [] } })
+      .expect(201);
+    const draft = created.body as DraftResponse;
+
+    const res = await request(app.getHttpServer())
+      .patch(`/drafts/${draft.id}`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ title: "Updated" })
+      .expect(200);
+    const updated = res.body as DraftResponse;
+
+    expect(updated.id).toBe(draft.id);
+    expect(updated.title).toBe("Updated");
+    expect(updated.version).toBe(draft.version + 1);
+  });
+
+  it("PATCH /drafts/:id -> 403 when caller is not author", async () => {
+    const created = await request(app.getHttpServer())
+      .post("/drafts")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ title: "Mine", body: {} })
+      .expect(201);
+    const draft = created.body as DraftResponse;
+
+    const otherHandle = `e2e-other-${Date.now()}`;
+    await prisma.user.create({ data: { handle: otherHandle } });
+    const loginRes = await request(app.getHttpServer())
+      .post("/auth/login")
+      .send({ handle: otherHandle })
+      .expect(200);
+    const otherToken = (loginRes.body as { accessToken: string }).accessToken;
+
+    await request(app.getHttpServer())
+      .patch(`/drafts/${draft.id}`)
+      .set("Authorization", `Bearer ${otherToken}`)
+      .send({ title: "Hacked" })
+      .expect(403);
+  });
+
+  it("PATCH /drafts/:id -> 404 when draft id does not exist", async () => {
+    await request(app.getHttpServer())
+      .patch("/drafts/nonexistent-id-zzz")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ title: "x" })
+      .expect(404);
+  });
 });

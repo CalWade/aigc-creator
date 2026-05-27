@@ -5,6 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   Post,
   UseGuards,
 } from "@nestjs/common";
@@ -15,6 +16,7 @@ import type { JwtPayload } from "../auth/jwt-payload.interface";
 import { UserGuard } from "../auth/user.guard";
 import { DraftsService } from "./drafts.service";
 import { CreateDraftDto } from "./dto/create-draft.dto";
+import { UpdateDraftDto } from "./dto/update-draft.dto";
 
 @Controller("drafts")
 @UseGuards(UserGuard)
@@ -40,5 +42,14 @@ export class DraftsController {
   @Get(":id")
   findOne(@Param("id") id: string): Promise<Draft> {
     return this.drafts.findOne(id);
+  }
+
+  @Patch(":id")
+  update(
+    @Param("id") id: string,
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: UpdateDraftDto,
+  ): Promise<Draft> {
+    return this.drafts.update(id, user.sub, dto);
   }
 }
