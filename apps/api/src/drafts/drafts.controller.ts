@@ -1,12 +1,23 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+  UseGuards,
+} from "@nestjs/common";
 import { Draft } from "@prisma/client";
 
 import { CurrentUser } from "../auth/current-user.decorator";
 import type { JwtPayload } from "../auth/jwt-payload.interface";
+import { UserGuard } from "../auth/user.guard";
 import { DraftsService } from "./drafts.service";
 import { CreateDraftDto } from "./dto/create-draft.dto";
 
 @Controller("drafts")
+@UseGuards(UserGuard)
 export class DraftsController {
   constructor(private readonly drafts: DraftsService) {}
 
@@ -19,6 +30,11 @@ export class DraftsController {
   @Get()
   list(): Promise<Draft[]> {
     return this.drafts.list();
+  }
+
+  @Get("mine")
+  findMine(@CurrentUser() user: JwtPayload): Promise<Draft[]> {
+    return this.drafts.findByAuthor(user.sub);
   }
 
   @Get(":id")

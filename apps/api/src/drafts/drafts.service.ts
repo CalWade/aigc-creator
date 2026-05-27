@@ -25,6 +25,13 @@ export class DraftsService {
     });
   }
 
+  async findByAuthor(authorId: string): Promise<Draft[]> {
+    return this.prisma.draft.findMany({
+      where: { authorId },
+      orderBy: { updatedAt: "desc" },
+    });
+  }
+
   async findOne(id: string): Promise<Draft> {
     const draft = await this.prisma.draft.findUnique({ where: { id } });
     if (!draft) {
