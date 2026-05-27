@@ -86,6 +86,14 @@ pnpm db:up
 pnpm --filter @bytedance-aigc/api test:e2e
 ```
 
+## 内容生产 / 编辑器
+
+- 路由：`/drafts/[id]` 富文本编辑器；`/drafts/mine` 列表 + 新建按钮
+- 编辑器：TipTap（基于 ProseMirror），ProseMirror JSON 落 `drafts.body Json` 字段
+- 自动保存：`useAutosave` hook，1.5s 防抖，PATCH 一次发 `{title, body}`，service 端 `version: { increment: 1 }`
+- SSR 配方：TipTap `useEditor({ immediatelyRender: false })` 避免 Next.js hydration mismatch
+- 端点：`PATCH /drafts/:id`（UserGuard + service 层作者校验，非作者 403，不存在 404）
+
 ## 交付物清单
 
 - [x] PRD 终稿
