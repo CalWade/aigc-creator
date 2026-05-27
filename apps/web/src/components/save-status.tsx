@@ -23,7 +23,7 @@ function relativeTime(ts: number, now: number): string {
 }
 
 export function SaveStatus({ status, lastSavedAt, onRetry }: SaveStatusProps) {
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 30_000);
