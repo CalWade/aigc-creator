@@ -1,9 +1,11 @@
 import { Controller, Get, Param, Query } from "@nestjs/common";
 import { Prompt } from "@prisma/client";
 
+import { Public } from "../auth/public.decorator";
 import { ListPromptsQueryDto } from "./dto/list-prompts-query.dto";
 import { PromptsService } from "./prompts.service";
 
+@Public()
 @Controller("prompts")
 export class PromptsController {
   constructor(private readonly prompts: PromptsService) {}

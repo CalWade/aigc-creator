@@ -5,10 +5,6 @@ import { DraftMode } from "@prisma/client";
 export class CreateDraftDto {
   @IsString()
   @MinLength(1)
-  authorId!: string;
-
-  @IsString()
-  @MinLength(1)
   @MaxLength(200)
   title!: string;
 

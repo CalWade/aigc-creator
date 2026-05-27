@@ -1,6 +1,8 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post } from "@nestjs/common";
 import { Draft } from "@prisma/client";
 
+import { CurrentUser } from "../auth/current-user.decorator";
+import type { JwtPayload } from "../auth/jwt-payload.interface";
 import { DraftsService } from "./drafts.service";
 import { CreateDraftDto } from "./dto/create-draft.dto";
 
@@ -10,8 +12,8 @@ export class DraftsController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() dto: CreateDraftDto): Promise<Draft> {
-    return this.drafts.create(dto);
+  create(@CurrentUser() user: JwtPayload, @Body() dto: CreateDraftDto): Promise<Draft> {
+    return this.drafts.create(user.sub, dto);
   }
 
   @Get()

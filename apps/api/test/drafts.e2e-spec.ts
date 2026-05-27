@@ -6,6 +6,7 @@ import { App } from "supertest/types";
 import { AppModule } from "./../src/app.module";
 import { PrismaService } from "./../src/prisma/prisma.service";
 import { applyAllFixtures, cleanupAllFixtures, DEMO_AUTHOR_ID } from "./../prisma/fixtures";
+import { loginAsDemo } from "./helpers/auth";
 
 interface DraftResponse {
   id: string;
@@ -18,6 +19,7 @@ interface DraftResponse {
 describe("DraftsController (e2e)", () => {
   let app: INestApplication<App>;
   let prisma: PrismaService;
+  let token: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -36,6 +38,8 @@ describe("DraftsController (e2e)", () => {
 
     prisma = app.get(PrismaService);
     await applyAllFixtures(prisma);
+
+    token = await loginAsDemo(app);
   });
 
   afterAll(async () => {
@@ -43,11 +47,11 @@ describe("DraftsController (e2e)", () => {
     await app.close();
   });
 
-  it("POST /drafts -> 201 returns created draft with cuid", async () => {
+  it("POST /drafts -> 201 returns created draft with cuid (authorId from token)", async () => {
     const res = await request(app.getHttpServer())
       .post("/drafts")
+      .set("Authorization", `Bearer ${token}`)
       .send({
-        authorId: DEMO_AUTHOR_ID,
         title: "Hello Draft",
         body: { type: "doc", content: [] },
       })
@@ -65,7 +69,10 @@ describe("DraftsController (e2e)", () => {
   });
 
   it("GET /drafts -> 200 returns array including demo + created drafts", async () => {
-    const res = await request(app.getHttpServer()).get("/drafts").expect(200);
+    const res = await request(app.getHttpServer())
+      .get("/drafts")
+      .set("Authorization", `Bearer ${token}`)
+      .expect(200);
     const list = res.body as DraftResponse[];
 
     expect(Array.isArray(list)).toBe(true);
@@ -76,15 +83,18 @@ describe("DraftsController (e2e)", () => {
   it("GET /drafts/:id -> 200 returns one draft", async () => {
     const created = await request(app.getHttpServer())
       .post("/drafts")
+      .set("Authorization", `Bearer ${token}`)
       .send({
-        authorId: DEMO_AUTHOR_ID,
         title: "Findable",
         body: {},
       })
       .expect(201);
     const createdBody = created.body as DraftResponse;
 
-    const res = await request(app.getHttpServer()).get(`/drafts/${createdBody.id}`).expect(200);
+    const res = await request(app.getHttpServer())
+      .get(`/drafts/${createdBody.id}`)
+      .set("Authorization", `Bearer ${token}`)
+      .expect(200);
     const found = res.body as DraftResponse;
 
     expect(found.id).toBe(createdBody.id);
@@ -94,11 +104,23 @@ describe("DraftsController (e2e)", () => {
   it("POST /drafts -> 400 when title missing", async () => {
     await request(app.getHttpServer())
       .post("/drafts")
-      .send({ authorId: DEMO_AUTHOR_ID, body: {} })
+      .set("Authorization", `Bearer ${token}`)
+      .send({ body: {} })
+      .expect(400);
+  });
+
+  it("POST /drafts -> 400 when body contains forbidden authorId field", async () => {
+    await request(app.getHttpServer())
+      .post("/drafts")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ authorId: "spoofed", title: "x", body: {} })
       .expect(400);
   });
 
   it("GET /drafts/:id -> 404 when not found", async () => {
-    await request(app.getHttpServer()).get("/drafts/nonexistent-id-zzz").expect(404);
+    await request(app.getHttpServer())
+      .get("/drafts/nonexistent-id-zzz")
+      .set("Authorization", `Bearer ${token}`)
+      .expect(404);
   });
 });

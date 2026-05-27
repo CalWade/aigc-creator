@@ -8,10 +8,10 @@ import { CreateDraftDto } from "./dto/create-draft.dto";
 export class DraftsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(dto: CreateDraftDto): Promise<Draft> {
+  async create(authorId: string, dto: CreateDraftDto): Promise<Draft> {
     return this.prisma.draft.create({
       data: {
-        authorId: dto.authorId,
+        authorId,
         title: dto.title,
         body: dto.body as Prisma.InputJsonValue,
         mode: dto.mode,
