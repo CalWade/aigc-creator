@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -21,6 +22,8 @@ type LoadState =
 export default function MyDraftsPage() {
   const router = useRouter();
   const [state, setState] = useState<LoadState>({ kind: "loading" });
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!getToken()) {
@@ -57,6 +60,36 @@ export default function MyDraftsPage() {
     };
   }, [router]);
 
+  async function onCreate() {
+    if (creating) return;
+    setCreating(true);
+    setCreateError(null);
+    try {
+      const res = await apiFetch("/drafts", {
+        method: "POST",
+        body: JSON.stringify({
+          title: "未命名草稿",
+          body: { type: "doc", content: [] },
+        }),
+      });
+      if (res.status === 401) {
+        clearToken();
+        router.replace("/login");
+        return;
+      }
+      if (!res.ok) {
+        setCreateError(`创建失败 (HTTP ${res.status})`);
+        return;
+      }
+      const draft = (await res.json()) as { id: string };
+      router.push(`/drafts/${draft.id}`);
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : "网络错误");
+    } finally {
+      setCreating(false);
+    }
+  }
+
   function onLogout() {
     clearToken();
     router.replace("/login");
@@ -73,15 +106,26 @@ export default function MyDraftsPage() {
             </p>
           )}
         </div>
-        <button
-          type="button"
-          onClick={onLogout}
-          className="text-sm text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-        >
-          退出登录
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onCreate}
+            disabled={creating}
+            className="rounded-md bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium px-3 py-1.5 transition-colors"
+          >
+            {creating ? "创建中…" : "新建草稿"}
+          </button>
+          <button
+            type="button"
+            onClick={onLogout}
+            className="text-sm text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+          >
+            退出登录
+          </button>
+        </div>
       </header>
 
+      {createError && <p className="text-sm text-red-600">{createError}</p>}
       {state.kind === "loading" && <p className="text-sm text-zinc-500">加载中…</p>}
       {state.kind === "error" && <p className="text-sm text-red-600">{state.message}</p>}
       {state.kind === "ready" && state.drafts.length === 0 && (
@@ -90,26 +134,28 @@ export default function MyDraftsPage() {
       {state.kind === "ready" && state.drafts.length > 0 && (
         <ul className="flex flex-col gap-3">
           {state.drafts.map((d) => (
-            <li
-              key={d.id}
-              className="flex items-center justify-between rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-4 shadow-sm"
-            >
-              <div className="flex flex-col gap-1 min-w-0">
-                <h2 className="text-base font-medium truncate">{d.title}</h2>
-                <p className="text-xs text-zinc-500 font-mono truncate">{d.id}</p>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <span
-                  className={
-                    d.mode === "FAST"
-                      ? "inline-flex items-center rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 text-xs font-medium"
-                      : "inline-flex items-center rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 px-2 py-0.5 text-xs font-medium"
-                  }
-                >
-                  {d.mode}
-                </span>
-                <span className="text-xs text-zinc-500">v{d.version}</span>
-              </div>
+            <li key={d.id}>
+              <Link
+                href={`/drafts/${d.id}`}
+                className="flex items-center justify-between rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-4 shadow-sm hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors"
+              >
+                <div className="flex flex-col gap-1 min-w-0">
+                  <h2 className="text-base font-medium truncate">{d.title}</h2>
+                  <p className="text-xs text-zinc-500 font-mono truncate">{d.id}</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span
+                    className={
+                      d.mode === "FAST"
+                        ? "inline-flex items-center rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 text-xs font-medium"
+                        : "inline-flex items-center rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 px-2 py-0.5 text-xs font-medium"
+                    }
+                  >
+                    {d.mode}
+                  </span>
+                  <span className="text-xs text-zinc-500">v{d.version}</span>
+                </div>
+              </Link>
             </li>
           ))}
         </ul>
