@@ -1,13 +1,13 @@
 # Phase 2.2 设计 — FAST 模式生成 + 9 AI 工具卡 + Prompt 自定义
 
-> 状态:草稿 v2(2026-06-02 修订),已吸收 verification 子代理 gap review(2 必修 + 6 CONCERN)。等用户 review。下一步交给 superpowers:writing-plans 出实施计划。
+> 状态:草稿 v2.2(2026-06-03 修订),已吸收用户审稿(M1-M3 必修 + S1/S2 建议 + N1-N5 小注)。下一步交给 superpowers:writing-plans 出实施计划。
 
 ## 1. 目标
 
 让 `/drafts/[id]` 编辑器具备 PRD §3.1.1 / §3.1.2 / §3.5.2 的核心生产力:
 
 1. **FAST 模式全链路** — 选题 → 大纲(3-8 段,非流式)→ 用户编辑大纲 → 分段流式生成正文(SSE)。
-2. **9 个 AI 工具卡** — 选中文本后,BubbleMenu 弹出 3 组工具按钮,调用统一端点同步返回候选;用户三态决策 Accept / Reject / Modify。
+2. **9 个 AI 工具卡** — 选中文本后,BubbleMenu 弹出 3 组共 9 个工具按钮,调用统一端点同步返回候选;用户三态决策 Accept / Reject / Modify。
 3. **Prompt 自定义(§3.5.2)** — 平台层只读,用户可"复制到我的"得到一份私人副本;私人 Prompt 可改可删;"当前生效"由前端 localStorage 记录,后端只做 CRUD。
 
 不在本 milestone 范围(拆到后续):
@@ -19,19 +19,19 @@
 
 ## 2. 锁定决策表
 
-| 岔路             | 选择                                                                                                                            | 理由                                                                                                                                                                             |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 范围             | **一锅出**(一个 spec 一个 plan)                                                                                                 | FAST 主链路、9 工具、Prompt 写 API 共用 LLM 客户端 + 鉴权 + 编辑器宿主,拆开会反复改同一批文件。                                                                                  |
-| LLM 客户端       | **OpenAI SDK + 自定义 baseURL(任意 OpenAI 兼容端点)**                                                                           | OpenAI SDK 是事实标准;通过 `LLM_BASE_URL` 注入(可填 OpenAI 官方 / 火山方舟 ARK / DeepSeek / 自建网关),代码不绑定厂商,符合 PRD §6.4 "OpenAI SDK 兼容"精神同时给评委一键切换能力。 |
-| 流式协议         | **SSE(NestJS `@Sse()` + rxjs Observable)**                                                                                      | HTTP/1.1 单向流、原生支持断线重连、跟 OpenAI Stream 协议一一对应;WebSocket 在本场景属过度工程。                                                                                  |
-| SSE 鉴权         | **fetch + ReadableStream + `Authorization: Bearer <jwt>` 手解 SSE 帧**                                                          | 浏览器原生 EventSource 不支持自定义请求头,无法带 JWT;fetch 流式读取 + 手动按 `\n\n` 分帧最干净。                                                                                 |
-| FAST 节奏        | **POST /drafts/:id/outline(非流 JSON)→ 用户编辑 → GET /drafts/:id/sections/stream(SSE 分段)**                                   | 严遵 PRD §3.1.1;大纲短、要稳;分段长、要流。                                                                                                                                      |
-| 9 工具端点       | **统一 `POST /drafts/:id/tools/invoke { tool: DraftToolType, input, promptId? }`,`input` 为 discriminated union(按 tool 分支)** | 9 工具的输出 shape 同构;**输入差异**用 union 收敛(REWRITE 系工具吃选区,HEADLINE/ADD_TOPIC/ADD_FACTS/IMAGE_SUGGEST 吃全文)。新增工具只需扩 enum + union 分支 + 后端 case。        |
-| 工具返回模式     | **同步 POST 返回完整候选**(只有 FAST 全文生成走 SSE)                                                                            | 工具卡平均 < 200 字,等 1-2s 比断流后拼字符串体验更稳;前端实现简单,无需为每个工具加 SSE 状态机。                                                                                  |
-| Prompt 自定义    | **后端 CRUD + 前端 localStorage 记"当前生效"**                                                                                  | 保持 schema 不动(已经有 `sourcePromptId` 自指链);"当前生效"是 UI 状态,没有跨设备同步价值。                                                                                       |
-| 默认 Prompt 选取 | **`where { owner: PLATFORM, tool, isStarter: true }` 唯一命中,缺失则回退到该 tool 下 PLATFORM 首条**                            | schema 已有 `isStarter` 字段(prisma `@@index([owner, tool])` 已建);`isStarter` 作主键避免靠 `createdAt` 兜底的偶然性。                                                           |
-| UI 入口          | **TipTap BubbleMenu,3 组分组:改写类 / 标题类 / 补充类**                                                                         | 选区即工具,符合 PRD §3.1.2 "选中即可调用";3 组减少视觉噪音;BubbleMenu 是 TipTap 一等公民扩展。                                                                                   |
-| 流式 × autosave  | **流前 flush autosave → 流期间冻结 autosave → 流结束触发一次 PATCH**                                                            | Phase 2.1 `useAutosave` 监听 `onUpdate`,程序化 `insertContentAt` 仍触发 dirty;若不冻结,30s 倒计时会在流中段命中,与流末 PATCH 抢版本。                                            |
+| 岔路             | 选择                                                                                                                            | 理由                                                                                                                                                                                                                    |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 范围             | **一锅出**(一个 spec 一个 plan)                                                                                                 | FAST 主链路、9 工具、Prompt 写 API 共用 LLM 客户端 + 鉴权 + 编辑器宿主,拆开会反复改同一批文件。                                                                                                                         |
+| LLM 客户端       | **OpenAI SDK + 自定义 baseURL(任意 OpenAI 兼容端点)**                                                                           | OpenAI SDK 是事实标准;通过 `LLM_BASE_URL` 注入(可填 OpenAI 官方 / 火山方舟 ARK / DeepSeek / 自建网关),代码不绑定厂商,符合 PRD §6.4 "OpenAI SDK 兼容"精神同时给评委一键切换能力。                                        |
+| 流式协议         | **SSE(NestJS `@Sse()` + rxjs Observable)**                                                                                      | HTTP/1.1 单向流、原生支持断线重连、跟 OpenAI Stream 协议一一对应;WebSocket 在本场景属过度工程。                                                                                                                         |
+| SSE 鉴权         | **fetch + ReadableStream + `Authorization: Bearer <jwt>` 手解 SSE 帧**                                                          | 浏览器原生 EventSource 不支持自定义请求头,无法带 JWT;fetch 流式读取 + 手动按 `\n\n` 分帧最干净。                                                                                                                        |
+| FAST 节奏        | **POST /drafts/:id/outline(非流 JSON,无副作用)→ 用户编辑 → POST /drafts/:id/sections/stream(SSE,body 带大纲)**                  | 严遵 PRD §3.1.1;大纲短、要稳;分段长、要流。**两个端点都不写库**——outline 落地由前端持有并随流式请求送回,流末由前端 PATCH 一次完整正文落库,与 Phase 2.1 PATCH 通道(`version: { increment: 1 }`)合并,不引入"半成品落库"。 |
+| 9 工具端点       | **统一 `POST /drafts/:id/tools/invoke { tool: DraftToolType, input, promptId? }`,`input` 为 discriminated union(按 tool 分支)** | 9 工具的输出 shape 同构;**输入差异**用 union 收敛(REWRITE 系工具吃选区,HEADLINE/ADD_TOPIC/ADD_FACTS/IMAGE_SUGGEST 吃全文)。新增工具只需扩 enum + union 分支 + 后端 case。                                               |
+| 工具返回模式     | **同步 POST 返回完整候选**(只有 FAST 全文生成走 SSE)                                                                            | 工具卡平均 < 200 字,等 1-2s 比断流后拼字符串体验更稳;前端实现简单,无需为每个工具加 SSE 状态机。                                                                                                                         |
+| Prompt 自定义    | **后端 CRUD + 前端 localStorage 记"当前生效"**                                                                                  | 保持 schema 不动(已经有 `sourcePromptId` 自指链);"当前生效"是 UI 状态,没有跨设备同步价值。                                                                                                                              |
+| 默认 Prompt 选取 | **`where { owner: PLATFORM, tool, isStarter: true }` 唯一命中,缺失则回退到该 tool 下 PLATFORM 首条**                            | schema 已有 `isStarter` 字段(prisma `@@index([owner, tool])` 已建);`isStarter` 作主键避免靠 `createdAt` 兜底的偶然性。                                                                                                  |
+| UI 入口          | **TipTap BubbleMenu,3 组分组:改写类 / 标题类 / 补充类**                                                                         | 选区即工具,符合 PRD §3.1.2 "选中即可调用";3 组减少视觉噪音;BubbleMenu 是 TipTap 一等公民扩展。                                                                                                                          |
+| 流式 × autosave  | **流前 flush autosave → 流期间冻结 autosave → 流结束触发一次 PATCH**                                                            | Phase 2.1 `useAutosave` 监听 `onUpdate`,程序化 `insertContentAt` 仍触发 dirty;若不冻结,30s 倒计时会在流中段命中,与流末 PATCH 抢版本。                                                                                   |
 
 ## 3. 端到端流
 
@@ -40,14 +40,15 @@
 ```
 用户在 /drafts/[id] 点「FAST 模式」按钮
   → 弹出选题输入框(topic + 可选风格 hint)
-  → POST /drafts/:id/outline { topic, hint? }     [非流式]
+  → POST /drafts/:id/outline { topic, hint? }     [非流式,无副作用,不写库]
       ← 200 { sections: [{ heading, summary, hint? }] }   3-8 项
-  → 大纲面板渲染为可拖拽/编辑/增删的列表
+  → 大纲面板渲染为可拖拽/编辑/增删的列表(state 在前端)
   → 用户调整完大纲,点「开始生成正文」
   → [前端] flushAutosave() — 把当前编辑器脏内容 PATCH 落库一次,确保流前基线干净
   → [前端] pauseAutosave() — 进入 streaming 状态,onUpdate 期间跳过 dirty 标记
   // 上述两步对应 §5.3 useAutosave 暴露的真实 API:flush() + setStreaming(true)
-  → GET /drafts/:id/sections/stream?cursor=0     [SSE]
+  → POST /drafts/:id/sections/stream     [SSE,body 携带最终 outline]
+       body: { sections: OutlineItem[], cursor?: number }
       ← event: section.start  data: { index: 0, heading: "..." }
       ← event: token          data: { index: 0, delta: "字" }
       ← event: section.end    data: { index: 0 }
@@ -55,8 +56,12 @@
       ← ... 直到 done
       ← event: done           data: {}
   → 前端实时把 token 拼到 TipTap 文档对应段落
-  → 流结束后 resumeAutosave() + 触发一次 PATCH /drafts/:id 落库(沿用 Phase 2.1 自动保存通道)
+  → 流结束后 resumeAutosave() + 触发一次 PATCH /drafts/:id 落库(沿用 Phase 2.1 自动保存通道,version+1)
 ```
+
+> **为什么是 POST 而不是 GET**:大纲是流的输入(可能上百字),GET query 串塞不下;EventSource 不能带自定义请求头(JWT 用不了)本就要走 fetch+ReadableStream,顺势改 POST 也不增加客户端复杂度。NestJS `@Sse()` 装饰器对 GET/POST 都开放(本质只关心响应 Content-Type)。
+>
+> **为什么 outline 不写库**:outline 是过程产物,只在"用户调整大纲 → 开始生成"窗口内有意义;落库会引入"草稿上既有正文又有 outline,各 version 怎么管"的合并问题。前端持有 outline 状态、流末 PATCH 完整正文,语义最干净。如果用户中途关页,大纲丢失=重新调用 outline 端点(成本 1 次 LLM 调用,可接受)。
 
 错误路径:
 
@@ -88,7 +93,7 @@
 ```
 打开「Prompt 设置」抽屉(编辑器右上角入口)
   → GET /prompts                        列出 PLATFORM 全部
-  → GET /prompts?owner=PRIVATE         (新参数)列出我的
+  → GET /prompts/private               (PromptsPrivateController,见 §4.4)列出我的
   → 在某条 PLATFORM 上点「复制到我的」
   → POST /prompts/:platformId/copy     ← 200 创建 PRIVATE 副本,sourcePromptId 指向原 PLATFORM
   → 抽屉切到「我的」分组,新副本可见
@@ -131,21 +136,29 @@ ConfigModule 已在 `apps/api/src/app.module.ts:17` 通过 `ConfigModule.forRoot
 - `llm.client.ts` — 单例,构造 `new OpenAI({ apiKey: LLM_API_KEY, baseURL: LLM_BASE_URL })`(`openai` SDK)。两个方法:
   - `chat(messages, opts?): Promise<string>` 同步返回(工具走它)
   - `chatStream(messages, opts?): Observable<{ delta: string } | { done: true } | { error: string }>` 流式(FAST 走它)
-  - **不依赖任何厂商专属字段**;若某些 OpenAI 兼容厂商不支持 stream 的某种 finish_reason,在 client 内部归一化为 `{ done: true }`。
+  - **薄 adapter 层**:在 SDK 调用之后做归一化(finish_reason / 流帧格式 / 错误码)——OpenAI 用 `"stop"`,部分兼容厂商用 `null` 或自定义,client 内部统一映射为 `{ done: true }` 或 `{ error: string }` 后再 emit。任何厂商专属字段一律不渗到 service 层(与 §9 风险表"OpenAI 兼容厂商行为差异"缓解项一致)。
 - `llm.module.ts` — `@Global()` 导出 `LlmClient`。
 - 单测:mock OpenAI SDK,覆盖正常返回 + 限流错误 + 流式中断 + baseURL 自定义注入。
 
 ### 4.3 新增端点(drafts 模块)
 
-| 路由                              | Guard               | 入参                                               | 出参                          |
-| --------------------------------- | ------------------- | -------------------------------------------------- | ----------------------------- |
-| `POST /drafts/:id/outline`        | 类级 UserGuard 已挂 | `{ topic: string, hint?: string }`                 | `{ sections: OutlineItem[] }` |
-| `GET /drafts/:id/sections/stream` | 类级 UserGuard 已挂 | query: `cursor?: number`                           | SSE 帧(见 §3.1)               |
-| `POST /drafts/:id/tools/invoke`   | 类级 UserGuard 已挂 | `{ tool, input, promptId? }`(`input` 见下方 union) | `{ candidates: Candidate[] }` |
+| 路由                               | Guard               | 入参                                                 | 出参                          |
+| ---------------------------------- | ------------------- | ---------------------------------------------------- | ----------------------------- |
+| `POST /drafts/:id/outline`         | 类级 UserGuard 已挂 | `{ topic: string, hint?: string }`                   | `{ sections: OutlineItem[] }` |
+| `POST /drafts/:id/sections/stream` | 类级 UserGuard 已挂 | body: `{ sections: OutlineItem[], cursor?: number }` | SSE 帧(见 §3.1)               |
+| `POST /drafts/:id/tools/invoke`    | 类级 UserGuard 已挂 | `{ tool, input, promptId? }`(`input` 见下方 union)   | `{ candidates: Candidate[] }` |
 
 `OutlineItem`:`{ heading: string; summary: string; hint?: string }`。
 
-`Candidate`:`{ text: string }`,IMAGE_SUGGEST 工具额外带 `{ alt: string; reason: string }[]`,由 DTO 类型 union 收敛。
+`Candidate`(discriminated union,与 `ToolInvokeInput` 同一份 shared 包):
+
+```ts
+type Candidate =
+  | { kind: "text"; text: string } // 8 个文本类工具
+  | { kind: "image"; alt: string; reason: string }; // IMAGE_SUGGEST 唯一返回此 kind
+```
+
+8 个文本类工具返回 `{ candidates: Candidate[] }`,每项 `kind: "text"`(`HEADLINE_NEW` 等可返回 N 项,其余通常 1 项);`IMAGE_SUGGEST` 返回 `{ candidates: Candidate[] }`,每项 `kind: "image"`。前端按 `kind` 判别渲染卡片,**不再混用同一字段名歧义**。
 
 `ToolInvokeInput` discriminated union(按 tool 分支,plan 阶段把它落到 shared 包):
 
@@ -172,14 +185,16 @@ DTO 用 `class-validator` + `class-transformer` 的 `@Type` + 鉴别器或在 se
 
 新建 `PromptsPrivateController`(同一路由前缀 `prompts`,Nest 允许多 controller 共享前缀)+ 类级 `@UseGuards(UserGuard)` + **不挂 `@Public()`**,把 4 个新端点全挂这上面。原 `PromptsController` 保持 `@Public()` 不动,Phase 1.4 现有的 5 个 e2e 用例向后兼容零影响。
 
-| 路由                             | Controller               | Guard          | 校验                                                    | 出参       |
-| -------------------------------- | ------------------------ | -------------- | ------------------------------------------------------- | ---------- |
-| `GET /prompts?owner=PRIVATE`     | PromptsPrivateController | 类级 UserGuard | 仅返回 `authorId === user.sub` 的 PRIVATE               | `Prompt[]` |
-| `POST /prompts/:platformId/copy` | PromptsPrivateController | 类级 UserGuard | source 必须 PLATFORM;新建 PRIVATE,`sourcePromptId` 自指 | `Prompt`   |
-| `PATCH /prompts/:id`             | PromptsPrivateController | 类级 UserGuard | 必须 PRIVATE && `authorId === user.sub`                 | `Prompt`   |
-| `DELETE /prompts/:id`            | PromptsPrivateController | 类级 UserGuard | 必须 PRIVATE && `authorId === user.sub`                 | `204`      |
+> 下表 4 个端点都在 `PromptsPrivateController` 上,鉴权统一为类级 `UserGuard`(下表"Guard"列省略,默认即此)。
 
-> **关键**:`GET /prompts?owner=PRIVATE` 与 `GET /prompts`(原 PromptsController 上的公开列表,默认 `owner=PLATFORM`)是**两个不同的 controller 方法**,共用 URL 但 NestJS 路由匹配按 query 走不到这一层——按需要把私有 GET 路径改为 `GET /prompts/private` 或用 `@Get()` + Nest 的"先注册先匹配"靠路由表顺序兜底。**plan 阶段拍板**:倾向 `GET /prompts/private` 显式拆开,避免 query 路由分支引发的"两个 GET / 同 URL"歧义。
+| 路由                             | 校验                                                    | 出参       |
+| -------------------------------- | ------------------------------------------------------- | ---------- |
+| `GET /prompts/private`           | 仅返回 `authorId === user.sub` 的 PRIVATE               | `Prompt[]` |
+| `POST /prompts/:platformId/copy` | source 必须 PLATFORM;新建 PRIVATE,`sourcePromptId` 自指 | `Prompt`   |
+| `PATCH /prompts/:id`             | 必须 PRIVATE && `authorId === user.sub`                 | `Prompt`   |
+| `DELETE /prompts/:id`            | 必须 PRIVATE && `authorId === user.sub`                 | `204`      |
+
+> v2 草稿曾纠结的 `?owner=PRIVATE` query 路由分支已弃,显式拆 `GET /prompts/private`,避免"两个 GET / 同 URL / 不同 controller / 靠注册顺序兜底"的歧义。
 
 GET 默认 `owner=PLATFORM` 不变(向后兼容 Phase 1.4),走原 PromptsController。
 
@@ -197,7 +212,7 @@ GET 默认 `owner=PLATFORM` 不变(向后兼容 Phase 1.4),走原 PromptsControl
 - `apps/api/src/drafts/outline.service.ts` — 选题 → 大纲的 Prompt 模板 + 调用 LlmClient.chat
 - `apps/api/src/drafts/sections.service.ts` — 大纲 → 分段流式生成
 - `apps/api/src/drafts/tools.service.ts` — 9 工具 case 分发 + 调用 LlmClient.chat
-- `apps/api/src/prompts/prompts-private.controller.ts` — **新建**,类级 `@UseGuards(UserGuard)`,挂 `GET /prompts/private`(等价 v1 设想的 `?owner=PRIVATE`)+ POST copy + PATCH + DELETE 共 4 个路由
+- `apps/api/src/prompts/prompts-private.controller.ts` — **新建**,挂 `GET /prompts/private` + POST copy + PATCH + DELETE 共 4 个路由(鉴权见 §4.4)
 - `apps/api/src/prompts/dto/copy-prompt.dto.ts`
 - `apps/api/src/prompts/dto/update-prompt.dto.ts`
 - `apps/api/test/fast-mode.e2e-spec.ts` — outline / sections SSE / tools invoke
@@ -213,7 +228,7 @@ GET 默认 `owner=PLATFORM` 不变(向后兼容 Phase 1.4),走原 PromptsControl
 - `apps/api/src/prompts/prompts.service.ts` — copy / update / delete + 越权检查 + **默认 Prompt 选取改为 `where { owner: PLATFORM, tool, isStarter: true }`** + 兜底回退首条
 - `apps/api/src/app.module.ts` — 注册 LlmModule
 - `apps/api/.env.example`、根 `.env.example` — 加 `LLM_*` 三项 + 多厂商示例注释
-- `package.json` 依赖:`openai`(OpenAI SDK)
+- `package.json` 依赖:`openai`(OpenAI SDK,纯 JS 不需 `pnpm.onlyBuiltDependencies` 白名单;plan 阶段装包后跑一次 `pnpm install` 验证 postinstall 不被拦)
 - `README.md` — "本地开发 → LLM 接入"小节,列三种典型 baseURL 填法
 
 ### 4.6 SSE 实现要点
@@ -236,6 +251,12 @@ streamSections(
 错误路径:**service 内部必须 try/catch 所有可能抛错的代码**(包括 prisma 查询、LLM 调用、JSON parse),把异常转成 `error` MessageEvent 通过 Observable 推出,不要让异常 bubble 到 `@Sse()` 装饰器外——否则会被全局 `PrismaKnownRequestFilter`(app.module.ts:29)或 NestJS 默认 ExceptionFilter 拦截转 500 JSON,客户端 SSE 解析器立即断流且无法读到错误体。
 
 > **未现场验证**:NestJS `@Sse()` 与全局 `APP_FILTER` 的精确交互(Observable 内部 `throwError` 是否被 Filter 接管)。本设计稿通过"service 内吃掉所有异常"的方式从源头规避;plan 阶段实现时若 e2e 测试发现仍被 Filter 拦,补一层方法级 `@UseFilters()` 旁路。
+
+**全局 `JwtAuthGuard` × SSE 交互声明**(`apps/api/src/app.module.ts:30` 注册的全局 guard):
+
+- SSE 请求的鉴权时机与普通 REST 一致——guard 只在请求进入时校验一次 JWT 签名/过期,通过后开流。
+- **流期间 token 过期不刷新**:JWT 7 天过期 ≫ 单次流式生成时长(典型几十秒),不实现"流中刷新 token"。若极端情形下流中过期,服务端不主动断流,前端在收到 `done` 后下一次请求时由 `apiFetch` 拿到 401 再走重登。
+- **e2e #2 必须打到真实全局 guard 路径**:不要 mock `JwtAuthGuard`、不要绕过 `APP_GUARD` provider;用真实 `loginAsDemo(app)` 拿到的 token 走 fetch+ReadableStream(supertest 不支持流式,plan 阶段考虑用 `@nestjs/testing` 的 `httpAdapter` 直接读 response stream 或起本地 server + `node:http` 客户端)。这样能回归"全局 guard 不拦 SSE / 拦了能正确转 401"两件事。
 
 ## 5. 前端架构(apps/web)
 
@@ -263,7 +284,32 @@ streamSections(
 
 - `apps/web/src/app/drafts/[id]/page.tsx` — **保持 server component**(只做布局 + 取 draft id 透传),把 FAST 入口按钮 / Prompt 入口 / BubbleMenu 这些交互层全部下沉到 `_components/` 里的 client 子组件。Phase 2.1 已有的 `DraftEditor` 容器若是 client,继续作为子树根。
 - `apps/web/src/lib/auth.ts` — 已有 `apiFetch`;为 SSE 复用其 baseUrl + token 读取,但走 fetch 流式分支
-- `apps/web/src/hooks/useAutosave.ts`(Phase 2.1 产物) — **新增 pause / resume API**:暴露 `setStreaming(boolean)`,streaming=true 时 onUpdate 回调跳过 dirty 标记;streaming 切 false 时不自动触发 PATCH(由调用方在流末显式 `flush()`)。
+- `apps/web/src/lib/use-autosave.ts`(Phase 2.1 产物) — **签名扩展为**:
+
+  ```ts
+  // Phase 2.1 旧签名:
+  // function useAutosave<T>(value: T, save: (v: T) => Promise<void>, delayMs?: number): { status, lastSavedAt }
+  // Phase 2.2 新签名(向后兼容,仅扩展返回值):
+  type AutosaveControl<T> = {
+    status: AutosaveStatus;
+    lastSavedAt: number | null;
+    setStreaming: (on: boolean) => void; // true 时 onUpdate/value 变化跳过 dirty 标记,不启倒计时
+    flush: () => Promise<void>; // 立即触发一次 save(v),不管当前 status;done resolve 表示落库完成
+  };
+  function useAutosave<T>(
+    value: T,
+    save: (v: T) => Promise<void>,
+    delayMs?: number,
+  ): AutosaveControl<T>;
+  ```
+
+  - `setStreaming(true)` 期间:value 引用变化仍读到新值(供后续 flush 用),但**不**触发 `setStatus("dirty")` 也**不**启动 `setTimeout`。
+  - `setStreaming(false)` 后:**不自动**触发一次 PATCH(防止 streaming 切回时撞 race);需要落库由调用方显式 `flush()`。
+  - `flush()` 的合约:无论当前 status 为何(idle/dirty/saving/saved/error),都 call 一次 `save(latestValue)`;返回的 Promise 在 save resolve/reject 时 settle。**实现注意**:flush 期间内部 status 走 saving → saved/error,这点保持与防抖路径一致。
+  - 调用方 `DraftEditor` 沿用既有 `enabledValue = state.kind === "ready" ? value : null` 桥模式,不变。
+
+- `apps/web/src/components/draft-editor.tsx`(Phase 2.1 产物) — **接入新 API**:从 `useAutosave` 返回值解构出 `setStreaming` 与 `flush`,通过 props/context 透传给 `SectionStream` 子组件,供其在流前/流末调用;**本文件本期改动仅限于 hook 返回值消费,不动 5-state 状态机**。
+- `apps/web/src/components/save-status.tsx`(Phase 2.1 产物) — 不变,继续读 `status` + `lastSavedAt`。
 
 ### 5.4 BubbleMenu 分组
 
@@ -327,13 +373,15 @@ const TOOL_GROUPS = [
 `apps/api/test/fast-mode.e2e-spec.ts`:
 
 1. POST /drafts/:id/outline 200 + sections 长度 3-8(mock LlmClient)
-2. GET /drafts/:id/sections/stream — 收齐 section.start _ N + token _ M + done
-3. POST /drafts/:id/tools/invoke `tool=REWRITE_FLUENT, input.selectedText` → 200 + candidates.length >= 1
-4. POST /drafts/:id/tools/invoke `tool=HEADLINE_NEW, input.fullText` → 200 + candidates.length >= 1
-5. POST /drafts/:id/outline 用别人的 draftId → 403
+2. POST /drafts/:id/sections/stream(body 带 outline)— 收齐 section.start _ N + token _ M + done;**用真 JWT 走全局 `JwtAuthGuard` + 类级 `UserGuard`,不 mock**(回归 SSE 鉴权,见 §4.6)
+3. POST /drafts/:id/tools/invoke `tool=REWRITE_FLUENT, input.selectedText` → 200 + candidates.length >= 1,且 `candidates[0].kind === "text"`
+4. POST /drafts/:id/tools/invoke `tool=HEADLINE_NEW, input.fullText` → 200 + candidates.length >= 1,kind 同上
+5. POST /drafts/:id/outline 用别人的 draftId → 403(`assertAuthor` 抽出后的回归)
 6. POST /drafts/:id/tools/invoke 不存在的 draftId → 404
-7. POST /drafts/:id/tools/invoke `promptId=<别人的 PRIVATE>` → 403
-8. GET /drafts/:id/sections/stream 中间 service 主动抛 prisma 错 → SSE 帧有 `event: error` 而非 HTTP 500(防全局 Filter 截胡的回归测试)
+7. POST /drafts/:id/tools/invoke 用别人的 draftId → 403(覆盖 `assertAuthor` 在新端点的接入,N2)
+8. POST /drafts/:id/tools/invoke `promptId=<别人的 PRIVATE>` → 403
+9. POST /drafts/:id/sections/stream 中间 service 主动抛 prisma 错 → SSE 帧有 `event: error` 而非 HTTP 500(防全局 Filter 截胡的回归测试)
+10. POST /drafts/:id/tools/invoke `tool=IMAGE_SUGGEST, input.fullText` → 200 + `candidates[0].kind === "image"`,带 alt + reason(回归 §4.3 Candidate union)
 
 `apps/api/test/prompts-write.e2e-spec.ts`:
 
@@ -343,7 +391,7 @@ const TOOL_GROUPS = [
 4. PATCH /prompts/:id(别人的 PRIVATE)403
 5. DELETE /prompts/:id(自己的 PRIVATE)204
 6. DELETE /prompts/:id(PLATFORM)403
-7. GET /prompts?owner=PRIVATE 只返回自己的
+7. GET /prompts/private 只返回自己的(走 PromptsPrivateController + 类级 UserGuard,N3 路径变更后的回归)
 8. tools/invoke 不传 promptId → 后端解析到 `isStarter: true` 默认款(可通过 service spy 或返回头观测)
 
 ### 8.3 静态五连
@@ -386,18 +434,18 @@ const TOOL_GROUPS = [
 feat(content): FAST 模式生成 + 9 AI 工具卡 + Prompt 自定义(Phase 2.2)
 
 后端
-- llm: LlmClient(OpenAI SDK + 自定义 baseURL,支持任意 OpenAI 兼容厂商) + LlmModule(@Global)
+- llm: LlmClient(OpenAI SDK + 自定义 baseURL,薄 adapter 归一 finish_reason/流帧/错误码) + LlmModule(@Global)
 - config: 新建 apps/api/src/config/ 目录 + llm.config.ts(LLM_BASE_URL/API_KEY/MODEL 三项校验)
-- drafts: POST /:id/outline, GET /:id/sections/stream(SSE), POST /:id/tools/invoke(input discriminated union)
+- drafts: POST /:id/outline(无副作用)、POST /:id/sections/stream(SSE,body 带 outline)、POST /:id/tools/invoke(input discriminated union;Candidate = text | image)
 - drafts.service: assertAuthor 抽取(原 49-51 行)
 - prompts: **新建 PromptsPrivateController**(类级 UserGuard);GET /prompts/private、POST /:id/copy、PATCH /:id、DELETE /:id;原 PromptsController 保持 @Public 不动;默认款用 isStarter 选取
-- e2e: fast-mode 8 用例 + prompts-write 8 用例
+- e2e: fast-mode 10 用例(含 IMAGE_SUGGEST kind 回归 + tools/invoke 别人 draftId 403 + SSE 走真实全局 guard)+ prompts-write 8 用例
 
 前端
-- FastModeDialog/OutlinePanel/SectionStream + useStreamingGeneration(fetch+ReadableStream+JWT)
-- AiBubbleMenu(3 组工具) + ToolCandidateCard(Accept/Modify/Reject)
+- FastModeDialog/OutlinePanel/SectionStream + useStreamingGeneration(fetch+ReadableStream+JWT,POST 带 outline)
+- AiBubbleMenu(3 组共 9 工具) + ToolCandidateCard(Accept/Modify/Reject;按 candidate.kind 分支渲染)
 - PromptDrawer + useActivePromptId(localStorage 当前生效)
-- useAutosave 加 pause/resume,与流式协调
+- useAutosave 扩签名 setStreaming/flush;DraftEditor 接入并向 SectionStream 透传
 
 环境
 - LLM_BASE_URL / LLM_API_KEY / LLM_MODEL 三项加入 .env.example + README 多厂商示例
@@ -416,3 +464,15 @@ feat(content): FAST 模式生成 + 9 AI 工具卡 + Prompt 自定义(Phase 2.2)
 - v1(2026-05-27,commit 1b780c5):初稿。
 - v2(2026-06-02):吸收 verification gap review;LLM 客户端解绑火山方舟改 OpenAI 兼容自定义端点;修正 §3.2 行号引用 49-51、§4.6 移除冗余方法级 Guard、§4.1 ConfigModule 实际由 Phase 1.4 引入且 `apps/api/src/config/` 需新建;补:SSE 错误绕全局 Filter / PLATFORM 默认款用 isStarter / 9 工具 input discriminated union / 流式 × autosave 三段控制 / 前端组件统一 `"use client"`。
 - v2.1(2026-06-02):吸收 v2 二轮 verification(D3 FAIL):**§4.4 / §4.5 / §10 改为新建 `PromptsPrivateController`**(类级 UserGuard,路由 `GET /prompts/private`),原 `PromptsController` 保持 `@Public()` 不动以保 Phase 1.4 e2e 向后兼容,避免 `@Public` × `@UseGuards` 元数据优先级歧义;§3.1 流程图加注 `flushAutosave()` / `pauseAutosave()` 对应 §5.3 真实 API `flush()` / `setStreaming(true)`(D2 命名一致性)。
+- v2.2(2026-06-03):吸收用户审稿(M1-M3 必修 + S1/S2 + N1-N5):
+  - **M1**:§3.1 / §4.3 SSE 端点改为 `POST /drafts/:id/sections/stream`,body 携带 `{ sections, cursor? }`;outline 端点声明无副作用、不写库,前端持有 outline 状态、流末由前端 PATCH 完整正文落库。
+  - **M2**:§5.3 `useAutosave` 新签名完整写出(`AutosaveControl<T>` 含 `setStreaming` / `flush`,`flush` 语义钉为"无视 status 立即触发一次 save");**修改清单显式加 `apps/web/src/components/draft-editor.tsx`**(消费新 API);修复 v2 笔误 `apps/web/src/hooks/useAutosave.ts` → `apps/web/src/lib/use-autosave.ts`(Phase 2.1 实际落地路径)。
+  - **M3**:§4.6 增"全局 `JwtAuthGuard` × SSE 交互声明"段——鉴权时机、流期间不刷 token 策略、e2e #2 必须打到真实全局 guard。
+  - **S1**:§4.3 `Candidate` 改 discriminated union(`{kind:"text",text}` | `{kind:"image",alt,reason}`),IMAGE_SUGGEST 不再外挂副字段;§8.2 e2e #3/#4/#10 验 kind 字段。
+  - **S2**:§4.5 `openai` 依赖行加注 postinstall 验证步骤(纯 JS 大概率不需白名单,装包后跑一次 `pnpm install` 确认)。
+  - **N1**:§4.4 表格"Guard"列省略(类级 UserGuard 在表前一段已声明),§4.5 `prompts-private.controller.ts` 行同步压缩重复表述。
+  - **N2**:§8.2 fast-mode e2e 增 #7 "POST /drafts/:id/tools/invoke 用别人的 draftId → 403";新增 #10 验 IMAGE_SUGGEST kind。e2e 总数 8 → 10。
+  - **N3**:§3.3 流程图 `GET /prompts?owner=PRIVATE` → `GET /prompts/private`,与 §4.4 路由表对齐。
+  - **N4**:§1 目标 2 "3 组工具按钮" → "3 组共 9 个工具按钮"。
+  - **N5**:§4.2 LlmClient 描述补"薄 adapter 层"措辞,与 §9 风险表"OpenAI 兼容厂商行为差异"缓解项对齐。
+  - §10 提交计划同步:e2e 数从 8 改 10、SSE 改 POST、Candidate union、useAutosave 签名扩展、DraftEditor 接入。
