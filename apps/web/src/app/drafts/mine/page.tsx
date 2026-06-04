@@ -10,6 +10,7 @@ interface DraftItem {
   id: string;
   title: string;
   mode: "FAST" | "FINE";
+  status?: "DRAFT" | "PUBLISHED";
   version: number;
   updatedAt: string;
 }
@@ -44,7 +45,9 @@ export default function MyDraftsPage() {
           setState({ kind: "error", message: `加载失败 (HTTP ${res.status})` });
           return;
         }
-        const drafts = (await res.json()) as DraftItem[];
+        const allDrafts = (await res.json()) as DraftItem[];
+        // Phase 2.4:fixtures 扩展后 /drafts/mine 会包含 PUBLISHED,本页面只展示 DRAFT 态
+        const drafts = allDrafts.filter((d) => d.status !== "PUBLISHED");
         if (cancelled) return;
         setState({ kind: "ready", drafts, handle });
       })
