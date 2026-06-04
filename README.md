@@ -134,6 +134,21 @@ LLM_MODEL=<模型/endpoint 标识>
 - Prompt 体系:`SAFETY_REVIEW` / `QUALITY_REVIEW` 是平台保留 Prompt(PRD §4.7.1 / §4.7.2),`PromptsService.copyToPrivate` 守卫禁止作者复制,`PromptsController.list` 默认隐藏。
 - 数据模型:`Review` 表(一对多)+ `Draft.lastReviewId` 快读外键 + `Draft.status` / `Draft.publishedAt`。
 
+## Phase 2.4 — 信息流分发 + 实时排序
+
+PRD §5。已发布稿(复用 `Draft where status='PUBLISHED'`,**未引入 Post 表**)按 `score = α·QualityScore + β·HotnessScore + γ·TimeDecayScore` 实时排序;默认 α=0.5/β=0.3/γ=0.2,前端权重抽屉可热调,通过 query 透传。`HotnessScore` 当前用 `hotnessMockBase(postId)` 确定性 hash 占位,Phase 2.5 接 `PostStat` 表(已建好,空表)在 `feed.service.ts` 单点替换 `// PHASE_2_5_REPLACE_HERE`。
+
+- 端点(均 `@Public()` 公开,`/me/works` 鉴权):
+  - `GET /feed?alpha&beta&gamma&cursor&limit` — 信息流(τ=24h、窗口=30d)
+  - `GET /rank/hot?cursor&limit` — 热点榜(τ=12h、窗口=12h、固定 α=0.2/β=0.5/γ=0.3)
+  - `GET /rank/best?cursor&limit` — 爆文榜(τ=72h、窗口=72h、固定 α=0.5/β=0.4/γ=0.1)
+  - `GET /post/:id` — 详情(BLOCK 或非 PUBLISHED 一律 404)
+  - `GET /authors/:id/posts` — 作者已发布稿
+  - `GET /me/works?status=ALL|PUBLISHED|DRAFT` — 我的作品(草稿+已发布合并视图)
+- 排序与分页:`packages/shared/src/ranking.ts` 提供 `timeDecayScore` / `normalizeHotness`(pool<50 用 P95)/ `computeScore`;cursor 编码 `{rank, weights}` base64url,翻页时 `weights` 不一致返 400 `CURSOR_WEIGHTS_MISMATCH` 强制回到第 1 页。
+- Fixtures:3 作者(demo/tech/life) × 10 PUBLISHED = 30 条,`publishedAt = now - i·6h - 30min`(前 2 落 12h 窗口,前 12 落 72h 窗口),5 张 WebP 封面在 `apps/web/public/covers/`。
+- 前端 SSR:`page.tsx`(信息流)/ `rank/hot` / `rank/best` / `post/[id]` 均 Server Component;`me/works` 客户端鉴权。`WeightDrawer` localStorage(`phase24:feed-weights`)+ `router.replace(?alpha&beta&gamma)` 热调权重。`LoadMore` 用 IntersectionObserver 触发 cursor 下一页。
+
 ## 交付物清单
 
 - [x] PRD 终稿

@@ -1,24 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { DEFAULT_FEED_WEIGHTS, type FeedWeights } from "@bytedance-aigc/shared";
 
 const KEY = "phase24:feed-weights";
 
+function readInitialWeights(): FeedWeights {
+  if (typeof window === "undefined") return DEFAULT_FEED_WEIGHTS;
+  try {
+    const raw = window.localStorage.getItem(KEY);
+    if (raw) return JSON.parse(raw) as FeedWeights;
+  } catch {
+    /* noop */
+  }
+  return DEFAULT_FEED_WEIGHTS;
+}
+
 export function WeightDrawer() {
   const [open, setOpen] = useState(false);
-  const [w, setW] = useState<FeedWeights>(DEFAULT_FEED_WEIGHTS);
+  const [w, setW] = useState<FeedWeights>(readInitialWeights);
   const router = useRouter();
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(KEY);
-      if (raw) setW(JSON.parse(raw) as FeedWeights);
-    } catch {
-      /* noop */
-    }
-  }, []);
 
   function commit(next: FeedWeights) {
     localStorage.setItem(KEY, JSON.stringify(next));

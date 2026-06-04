@@ -38,7 +38,6 @@ export default function MyWorksPage() {
       return;
     }
     let cancelled = false;
-    setState({ kind: "loading" });
     void apiFetch(`/me/works?status=${filter}&limit=50`)
       .then(async (res) => {
         if (cancelled) return;
