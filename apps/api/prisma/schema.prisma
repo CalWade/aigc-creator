@@ -22,6 +22,22 @@ enum PromptOwner {
   PRIVATE
 }
 
+enum DraftStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum ReviewStage {
+  PREFLIGHT
+  POST_PUBLISH
+}
+
+enum ReviewRecommendation {
+  ALLOW
+  WARN
+  BLOCK
+}
+
 enum DraftToolType {
   REWRITE_FLUENT
   EXPAND
@@ -32,6 +48,8 @@ enum DraftToolType {
   ADD_FACTS
   ADD_TOPIC
   IMAGE_SUGGEST
+  SAFETY_REVIEW
+  QUALITY_REVIEW
 }
 
 model User {
@@ -46,19 +64,25 @@ model User {
 }
 
 model Draft {
-  id        String    @id @default(cuid())
-  authorId  String
-  mode      DraftMode @default(FAST)
-  title     String
-  body      Json
-  version   Int       @default(1)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id           String      @id @default(cuid())
+  authorId     String
+  mode         DraftMode   @default(FAST)
+  status       DraftStatus @default(DRAFT)
+  title        String
+  body         Json
+  version      Int         @default(1)
+  publishedAt  DateTime?
+  lastReviewId String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
 
-  author   User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  versions DraftVersion[]
+  author     User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  versions   DraftVersion[]
+  lastReview Review?        @relation("DraftLastReview", fields: [lastReviewId], references: [id])
+  reviews    Review[]       @relation("DraftReviews")
 
   @@index([authorId])
+  @@index([status])
   @@map("drafts")
 }
 
@@ -96,4 +120,21 @@ model Prompt {
   @@index([owner, tool])
   @@index([authorId])
   @@map("prompts")
+}
+
+model Review {
+  id             String               @id @default(cuid())
+  draftId        String
+  stage          ReviewStage
+  safety         Json
+  quality        Json
+  recommendation ReviewRecommendation
+  modelMeta      Json?
+  createdAt      DateTime             @default(now())
+
+  draft         Draft   @relation("DraftReviews", fields: [draftId], references: [id], onDelete: Cascade)
+  draftLastSeen Draft[] @relation("DraftLastReview")
+
+  @@index([draftId, createdAt(sort: Desc)])
+  @@map("reviews")
 }
