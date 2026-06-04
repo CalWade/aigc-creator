@@ -16,6 +16,7 @@ import { SectionStream } from "@/app/drafts/[id]/_components/SectionStream";
 import { AiBubbleMenu } from "@/app/drafts/[id]/_components/AiBubbleMenu";
 import { ToolCandidateCard } from "@/app/drafts/[id]/_components/ToolCandidateCard";
 import { PromptDrawer } from "@/app/drafts/[id]/_components/PromptDrawer";
+import { PreflightDialog } from "@/app/drafts/[id]/_components/PreflightDialog";
 
 interface DraftDetail {
   id: string;
@@ -55,6 +56,7 @@ export function DraftEditor({ id }: { id: string }) {
   const [fastDialogOpen, setFastDialogOpen] = useState(false);
   const [fast, setFast] = useState<FastStage>({ kind: "idle" });
   const [promptDrawerOpen, setPromptDrawerOpen] = useState(false);
+  const [preflightOpen, setPreflightOpen] = useState(false);
 
   const [toolBusy, setToolBusy] = useState<DraftToolType | null>(null);
   const [toolError, setToolError] = useState<string | null>(null);
@@ -244,6 +246,13 @@ export function DraftEditor({ id }: { id: string }) {
         >
           ⚙
         </button>
+        <button
+          type="button"
+          onClick={() => setPreflightOpen(true)}
+          className="text-sm rounded bg-zinc-900 text-white px-2.5 py-1.5 hover:bg-zinc-700"
+        >
+          发布
+        </button>
         <SaveStatus status={status} lastSavedAt={lastSavedAt} />
       </header>
 
@@ -301,6 +310,8 @@ export function DraftEditor({ id }: { id: string }) {
       />
 
       <PromptDrawer open={promptDrawerOpen} onClose={() => setPromptDrawerOpen(false)} />
+
+      <PreflightDialog draftId={id} open={preflightOpen} onClose={() => setPreflightOpen(false)} />
     </main>
   );
 }
