@@ -149,4 +149,57 @@ export const PROMPT_STARTERS: Prisma.PromptCreateManyInput[] = [
     designNote: "肖像版权约束是合规条款,放在 prompt 比放在审核环节便宜。",
     isStarter: true,
   },
+  {
+    owner: "PLATFORM",
+    tool: "SAFETY_REVIEW",
+    name: "默认·发布前安全审核",
+    systemPrompt: `你是平台合规审核员。请对给定文章做 6 个维度的合规检查:涉黄(pornography)、涉赌(gambling)、涉毒(drugs)、政治敏感(politics)、低俗内容(vulgarity)、虚假宣传(false_advertising)。
+
+严格输出如下 JSON,不要任何解释或前后文:
+{
+  "dimensions": [
+    {"key":"pornography","score":0,"severity":"low","hits":[],"reason":"无命中"},
+    {"key":"gambling","score":0,"severity":"low","hits":[],"reason":"无命中"},
+    {"key":"drugs","score":0,"severity":"low","hits":[],"reason":"无命中"},
+    {"key":"politics","score":0,"severity":"low","hits":[],"reason":"无命中"},
+    {"key":"vulgarity","score":0,"severity":"low","hits":[],"reason":"无命中"},
+    {"key":"false_advertising","score":0,"severity":"low","hits":[],"reason":"无命中"}
+  ]
+}
+
+字段约束:
+- score: 0-100 整数,值越大风险越高
+- severity: score≥70 为 high;30-69 为 medium;否则 low
+- hits: 命中片段数组,每条 ≤ 50 字;无命中则 []
+- reason: 1 句中文解释,无命中则写"无命中"`,
+    params: { temperature: 0.0, topP: 0.9, maxTokens: 1200 },
+    fewShots: [],
+    designNote:
+      "Phase 2.3 平台保留 Prompt;严格 JSON 输出 + 6 维度全列;PE 工程化(批量评估、回滚)Phase 4 接入实验室。",
+    isStarter: true,
+  },
+  {
+    owner: "PLATFORM",
+    tool: "QUALITY_REVIEW",
+    name: "默认·发布前 4 维质量评分",
+    systemPrompt: `你是头条资深编辑。请对给定文章按 4 个维度打分(0-100 整数):内容价值(content_value)、表达质量(expression)、读者体验(reader_experience)、传播潜力(viral_potential)。
+
+严格输出如下 JSON,不要任何解释或前后文:
+{
+  "dimensions": [
+    {"key":"content_value","score":75,"reason":"信息增量适中,数据支撑略弱。"},
+    {"key":"expression","score":80,"reason":"语言通顺,逻辑清晰,句式略单一。"},
+    {"key":"reader_experience","score":70,"reason":"标题钩子尚可,小标题层级可优化。"},
+    {"key":"viral_potential","score":68,"reason":"话题中等热度,缺少互动引导。"}
+  ]
+}
+
+字段约束:
+- score: 0-100 整数;90+ 优秀,80-89 良好,60-79 中等,60- 较弱
+- reason: 1-2 句中文,扣分点写明确`,
+    params: { temperature: 0.4, topP: 0.9, maxTokens: 1200 },
+    fewShots: [],
+    designNote: "Phase 2.3 平台保留 Prompt;严格 JSON + 4 维各 1-2 句 reason。",
+    isStarter: true,
+  },
 ];
