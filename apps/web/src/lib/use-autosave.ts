@@ -30,7 +30,9 @@ export function useAutosave<T>(
   }, [save]);
 
   const valueRef = useRef(value);
-  valueRef.current = value;
+  useEffect(() => {
+    valueRef.current = value;
+  }, [value]);
 
   const streamingRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);

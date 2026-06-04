@@ -2,13 +2,20 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { JSONContent } from "@tiptap/react";
+import type { JSONContent, Editor } from "@tiptap/react";
+import type { Candidate, DraftToolType, OutlineItem } from "@bytedance-aigc/shared";
 
 import { apiFetch, clearToken, getToken } from "@/lib/auth";
 import { useAutosave } from "@/lib/use-autosave";
 
 import { SaveStatus } from "./save-status";
 import { TiptapBody } from "./tiptap-body";
+import { FastModeDialog } from "@/app/drafts/[id]/_components/FastModeDialog";
+import { OutlinePanel } from "@/app/drafts/[id]/_components/OutlinePanel";
+import { SectionStream } from "@/app/drafts/[id]/_components/SectionStream";
+import { AiBubbleMenu } from "@/app/drafts/[id]/_components/AiBubbleMenu";
+import { ToolCandidateCard } from "@/app/drafts/[id]/_components/ToolCandidateCard";
+import { PromptDrawer } from "@/app/drafts/[id]/_components/PromptDrawer";
 
 interface DraftDetail {
   id: string;
@@ -27,11 +34,31 @@ type State =
   | { kind: "forbidden" }
   | { kind: "error"; message: string };
 
+type FastStage =
+  | { kind: "idle" }
+  | { kind: "outline"; sections: OutlineItem[] }
+  | { kind: "stream"; sections: OutlineItem[] };
+
+interface ToolPanel {
+  tool: DraftToolType;
+  selectedText: string;
+  candidates: Candidate[];
+}
+
 export function DraftEditor({ id }: { id: string }) {
   const router = useRouter();
   const [state, setState] = useState<State>({ kind: "loading" });
   const [title, setTitle] = useState("");
   const [body, setBody] = useState<JSONContent>({ type: "doc", content: [] });
+  const [editor, setEditor] = useState<Editor | null>(null);
+
+  const [fastDialogOpen, setFastDialogOpen] = useState(false);
+  const [fast, setFast] = useState<FastStage>({ kind: "idle" });
+  const [promptDrawerOpen, setPromptDrawerOpen] = useState(false);
+
+  const [toolBusy, setToolBusy] = useState<DraftToolType | null>(null);
+  const [toolError, setToolError] = useState<string | null>(null);
+  const [toolPanel, setToolPanel] = useState<ToolPanel | null>(null);
 
   useEffect(() => {
     if (!getToken()) {
@@ -91,12 +118,91 @@ export function DraftEditor({ id }: { id: string }) {
   );
 
   const enabledValue = state.kind === "ready" ? value : null;
-  const { status, lastSavedAt } = useAutosave(
+  const { status, lastSavedAt, setStreaming, flush } = useAutosave(
     enabledValue,
     async (v) => {
       if (v) await save(v);
     },
     1500,
+  );
+
+  // 调 /drafts/:id/tools/invoke
+  const invokeTool = useCallback(
+    async (
+      tool: DraftToolType,
+      payload: { selectedText: string; fullText: string },
+    ): Promise<void> => {
+      if (!editor) return;
+      setToolBusy(tool);
+      setToolError(null);
+      try {
+        // 按工具形态选 input(plan D1 narrow)
+        let input: Record<string, unknown>;
+        switch (tool) {
+          case "REWRITE_FLUENT":
+          case "EXPAND":
+          case "TRANSFORM_STYLE":
+          case "REWRITE_OPENING":
+          case "HEADLINE_SUB":
+            input = { selectedText: payload.selectedText };
+            break;
+          case "HEADLINE_NEW":
+          case "ADD_TOPIC":
+          case "IMAGE_SUGGEST":
+            input = { fullText: payload.fullText };
+            break;
+          case "ADD_FACTS":
+            input = {
+              selectedText: payload.selectedText,
+              fullText: payload.fullText,
+            };
+            break;
+        }
+        // 当前生效 promptId(以 REWRITE_FLUENT 为例 — 不同工具各自记忆,这里取
+        // 通用槽位:invoke 后端按 tool 自己 narrow,单工具调用拿同 tool 的 active id)
+        const active = window.localStorage.getItem(`bytedance-aigc:active-prompt:${tool}`);
+        const res = await apiFetch(`/drafts/${id}/tools/invoke`, {
+          method: "POST",
+          body: JSON.stringify({
+            tool,
+            input,
+            ...(active ? { promptId: active } : {}),
+          }),
+        });
+        if (!res.ok) {
+          setToolError(`HTTP ${res.status}`);
+          return;
+        }
+        const data = (await res.json()) as { candidates: Candidate[] };
+        setToolPanel({
+          tool,
+          selectedText: payload.selectedText,
+          candidates: data.candidates ?? [],
+        });
+      } catch (err) {
+        setToolError(err instanceof Error ? err.message : "网络错误");
+      } finally {
+        setToolBusy(null);
+      }
+    },
+    [editor, id],
+  );
+
+  const adoptCandidate = useCallback(
+    (text: string): void => {
+      if (!editor) return;
+      const { from, to, empty } = editor.state.selection;
+      if (empty) {
+        editor
+          .chain()
+          .focus("end")
+          .insertContent(text + "\n")
+          .run();
+      } else {
+        editor.chain().focus().insertContentAt({ from, to }, text).run();
+      }
+    },
+    [editor],
   );
 
   if (state.kind === "loading") {
@@ -122,9 +228,79 @@ export function DraftEditor({ id }: { id: string }) {
           className="flex-1 text-2xl font-semibold tracking-tight bg-transparent outline-none border-b border-transparent focus:border-zinc-300 dark:focus:border-zinc-700"
           placeholder="未命名草稿"
         />
+        <button
+          type="button"
+          onClick={() => setFastDialogOpen(true)}
+          className="text-sm rounded border border-zinc-300 dark:border-zinc-700 px-2.5 py-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+        >
+          FAST 生成
+        </button>
+        <button
+          type="button"
+          onClick={() => setPromptDrawerOpen(true)}
+          aria-label="Prompt 库"
+          title="Prompt 库"
+          className="text-sm rounded border border-zinc-300 dark:border-zinc-700 px-2.5 py-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+        >
+          ⚙
+        </button>
         <SaveStatus status={status} lastSavedAt={lastSavedAt} />
       </header>
-      <TiptapBody initial={body} onChange={setBody} />
+
+      {fast.kind === "outline" && (
+        <OutlinePanel
+          initial={fast.sections}
+          onCancel={() => setFast({ kind: "idle" })}
+          onConfirm={(sections) => setFast({ kind: "stream", sections })}
+        />
+      )}
+
+      {fast.kind === "stream" && (
+        <SectionStream
+          editor={editor}
+          draftId={id}
+          sections={fast.sections}
+          setStreaming={setStreaming}
+          flush={flush}
+          onComplete={() => setFast({ kind: "idle" })}
+          onError={() => {
+            // 流末错误已在 SectionStream 内显示;父组件保持 stream 阶段以便用户看到错
+          }}
+        />
+      )}
+
+      <TiptapBody initial={body} onChange={setBody} onReady={setEditor} />
+
+      <AiBubbleMenu editor={editor} onInvoke={invokeTool} />
+
+      {toolBusy && (
+        <p className="fixed bottom-4 left-1/2 -translate-x-1/2 text-xs rounded bg-zinc-900 text-white px-3 py-1.5">
+          调用 {toolBusy}…
+        </p>
+      )}
+      {toolError && !toolBusy && (
+        <p className="fixed bottom-4 left-1/2 -translate-x-1/2 text-xs rounded bg-red-600 text-white px-3 py-1.5">
+          工具失败:{toolError}
+        </p>
+      )}
+      {toolPanel && (
+        <div className="fixed bottom-6 right-6 z-30">
+          <ToolCandidateCard
+            candidates={toolPanel.candidates}
+            onAdopt={adoptCandidate}
+            onClose={() => setToolPanel(null)}
+          />
+        </div>
+      )}
+
+      <FastModeDialog
+        draftId={id}
+        open={fastDialogOpen}
+        onClose={() => setFastDialogOpen(false)}
+        onAccept={(sections) => setFast({ kind: "outline", sections })}
+      />
+
+      <PromptDrawer open={promptDrawerOpen} onClose={() => setPromptDrawerOpen(false)} />
     </main>
   );
 }

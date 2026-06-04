@@ -3,14 +3,16 @@
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { useEffect } from "react";
-import type { JSONContent } from "@tiptap/react";
+import type { Editor, JSONContent } from "@tiptap/react";
 
 interface TiptapBodyProps {
   initial: JSONContent;
   onChange: (json: JSONContent) => void;
+  /** 把 editor 实例上提给父组件用于 BubbleMenu / SectionStream / 工具卡接入。 */
+  onReady?: (editor: Editor | null) => void;
 }
 
-export function TiptapBody({ initial, onChange }: TiptapBodyProps) {
+export function TiptapBody({ initial, onChange, onReady }: TiptapBodyProps) {
   const editor = useEditor({
     extensions: [StarterKit],
     content: initial,
@@ -19,6 +21,10 @@ export function TiptapBody({ initial, onChange }: TiptapBodyProps) {
       onChange(editor.getJSON());
     },
   });
+
+  useEffect(() => {
+    onReady?.(editor);
+  }, [editor, onReady]);
 
   useEffect(() => {
     return () => {
