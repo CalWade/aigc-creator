@@ -1,28 +1,42 @@
-import Link from "next/link";
+import type { FeedResponse } from "@bytedance-aigc/shared";
+import { DEFAULT_FEED_WEIGHTS } from "@bytedance-aigc/shared";
+import { serverFetchJson } from "@/lib/server-fetch";
+import { FeedList } from "./_components/FeedList";
+import { LoadMore } from "./_components/LoadMore";
+import { RankTabs } from "./_components/RankTabs";
+import { WeightDrawer } from "./_components/WeightDrawer";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+interface PageProps {
+  searchParams: Promise<{
+    alpha?: string;
+    beta?: string;
+    gamma?: string;
+  }>;
+}
+
+export default async function HomePage({ searchParams }: PageProps) {
+  const sp = await searchParams;
+  const alpha = sp.alpha ? Number(sp.alpha) : DEFAULT_FEED_WEIGHTS.alpha;
+  const beta = sp.beta ? Number(sp.beta) : DEFAULT_FEED_WEIGHTS.beta;
+  const gamma = sp.gamma ? Number(sp.gamma) : DEFAULT_FEED_WEIGHTS.gamma;
+  const qs = new URLSearchParams({
+    alpha: String(alpha),
+    beta: String(beta),
+    gamma: String(gamma),
+    limit: "20",
+  });
+  const data = await serverFetchJson<FeedResponse>(`/feed?${qs.toString()}`);
   return (
-    <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-16 text-center">
-      <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-        AI 创作者辅助生产与分发平台
-      </h1>
-      <p className="max-w-md text-base text-zinc-600 dark:text-zinc-400">
-        字节头条 AI 前端训练营项目 · 开发中
-      </p>
-      <div className="flex gap-3">
-        <Link
-          href="/login"
-          className="rounded-md bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 transition-colors"
-        >
-          登录
-        </Link>
-        <Link
-          href="/drafts/mine"
-          className="rounded-md border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-sm font-medium px-4 py-2 transition-colors"
-        >
-          我的草稿
-        </Link>
+    <main className="max-w-6xl mx-auto px-4 py-6">
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-semibold">推荐</h1>
+        <WeightDrawer />
       </div>
+      <RankTabs />
+      <FeedList data={data} />
+      <LoadMore initialCursor={data.nextCursor} endpoint={`/feed?${qs.toString()}`} />
     </main>
   );
 }
