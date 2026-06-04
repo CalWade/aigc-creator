@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@bytedance-aigc/shared": "workspace:*",
     "@tiptap/pm": "3.23.6",
     "@tiptap/react": "3.23.6",
     "@tiptap/starter-kit": "3.23.6",
