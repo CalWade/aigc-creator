@@ -48,9 +48,14 @@ describe("PromptsController (e2e)", () => {
     const list = res.body as PromptResponse[];
 
     expect(Array.isArray(list)).toBe(true);
-    expect(list.length).toBe(PROMPT_STARTERS.length);
+    // Phase 2.3 起 SAFETY_REVIEW / QUALITY_REVIEW 是平台保留 Prompt,默认从 list 隐藏
+    const visible = PROMPT_STARTERS.filter(
+      (p) => p.tool !== "SAFETY_REVIEW" && p.tool !== "QUALITY_REVIEW",
+    );
+    expect(list.length).toBe(visible.length);
     expect(list.every((p) => p.owner === "PLATFORM")).toBe(true);
     expect(list.every((p) => p.isStarter === true)).toBe(true);
+    expect(list.every((p) => p.tool !== "SAFETY_REVIEW" && p.tool !== "QUALITY_REVIEW")).toBe(true);
   });
 
   it("GET /prompts?tool=REWRITE_FLUENT -> 200 returns filtered list", async () => {

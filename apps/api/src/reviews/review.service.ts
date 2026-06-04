@@ -84,7 +84,7 @@ export class ReviewService {
             latencyMsQuality: qualityMs,
             totalMs: Date.now() - t0,
             truncated,
-          } as unknown as Prisma.InputJsonValue,
+          },
         },
       });
       await tx.draft.update({ where: { id: draftId }, data: { lastReviewId: created.id } });
@@ -148,10 +148,7 @@ export class ReviewService {
       if (!found) return fallback(`AI 输出缺维度 ${key}`);
       const f = found as Record<string, unknown>;
       const score = Number(f.score);
-      const severity = (f.severity === "high" || f.severity === "medium" ? f.severity : "low") as
-        | "low"
-        | "medium"
-        | "high";
+      const severity = f.severity === "high" || f.severity === "medium" ? f.severity : "low";
       dims.push({
         key,
         score: Number.isFinite(score) ? Math.max(0, Math.min(100, Math.round(score))) : 0,
@@ -205,10 +202,10 @@ export class ReviewService {
   private toDto(r: Review): PreflightResponse["review"] {
     return {
       id: r.id,
-      stage: r.stage as "PREFLIGHT" | "POST_PUBLISH",
+      stage: r.stage,
       safety: r.safety as unknown as ReviewSafety,
       quality: r.quality as unknown as ReviewQuality,
-      recommendation: r.recommendation as Recommendation,
+      recommendation: r.recommendation,
       modelMeta: r.modelMeta as never,
       createdAt: r.createdAt.toISOString(),
     };

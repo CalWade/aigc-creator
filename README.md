@@ -123,6 +123,17 @@ LLM_MODEL=<模型/endpoint 标识>
 
 切换厂商只改 `.env` 三项 + 重启 api,代码不绑定厂商。
 
+## Phase 2.3 — 发布前审核 + 4 维质量分
+
+作者点"发布"按钮 → 同步并发跑 2 个 LLM(`SAFETY_REVIEW` + `QUALITY_REVIEW`,温度 0.0/0.4)→ 弹窗展示 6 维安全分 + 4 维质量分 + ALLOW/WARN/BLOCK 推荐 → 通过后落 `status=PUBLISHED`。
+
+- 端点:
+  - `POST /drafts/:id/preflight` — 同步,2 次 LLM 并发,落 Review 行
+  - `POST /drafts/:id/publish` — 校验 `lastReview.stage===PREFLIGHT && rec!==BLOCK && now-createdAt<24h`,否则 409 PREFLIGHT_REQUIRED/PREFLIGHT_BLOCKED/PREFLIGHT_EXPIRED
+  - `GET /drafts/:id/reviews?limit=10` — 历史审核(为 Phase 2.4 发布后审核留接口形态)
+- Prompt 体系:`SAFETY_REVIEW` / `QUALITY_REVIEW` 是平台保留 Prompt(PRD §4.7.1 / §4.7.2),`PromptsService.copyToPrivate` 守卫禁止作者复制,`PromptsController.list` 默认隐藏。
+- 数据模型:`Review` 表(一对多)+ `Draft.lastReviewId` 快读外键 + `Draft.status` / `Draft.publishedAt`。
+
 ## 交付物清单
 
 - [x] PRD 终稿

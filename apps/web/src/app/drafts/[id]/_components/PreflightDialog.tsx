@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { PreflightResponse } from "@bytedance-aigc/shared";
 
@@ -7,6 +7,11 @@ import { ScorePanel } from "./ScorePanel";
 import { RecommendationBadge } from "./RecommendationBadge";
 import { usePreflight, usePublish } from "@/lib/use-preflight";
 
+/**
+ * Phase 2.3 发布前审核弹窗。父组件控制 open。打开时 useEffect 触发预检会被
+ * react-hooks/set-state-in-effect 拒,改为「只要 open && 还没结果且不在 loading
+ * 且无错误」就 lazily 触发一次,触发动作放在 render 路径用 `if` + 调一次。
+ */
 export function PreflightDialog({
   draftId,
   open,
@@ -19,16 +24,16 @@ export function PreflightDialog({
   const router = useRouter();
   const preflight = usePreflight(draftId);
   const publish = usePublish(draftId);
-  const [phase, setPhase] = useState<"idle" | "running" | "result" | "publishing">("idle");
+  const [publishing, setPublishing] = useState(false);
+  const [triggered, setTriggered] = useState(false);
 
-  useEffect(() => {
-    if (open && phase === "idle") {
-      setPhase("running");
-      void preflight.run().then((r) => setPhase(r ? "result" : "idle"));
-    }
-    if (!open) setPhase("idle");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  if (open && !triggered) {
+    setTriggered(true);
+    void preflight.run();
+  }
+  if (!open && triggered) {
+    setTriggered(false);
+  }
 
   if (!open) return null;
 
@@ -36,10 +41,14 @@ export function PreflightDialog({
   const canPublish = data && data.recommendation !== "BLOCK";
 
   const onPublishClick = async () => {
-    setPhase("publishing");
+    setPublishing(true);
     const r = await publish.run();
     if (r) router.push(`/post/${r.id}`);
-    else setPhase("result");
+    else setPublishing(false);
+  };
+
+  const retry = () => {
+    void preflight.run();
   };
 
   return (
@@ -51,23 +60,16 @@ export function PreflightDialog({
             ✕
           </button>
         </header>
-        {phase === "running" && <p className="text-sm">审核中,稍候(约 5-10 秒)...</p>}
-        {preflight.error && (
+        {preflight.loading && <p className="text-sm">审核中,稍候(约 5-10 秒)...</p>}
+        {preflight.error && !preflight.loading && (
           <div className="text-sm text-red-600 space-y-2">
             <p>{preflight.error}</p>
-            <button
-              type="button"
-              onClick={() => {
-                setPhase("running");
-                void preflight.run().then((r) => setPhase(r ? "result" : "idle"));
-              }}
-              className="rounded border px-3 py-1.5 text-xs"
-            >
+            <button type="button" onClick={retry} className="rounded border px-3 py-1.5 text-xs">
               重试
             </button>
           </div>
         )}
-        {data && phase !== "running" && (
+        {data && !preflight.loading && (
           <>
             <div className="flex items-center gap-3 mb-3">
               <RecommendationBadge value={data.recommendation} />
@@ -92,13 +94,13 @@ export function PreflightDialog({
               {canPublish && (
                 <button
                   type="button"
-                  disabled={phase === "publishing"}
+                  disabled={publishing}
                   onClick={onPublishClick}
                   className={`text-sm rounded px-3 py-1.5 text-white ${
                     data.recommendation === "WARN" ? "bg-yellow-600" : "bg-green-600"
                   } disabled:opacity-50`}
                 >
-                  {phase === "publishing" ? "发布中..." : "立即发布"}
+                  {publishing ? "发布中..." : "立即发布"}
                 </button>
               )}
             </footer>

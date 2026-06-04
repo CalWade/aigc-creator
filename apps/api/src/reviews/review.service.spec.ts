@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/unbound-method */
-import type { Prompt } from "@prisma/client";
-
 import { LlmClient } from "../llm/llm.client";
 import { PrismaService } from "../prisma/prisma.service";
 import { PromptsService } from "../prompts/prompts.service";
@@ -53,9 +50,7 @@ function makeService(safetyRaw: string, qualityRaw: string) {
       .mockImplementationOnce(() => Promise.resolve(qualityRaw)),
   } as unknown as LlmClient;
   const prompts = {
-    findDefaultByTool: jest
-      .fn()
-      .mockResolvedValue({ systemPrompt: "你是审核员", params: {} } as Prompt),
+    findDefaultByTool: jest.fn().mockResolvedValue({ systemPrompt: "你是审核员", params: {} }),
   } as unknown as PromptsService;
   const prisma = {
     $transaction: jest.fn().mockImplementation((cb: (tx: unknown) => Promise<unknown>) =>
