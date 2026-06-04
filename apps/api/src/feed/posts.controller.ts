@@ -30,10 +30,7 @@ export class PostsController {
       coverIndex: (Math.abs(hashId(draft.id)) % 5) + 1,
       excerpt: "",
       body: draft.body,
-      qualityRecommendation: (draft.lastReview?.recommendation ?? "ALLOW") as
-        | "ALLOW"
-        | "WARN"
-        | "BLOCK",
+      qualityRecommendation: draft.lastReview?.recommendation ?? "ALLOW",
     };
   }
 

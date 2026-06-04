@@ -9,6 +9,7 @@ import { AuthModule } from "./auth/auth.module";
 import { JwtAuthGuard } from "./auth/jwt-auth.guard";
 import { PrismaKnownRequestFilter } from "./common/filters/prisma-known-request.filter";
 import { DraftsModule } from "./drafts/drafts.module";
+import { FeedModule } from "./feed/feed.module";
 import { LlmModule } from "./llm/llm.module";
 import { PrismaModule } from "./prisma/prisma.module";
 import { PromptsModule } from "./prompts/prompts.module";
@@ -26,6 +27,7 @@ import { ReviewsModule } from "./reviews/reviews.module";
     PromptsModule,
     LlmModule,
     ReviewsModule,
+    FeedModule,
   ],
   controllers: [AppController],
   providers: [
