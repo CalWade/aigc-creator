@@ -53,6 +53,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm prisma:generate
       - run: pnpm test
 
   build:
