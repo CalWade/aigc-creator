@@ -8,6 +8,7 @@ import type {
   SafetyDim,
   QualityDim,
   PromptReviewResponse,
+  SectionReviewResponse,
   SensitiveCategory,
 } from "@bytedance-aigc/shared";
 import { SAFETY_KEYS, QUALITY_KEYS, SENSITIVE_CATEGORIES } from "@bytedance-aigc/shared";
@@ -17,6 +18,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import { PromptsService } from "../prompts/prompts.service";
 import { DraftsService } from "../drafts/drafts.service";
 import { buildPromptHints } from "./rule-loader";
+import { StreamSessionStore } from "./stream-session";
 
 const TRUNCATE_LIMIT = 12000;
 
@@ -29,6 +31,7 @@ export class ReviewService {
     private readonly prisma: PrismaService,
     private readonly llm: LlmClient,
     private readonly prompts: PromptsService,
+    private readonly streamSessions: StreamSessionStore,
   ) {}
 
   async preflight(draftId: string, userSub: string): Promise<PreflightResponse> {
@@ -153,6 +156,90 @@ export class ReviewService {
     );
 
     return { recommendation, hitCategories, message, reviewId };
+  }
+
+  /**
+   * Phase 2.5 ③ — 流式生成中段落审核
+   * 同 sessionId 内连续 ≥ 3 段 high → abortStream
+   */
+  async reviewSection(input: {
+    draftId: string;
+    userSub: string;
+    sessionId: string;
+    range: { from: number; to: number };
+    text: string;
+  }): Promise<SectionReviewResponse> {
+    const { draftId, userSub, sessionId, text } = input;
+    await this.drafts.assertAuthor(draftId, userSub);
+
+    const trimmed = text.trim();
+    if (trimmed.length === 0 || trimmed.length > 2000) {
+      throw new InternalServerErrorException("section text 必须非空且 ≤ 2000 字");
+    }
+
+    const promptCfg = await this.prompts.findDefaultByTool("SECTION_REVIEW");
+    const messages = [
+      { role: "system" as const, content: `${promptCfg.systemPrompt}\n\n${buildPromptHints()}` },
+      { role: "user" as const, content: trimmed },
+    ];
+
+    let raw = "";
+    let ms = 0;
+    try {
+      const r = await this.timed(() => this.llm.chat(messages, { temperature: 0.0 }));
+      raw = r.value;
+      ms = r.ms;
+    } catch (err) {
+      this.logger.warn(`reviewSection LLM error: ${(err as Error).message}`);
+      return {
+        recommendation: "ALLOW",
+        hitCategories: [],
+        severity: "low",
+        message: "审核服务暂时不可用",
+        abortStream: false,
+        reviewId: "",
+      };
+    }
+
+    const safety = this.parseSafetyOf7Cats(raw);
+    const isHigh = safety.dimensions.some((d) => d.severity === "high");
+    const isMedium = !isHigh && safety.dimensions.some((d) => d.severity === "medium");
+    const recommendation: "ALLOW" | "WARN" | "BLOCK" = isHigh
+      ? "BLOCK"
+      : isMedium
+        ? "WARN"
+        : "ALLOW";
+    const severity: "low" | "medium" | "high" = isHigh ? "high" : isMedium ? "medium" : "low";
+    const hitCategories = safety.dimensions
+      .filter((d) => d.severity === "high" || d.severity === "medium")
+      .map((d) => d.key as SensitiveCategory);
+
+    const { shouldAbort } = this.streamSessions.recordSegment(sessionId, isHigh);
+
+    let reviewId = "";
+    if (recommendation !== "ALLOW") {
+      const review = await this.prisma.review.create({
+        data: {
+          draftId,
+          stage: "SECTION_INLINE",
+          safety: safety,
+          quality: { overall: 0, dimensions: [], note: "本阶段不评质量" },
+          recommendation,
+          modelMeta: {
+            latencyMsSafety: ms,
+            latencyMsQuality: 0,
+            totalMs: ms,
+            truncated: false,
+          },
+        },
+      });
+      reviewId = review.id;
+    }
+
+    const message =
+      recommendation === "ALLOW" ? "段落正常" : `段落可能涉及 ${hitCategories.join("/")}`;
+
+    return { recommendation, hitCategories, severity, message, abortStream: shouldAbort, reviewId };
   }
 
   async listByDraft(draftId: string, userSub: string, limit = 10): Promise<Review[]> {

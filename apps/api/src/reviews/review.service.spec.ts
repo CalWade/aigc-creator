@@ -1,8 +1,11 @@
+import { SENSITIVE_CATEGORIES as SENSITIVE_CATEGORIES_FOR_TEST } from "@bytedance-aigc/shared";
+
 import { LlmClient } from "../llm/llm.client";
 import { PrismaService } from "../prisma/prisma.service";
 import { PromptsService } from "../prompts/prompts.service";
 import { DraftsService } from "../drafts/drafts.service";
 import { ReviewService } from "./review.service";
+import { StreamSessionStore } from "./stream-session";
 import { DEMO_AUTHOR_ID } from "../../prisma/fixtures";
 
 const ALL_LOW_SAFETY = JSON.stringify({
@@ -71,7 +74,8 @@ function makeService(safetyRaw: string, qualityRaw: string) {
       }),
     ),
   } as unknown as PrismaService;
-  return new ReviewService(drafts, prisma, llm, prompts);
+  const store = new StreamSessionStore();
+  return new ReviewService(drafts, prisma, llm, prompts, store);
 }
 
 describe("ReviewService.preflight", () => {
@@ -169,7 +173,8 @@ describe("reviewPrompt (Phase 2.5 ①)", () => {
       findDefaultByTool: jest.fn().mockResolvedValue({ systemPrompt: "你是审核员", params: {} }),
     } as unknown as PromptsService;
     const prisma = {} as unknown as PrismaService;
-    service = new ReviewService(drafts, prisma, llm as unknown as LlmClient, prompts);
+    const store = new StreamSessionStore();
+    service = new ReviewService(drafts, prisma, llm as unknown as LlmClient, prompts, store);
   });
 
   it("ALLOW happy path:全 low → recommendation ALLOW + hitCategories 空", async () => {
@@ -194,5 +199,149 @@ describe("reviewPrompt (Phase 2.5 ①)", () => {
     const sys = calledMessages.find((m) => m.role === "system")?.content ?? "";
     expect(sys).toContain("politics");
     expect(sys).toContain("pornography");
+  });
+});
+
+describe("reviewSection (Phase 2.5 ③)", () => {
+  const SECTION_LOW = JSON.stringify({
+    dimensions: SENSITIVE_CATEGORIES_FOR_TEST.map((key) => ({
+      key,
+      score: 0,
+      severity: "low",
+      hits: [],
+      reason: "无",
+    })),
+  });
+  const SECTION_HIGH_POLITICS = JSON.stringify({
+    dimensions: SENSITIVE_CATEGORIES_FOR_TEST.map((key) => ({
+      key,
+      score: key === "politics" ? 90 : 0,
+      severity: key === "politics" ? "high" : "low",
+      hits: key === "politics" ? ["xxx"] : [],
+      reason: key === "politics" ? "命中" : "无",
+    })),
+  });
+
+  let service: ReviewService;
+  let llm: { chat: jest.Mock };
+  let store: StreamSessionStore;
+  let reviewCreate: jest.Mock;
+
+  beforeEach(() => {
+    const drafts = {
+      assertAuthor: jest.fn().mockResolvedValue({
+        title: "标题",
+        body: { type: "doc", content: [] },
+      }),
+    } as unknown as DraftsService;
+    llm = { chat: jest.fn() };
+    const prompts = {
+      findDefaultByTool: jest.fn().mockResolvedValue({ systemPrompt: "你是审核员", params: {} }),
+    } as unknown as PromptsService;
+    reviewCreate = jest.fn().mockResolvedValue({
+      id: "section-review-id",
+      stage: "SECTION_INLINE",
+      safety: {},
+      quality: {},
+      recommendation: "WARN",
+      modelMeta: {},
+      createdAt: new Date(),
+    });
+    const prisma = { review: { create: reviewCreate } } as unknown as PrismaService;
+    store = new StreamSessionStore();
+    store.__reset();
+    service = new ReviewService(drafts, prisma, llm as unknown as LlmClient, prompts, store);
+  });
+
+  it("ALLOW 段落:不落 review,abortStream=false", async () => {
+    llm.chat.mockResolvedValueOnce(SECTION_LOW);
+    const res = await service.reviewSection({
+      draftId: "demodraft0000000000000001",
+      userSub: DEMO_AUTHOR_ID,
+      sessionId: "sess-allow-1",
+      range: { from: 0, to: 50 },
+      text: "正常段落内容。",
+    });
+    expect(res.recommendation).toBe("ALLOW");
+    expect(res.abortStream).toBe(false);
+    expect(reviewCreate).not.toHaveBeenCalled();
+  });
+
+  it("medium 段落:写 review + abortStream=false", async () => {
+    const SECTION_MEDIUM = JSON.stringify({
+      dimensions: SENSITIVE_CATEGORIES_FOR_TEST.map((key) => ({
+        key,
+        score: key === "vulgarity" ? 50 : 0,
+        severity: key === "vulgarity" ? "medium" : "low",
+        hits: [],
+        reason: "",
+      })),
+    });
+    llm.chat.mockResolvedValueOnce(SECTION_MEDIUM);
+    const res = await service.reviewSection({
+      draftId: "demodraft0000000000000001",
+      userSub: DEMO_AUTHOR_ID,
+      sessionId: "sess-medium-1",
+      range: { from: 0, to: 100 },
+      text: "段落",
+    });
+    expect(res.recommendation).toBe("WARN");
+    expect(res.severity).toBe("medium");
+    expect(res.abortStream).toBe(false);
+    expect(reviewCreate).toHaveBeenCalledTimes(1);
+  });
+
+  it("同 sessionId 连续 3 段 high → abortStream=true", async () => {
+    llm.chat
+      .mockResolvedValueOnce(SECTION_HIGH_POLITICS)
+      .mockResolvedValueOnce(SECTION_HIGH_POLITICS)
+      .mockResolvedValueOnce(SECTION_HIGH_POLITICS);
+    const sid = "sess-burst-1";
+    const r1 = await service.reviewSection({
+      draftId: "demodraft0000000000000001",
+      userSub: DEMO_AUTHOR_ID,
+      sessionId: sid,
+      range: { from: 0, to: 50 },
+      text: "段 1",
+    });
+    const r2 = await service.reviewSection({
+      draftId: "demodraft0000000000000001",
+      userSub: DEMO_AUTHOR_ID,
+      sessionId: sid,
+      range: { from: 51, to: 100 },
+      text: "段 2",
+    });
+    const r3 = await service.reviewSection({
+      draftId: "demodraft0000000000000001",
+      userSub: DEMO_AUTHOR_ID,
+      sessionId: sid,
+      range: { from: 101, to: 150 },
+      text: "段 3",
+    });
+    expect(r1.abortStream).toBe(false);
+    expect(r2.abortStream).toBe(false);
+    expect(r3.abortStream).toBe(true);
+  });
+
+  it("不同 sessionId 隔离:互不累计", async () => {
+    llm.chat
+      .mockResolvedValueOnce(SECTION_HIGH_POLITICS)
+      .mockResolvedValueOnce(SECTION_HIGH_POLITICS);
+    const r1 = await service.reviewSection({
+      draftId: "demodraft0000000000000001",
+      userSub: DEMO_AUTHOR_ID,
+      sessionId: "sess-A",
+      range: { from: 0, to: 50 },
+      text: "段 1",
+    });
+    const r2 = await service.reviewSection({
+      draftId: "demodraft0000000000000001",
+      userSub: DEMO_AUTHOR_ID,
+      sessionId: "sess-B",
+      range: { from: 0, to: 50 },
+      text: "段 1",
+    });
+    expect(r1.abortStream).toBe(false);
+    expect(r2.abortStream).toBe(false);
   });
 });

@@ -5,11 +5,12 @@ import { DraftsModule } from "../drafts/drafts.module";
 import { PromptsModule } from "../prompts/prompts.module";
 import { ReviewsController } from "./reviews.controller";
 import { ReviewService } from "./review.service";
+import { StreamSessionStore } from "./stream-session";
 
 @Module({
   imports: [AuthModule, DraftsModule, PromptsModule],
   controllers: [ReviewsController],
-  providers: [ReviewService],
+  providers: [ReviewService, StreamSessionStore],
   exports: [ReviewService],
 })
 export class ReviewsModule {}
