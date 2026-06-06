@@ -1,0 +1,5 @@
+{"text":"占位中性样本 1","expected_recommendation":"ALLOW","expected_categories":[],"source":"manual"}
+{"text":"占位中性样本 2","expected_recommendation":"ALLOW","expected_categories":[],"source":"manual"}
+{"text":"占位中性样本 3","expected_recommendation":"ALLOW","expected_categories":[],"source":"manual"}
+{"text":"占位中性样本 4","expected_recommendation":"ALLOW","expected_categories":[],"source":"manual"}
+{"text":"占位中性样本 5","expected_recommendation":"ALLOW","expected_categories":[],"source":"manual"}
