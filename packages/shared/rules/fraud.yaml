@@ -1,0 +1,10 @@
+- rule_id: SEC-FRAUD-001
+  category: fraud
+  severity: medium
+  description: 虚假宣传 / 引流诈骗
+  prompt_hint: |
+    若文本含虚假效果承诺(暴富/秒到账/包治百病)、留联系方式引流、未经核实数据,判 medium 或 high。
+  examples_positive:
+    - "(占位)"
+  examples_negative:
+    - "市场监管局发布反诈宣传材料。"

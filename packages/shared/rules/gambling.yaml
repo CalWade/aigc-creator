@@ -1,0 +1,10 @@
+- rule_id: SEC-GAMBLING-001
+  category: gambling
+  severity: high
+  description: 推广赌博平台 / 教唆参与赌博
+  prompt_hint: |
+    若文本含赌博平台名称、赌博玩法教学、诱导下注,判 high;非法博彩相关词汇判 medium。
+  examples_positive:
+    - "(占位)"
+  examples_negative:
+    - "央视报道东南亚电信诈骗与跨境赌博的关联。"

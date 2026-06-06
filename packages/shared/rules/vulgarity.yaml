@@ -1,0 +1,10 @@
+- rule_id: SEC-VULGAR-001
+  category: vulgarity
+  severity: medium
+  description: 低俗语言、辱骂、人身攻击
+  prompt_hint: |
+    若文本含粗俗辱骂词、人身攻击、贬损群体的称呼,判 medium。
+  examples_positive:
+    - "(占位)"
+  examples_negative:
+    - "(占位)"

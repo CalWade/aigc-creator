@@ -1,0 +1,10 @@
+- rule_id: SEC-PORN-001
+  category: pornography
+  severity: high
+  description: 露骨色情描写、性器官、性行为描写
+  prompt_hint: |
+    若文本含露骨色情描写、性器官、性行为细节,判 high;含暧昧或低俗暗示判 medium。
+  examples_positive:
+    - "(占位)"
+  examples_negative:
+    - "婚礼现场新人深情对视。"
