@@ -4,7 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import type { Editor } from "@tiptap/react";
 import type { OutlineItem } from "@bytedance-aigc/shared";
 
+import { useSectionReview } from "@/hooks/use-section-review";
 import { useStreamingGeneration } from "@/hooks/use-streaming-generation";
+
+import { SectionReviewCard } from "./SectionReviewCard";
 
 interface SectionStreamProps {
   editor: Editor | null;
@@ -38,6 +41,10 @@ export function SectionStream({
   const { status, start, stop } = useStreamingGeneration();
   const startedRef = useRef(false);
   const [errMsg, setErrMsg] = useState<string | null>(null);
+  const review = useSectionReview(editor);
+  const [sessionId] = useState(
+    () => `sess-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  );
 
   useEffect(() => {
     if (!editor || startedRef.current) return;
@@ -71,7 +78,23 @@ export function SectionStream({
             editor.chain().focus("end").insertContent(delta).run();
           },
           onSectionEnd: () => {
-            // 段落落地,结尾再加一个空段
+            // 段落落地,记录 range 并 fire-and-forget 审核
+            const to = editor.state.doc.content.size;
+            const from = sectionEnds.length > 0 ? sectionEnds[sectionEnds.length - 1] : 0;
+            const text = editor.state.doc.textBetween(from, to, "\n");
+            void review
+              .reviewSection({
+                draftId,
+                sessionId,
+                range: { from, to },
+                text,
+              })
+              .then((result) => {
+                if (result?.abortStream) {
+                  setErrMsg("连续多段命中风险,已中断生成");
+                  stop();
+                }
+              });
             editor.chain().focus("end").insertContent({ type: "paragraph" }).run();
           },
           onDone: () => {
@@ -111,6 +134,18 @@ export function SectionStream({
           停止
         </button>
       )}
+      {review.items.map((item, idx) => (
+        <SectionReviewCard
+          key={`${item.range.from}-${item.range.to}-${idx}`}
+          item={item}
+          onRegenerate={() => {
+            // 占位:Phase 2.5 不真正重生成;Phase 2.6 接 sections/stream 部分重做
+            console.log("regenerate", item.range);
+          }}
+          onSuggest={() => console.log("suggest", item.range)}
+          onKeep={() => console.log("keep", item.range)}
+        />
+      ))}
     </div>
   );
 }
