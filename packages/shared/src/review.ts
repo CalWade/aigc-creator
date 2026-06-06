@@ -71,3 +71,42 @@ export interface PreflightResponse {
   review: ReviewDto;
   recommendation: Recommendation;
 }
+
+/**
+ * Phase 2.5 — 7 类目敏感词分类(规则库 yaml + sensitive-words.json 共用)
+ */
+export const SENSITIVE_CATEGORIES = [
+  "politics",
+  "pornography",
+  "gambling",
+  "drugs",
+  "vulgarity",
+  "fraud",
+  "medical",
+] as const;
+export type SensitiveCategory = (typeof SENSITIVE_CATEGORIES)[number];
+
+/**
+ * Phase 2.5 ① Prompt 阶段审核响应
+ * 端点:POST /reviews/prompt
+ */
+export interface PromptReviewResponse {
+  recommendation: Recommendation;
+  hitCategories: SensitiveCategory[];
+  message: string;
+  reviewId: string;
+}
+
+/**
+ * Phase 2.5 ③ 段落审核响应
+ * 端点:POST /reviews/section
+ * abortStream: 同 sessionId 内连续 ≥ 3 段 high → true,前端 stop SectionStream
+ */
+export interface SectionReviewResponse {
+  recommendation: Recommendation;
+  hitCategories: SensitiveCategory[];
+  severity: Severity;
+  message: string;
+  abortStream: boolean;
+  reviewId: string;
+}
