@@ -5,6 +5,9 @@ import StarterKit from "@tiptap/starter-kit";
 import { useEffect } from "react";
 import type { Editor, JSONContent } from "@tiptap/react";
 
+import { ReviewDecorationsExt } from "@/lib/tiptap/review-decorations";
+import { useSensitiveScan } from "@/hooks/use-sensitive-scan";
+
 interface TiptapBodyProps {
   initial: JSONContent;
   onChange: (json: JSONContent) => void;
@@ -14,7 +17,7 @@ interface TiptapBodyProps {
 
 export function TiptapBody({ initial, onChange, onReady }: TiptapBodyProps) {
   const editor = useEditor({
-    extensions: [StarterKit],
+    extensions: [StarterKit, ReviewDecorationsExt],
     content: initial,
     immediatelyRender: false,
     onUpdate: ({ editor }) => {
@@ -25,6 +28,8 @@ export function TiptapBody({ initial, onChange, onReady }: TiptapBodyProps) {
   useEffect(() => {
     onReady?.(editor);
   }, [editor, onReady]);
+
+  useSensitiveScan(editor);
 
   useEffect(() => {
     return () => {
