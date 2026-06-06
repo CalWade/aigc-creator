@@ -1,0 +1,33 @@
+{
+  "version": "2026-06-06",
+  "categories": {
+    "politics": {
+      "severity": "high",
+      "words": ["占位词1", "占位词2", "占位词3"]
+    },
+    "pornography": {
+      "severity": "high",
+      "words": ["占位porn1", "占位porn2"]
+    },
+    "gambling": {
+      "severity": "high",
+      "words": ["占位gamb1", "占位gamb2"]
+    },
+    "drugs": {
+      "severity": "high",
+      "words": ["占位drug1", "占位drug2"]
+    },
+    "vulgarity": {
+      "severity": "medium",
+      "words": ["占位俗1", "占位俗2"]
+    },
+    "fraud": {
+      "severity": "medium",
+      "words": ["秒到账", "包治百病", "暴富"]
+    },
+    "medical": {
+      "severity": "medium",
+      "words": ["祖传秘方", "包治"]
+    }
+  }
+}
