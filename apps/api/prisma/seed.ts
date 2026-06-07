@@ -9,10 +9,10 @@ import { applyAllFixtures } from "./fixtures";
 const prisma = new PrismaClient();
 
 async function main(): Promise<void> {
-  console.log("[seed] 应用 fixtures(users / prompts / drafts)...");
+  console.log("[seed] 应用 fixtures(users / prompts / drafts / reviews / reports)...");
   const summary = await applyAllFixtures(prisma);
   console.log(
-    `[seed] 完成:users=${summary.users}, prompts=${summary.prompts}, drafts=${summary.drafts}`,
+    `[seed] 完成:users=${summary.users}, prompts=${summary.prompts}, drafts=${summary.drafts}, reviews=${summary.reviews}, reports=${summary.reports}`,
   );
 }
 

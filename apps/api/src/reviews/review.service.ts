@@ -242,6 +242,71 @@ export class ReviewService {
     return { recommendation, hitCategories, severity, message, abortStream: shouldAbort, reviewId };
   }
 
+  /**
+   * Phase 2.6 — 发布后举报触发的 LLM 复审。
+   * 由 ReportsService.create fire-and-forget 调用,失败 fallback 到"默认放行,等待 admin 人工裁决"。
+   * 不写 Review 表(决策见 spec §4):落 Report.llmRecommendation/llmReason 即可。
+   */
+  async reviewPostPublish(text: string): Promise<{
+    recommendation: "ALLOW" | "WARN" | "BLOCK";
+    reason: string;
+    hitCategories: SensitiveCategory[];
+  }> {
+    const fallback = (note: string) => {
+      this.logger.warn(`reviewPostPublish fallback: ${note}`);
+      return {
+        recommendation: "ALLOW" as const,
+        reason: "LLM 复审失败,默认放行,等待 admin 人工裁决",
+        hitCategories: [] as SensitiveCategory[],
+      };
+    };
+
+    const trimmed = text.trim();
+    if (trimmed.length === 0) return fallback("text 为空");
+    const truncated = trimmed.length > TRUNCATE_LIMIT ? trimmed.slice(0, TRUNCATE_LIMIT) : trimmed;
+
+    let prompt: { systemPrompt: string };
+    try {
+      prompt = await this.prompts.findDefaultByTool("POST_PUBLISH_REVIEW");
+    } catch (err) {
+      return fallback(`POST_PUBLISH_REVIEW prompt 缺失:${(err as Error).message}`);
+    }
+
+    let raw = "";
+    try {
+      raw = await this.llm.chat(
+        [
+          { role: "system", content: prompt.systemPrompt },
+          { role: "user", content: truncated },
+        ],
+        { temperature: 0.0 },
+      );
+    } catch (err) {
+      return fallback(`LLM error: ${(err as Error).message}`);
+    }
+
+    const safety = this.parseSafetyOf7Cats(raw);
+    const hitCategories: SensitiveCategory[] = safety.dimensions
+      .filter((d) => d.severity === "high" || d.severity === "medium")
+      .map((d) => d.key as SensitiveCategory);
+    const recommendation: "ALLOW" | "WARN" | "BLOCK" = safety.dimensions.some(
+      (d) => d.severity === "high",
+    )
+      ? "BLOCK"
+      : safety.dimensions.some((d) => d.severity === "medium")
+        ? "WARN"
+        : "ALLOW";
+
+    const reason =
+      recommendation === "ALLOW"
+        ? "复审未发现高风险类目,建议保留。"
+        : `复审命中 ${hitCategories.join("/")} 类目,建议 ${recommendation === "BLOCK" ? "下线" : "警告"}。`;
+
+    this.logger.log(`reviewPostPublish rec=${recommendation} hits=${hitCategories.join(",")}`);
+
+    return { recommendation, reason, hitCategories };
+  }
+
   async listByDraft(draftId: string, userSub: string, limit = 10): Promise<Review[]> {
     await this.drafts.assertAuthor(draftId, userSub);
     return this.prisma.review.findMany({

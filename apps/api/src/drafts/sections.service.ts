@@ -57,6 +57,9 @@ export class SectionsService {
           for (let i = startIdx; i < dto.sections.length; i++) {
             if (cancelled) return;
             const section = dto.sections[i];
+            if (dto.headings?.length && !dto.headings.includes(section.heading)) {
+              continue;
+            }
             emit({ type: "section.start", data: { index: i, heading: section.heading } });
 
             const messages: ChatMessage[] = [

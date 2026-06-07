@@ -348,3 +348,99 @@ describe("reviewSection (Phase 2.5 ③)", () => {
     expect(r2.abortStream).toBe(false);
   });
 });
+
+describe("reviewPostPublish (Phase 2.6)", () => {
+  const ALL_LOW_7CATS = JSON.stringify({
+    dimensions: [
+      { key: "politics", score: 0, severity: "low", hits: [], reason: "无" },
+      { key: "pornography", score: 0, severity: "low", hits: [], reason: "无" },
+      { key: "gambling", score: 0, severity: "low", hits: [], reason: "无" },
+      { key: "drugs", score: 0, severity: "low", hits: [], reason: "无" },
+      { key: "vulgarity", score: 0, severity: "low", hits: [], reason: "无" },
+      { key: "fraud", score: 0, severity: "low", hits: [], reason: "无" },
+      { key: "medical", score: 0, severity: "low", hits: [], reason: "无" },
+    ],
+  });
+  const POLITICS_HIGH_7CATS = JSON.stringify({
+    dimensions: [
+      { key: "politics", score: 90, severity: "high", hits: ["xxx"], reason: "命中" },
+      { key: "pornography", score: 0, severity: "low", hits: [], reason: "无" },
+      { key: "gambling", score: 0, severity: "low", hits: [], reason: "无" },
+      { key: "drugs", score: 0, severity: "low", hits: [], reason: "无" },
+      { key: "vulgarity", score: 0, severity: "low", hits: [], reason: "无" },
+      { key: "fraud", score: 0, severity: "low", hits: [], reason: "无" },
+      { key: "medical", score: 0, severity: "low", hits: [], reason: "无" },
+    ],
+  });
+  const VULGARITY_MEDIUM_7CATS = JSON.stringify({
+    dimensions: [
+      { key: "politics", score: 0, severity: "low", hits: [], reason: "无" },
+      { key: "pornography", score: 0, severity: "low", hits: [], reason: "无" },
+      { key: "gambling", score: 0, severity: "low", hits: [], reason: "无" },
+      { key: "drugs", score: 0, severity: "low", hits: [], reason: "无" },
+      { key: "vulgarity", score: 50, severity: "medium", hits: [], reason: "中等" },
+      { key: "fraud", score: 0, severity: "low", hits: [], reason: "无" },
+      { key: "medical", score: 0, severity: "low", hits: [], reason: "无" },
+    ],
+  });
+
+  let service: ReviewService;
+  let llm: { chat: jest.Mock };
+  let prompts: { findDefaultByTool: jest.Mock };
+
+  beforeEach(() => {
+    const drafts = {} as unknown as DraftsService;
+    llm = { chat: jest.fn() };
+    prompts = {
+      findDefaultByTool: jest.fn().mockResolvedValue({
+        systemPrompt: "你是社区复审员",
+        params: {},
+      }),
+    };
+    const prisma = {} as unknown as PrismaService;
+    const store = new StreamSessionStore();
+    service = new ReviewService(
+      drafts,
+      prisma,
+      llm as unknown as LlmClient,
+      prompts as unknown as PromptsService,
+      store,
+    );
+  });
+
+  it("ALLOW happy path:全 low → recommendation ALLOW + hitCategories 空", async () => {
+    llm.chat.mockResolvedValueOnce(ALL_LOW_7CATS);
+    const res = await service.reviewPostPublish("正常文章内容");
+    expect(res.recommendation).toBe("ALLOW");
+    expect(res.hitCategories).toEqual([]);
+    expect(typeof res.reason).toBe("string");
+  });
+
+  it("medium 命中 → WARN + hitCategories 含命中类目", async () => {
+    llm.chat.mockResolvedValueOnce(VULGARITY_MEDIUM_7CATS);
+    const res = await service.reviewPostPublish("内容");
+    expect(res.recommendation).toBe("WARN");
+    expect(res.hitCategories).toContain("vulgarity");
+  });
+
+  it("high 命中 → BLOCK", async () => {
+    llm.chat.mockResolvedValueOnce(POLITICS_HIGH_7CATS);
+    const res = await service.reviewPostPublish("内容");
+    expect(res.recommendation).toBe("BLOCK");
+    expect(res.hitCategories).toContain("politics");
+  });
+
+  it("LLM 抛错 → fallback ALLOW + reason 含'LLM 复审失败'", async () => {
+    llm.chat.mockRejectedValueOnce(new Error("network down"));
+    const res = await service.reviewPostPublish("内容");
+    expect(res.recommendation).toBe("ALLOW");
+    expect(res.reason).toContain("LLM 复审失败");
+    expect(res.hitCategories).toEqual([]);
+  });
+
+  it("text 为空 → 不调 LLM,直接 fallback ALLOW", async () => {
+    const res = await service.reviewPostPublish("   ");
+    expect(res.recommendation).toBe("ALLOW");
+    expect(llm.chat).not.toHaveBeenCalled();
+  });
+});

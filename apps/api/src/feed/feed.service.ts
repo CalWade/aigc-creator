@@ -8,6 +8,7 @@ import {
   DEFAULT_FEED_WEIGHTS,
   type FeedMode,
   type FeedWeights,
+  type MeWorksItem,
   type PostDto,
   type Scoreable,
 } from "@bytedance-aigc/shared";
@@ -125,12 +126,28 @@ export class FeedService {
     return drafts.map((d) => toPostDto(d, hotnessMockBase(d.id), hotnessPool));
   }
 
-  async getMyWorks(userId: string, status: "DRAFT" | "PUBLISHED" | "ALL", limit = 20) {
-    const where: { authorId: string; status?: "DRAFT" | "PUBLISHED" } = { authorId: userId };
+  async getMyWorks(
+    userId: string,
+    status: "DRAFT" | "PUBLISHED" | "OFFLINE" | "ALL",
+    limit = 20,
+  ): Promise<MeWorksItem[]> {
+    const where: { authorId: string; status?: "DRAFT" | "PUBLISHED" | "OFFLINE" } = {
+      authorId: userId,
+    };
     if (status !== "ALL") where.status = status;
     const drafts = await this.prisma.draft.findMany({
       where,
-      include: { lastReview: { select: { quality: true, recommendation: true } } },
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        mode: true,
+        publishedAt: true,
+        updatedAt: true,
+        offlineReason: true,
+        offlineAt: true,
+        lastReview: { select: { quality: true, recommendation: true } },
+      },
       orderBy: { updatedAt: "desc" },
       take: limit,
     });
@@ -143,6 +160,8 @@ export class FeedService {
       updatedAt: d.updatedAt.toISOString(),
       qualityOverall: readQualityOverall(d.lastReview?.quality),
       recommendation: d.lastReview?.recommendation ?? null,
+      offlineReason: d.offlineReason ?? null,
+      offlineAt: d.offlineAt?.toISOString() ?? null,
     }));
   }
 }

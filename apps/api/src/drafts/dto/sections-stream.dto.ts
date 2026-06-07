@@ -33,4 +33,10 @@ export class SectionsStreamDto {
   @IsInt()
   @Min(0)
   cursor?: number;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @ArrayMaxSize(50)
+  headings?: string[];
 }

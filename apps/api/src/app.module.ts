@@ -13,6 +13,7 @@ import { FeedModule } from "./feed/feed.module";
 import { LlmModule } from "./llm/llm.module";
 import { PrismaModule } from "./prisma/prisma.module";
 import { PromptsModule } from "./prompts/prompts.module";
+import { ReportsModule } from "./reports/reports.module";
 import { ReviewsModule } from "./reviews/reviews.module";
 
 @Module({
@@ -27,6 +28,7 @@ import { ReviewsModule } from "./reviews/reviews.module";
     PromptsModule,
     LlmModule,
     ReviewsModule,
+    ReportsModule,
     FeedModule,
   ],
   controllers: [AppController],

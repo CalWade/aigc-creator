@@ -255,4 +255,34 @@ export const PROMPT_STARTERS: Prisma.PromptCreateManyInput[] = [
     designNote: "Phase 2.5 ③ 段落审核;由 SectionStream onSectionEnd 触发;同 7 类目。",
     isStarter: true,
   },
+  {
+    owner: "PLATFORM",
+    tool: "POST_PUBLISH_REVIEW",
+    name: "默认·发布后举报复审",
+    systemPrompt: `你是社区内容复审员。给定一篇已发布的图文,请按 7 类目(politics / pornography / gambling / drugs / vulgarity / fraud / medical)逐项评估其违规程度。
+
+严格输出 JSON,无任何前后文:
+{
+  "dimensions": [
+    {"key":"politics","score":0,"severity":"low","hits":[],"reason":"无命中"},
+    {"key":"pornography","score":0,"severity":"low","hits":[],"reason":"无命中"},
+    {"key":"gambling","score":0,"severity":"low","hits":[],"reason":"无命中"},
+    {"key":"drugs","score":0,"severity":"low","hits":[],"reason":"无命中"},
+    {"key":"vulgarity","score":0,"severity":"low","hits":[],"reason":"无命中"},
+    {"key":"fraud","score":0,"severity":"low","hits":[],"reason":"无命中"},
+    {"key":"medical","score":0,"severity":"low","hits":[],"reason":"无命中"}
+  ]
+}
+
+字段约束:
+- score: 0-100 整数
+- severity: score≥70 high;30-69 medium;否则 low
+- hits: 命中片段数组,每条 ≤ 30 字
+- reason: 1 句中文,客观陈述`,
+    params: { temperature: 0.0, topP: 0.9, maxTokens: 800 },
+    fewShots: [],
+    designNote:
+      "Phase 2.6 发布后举报复审;由 ReportsService.create fire-and-forget 触发,失败 fallback 到 ALLOW + 等待人工裁决;同 7 类目结构,parser 复用 parseSafetyOf7Cats。",
+    isStarter: true,
+  },
 ];

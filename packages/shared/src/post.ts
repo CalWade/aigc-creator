@@ -52,3 +52,16 @@ export const WINDOW_HOURS: Record<FeedMode, number> = {
   hot: 12,
   best: 72,
 };
+
+export interface MeWorksItem {
+  id: string;
+  title: string;
+  status: "DRAFT" | "PUBLISHED" | "OFFLINE";
+  mode: "FAST" | "FINE";
+  publishedAt: string | null;
+  updatedAt: string;
+  qualityOverall: number;
+  recommendation: "ALLOW" | "WARN" | "BLOCK" | null;
+  offlineReason: string | null;
+  offlineAt: string | null;
+}

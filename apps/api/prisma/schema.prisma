@@ -25,6 +25,7 @@ enum PromptOwner {
 enum DraftStatus {
   DRAFT
   PUBLISHED
+  OFFLINE
 }
 
 enum ReviewStage {
@@ -54,6 +55,29 @@ enum DraftToolType {
   QUALITY_REVIEW
   PROMPT_REVIEW
   SECTION_REVIEW
+  POST_PUBLISH_REVIEW
+}
+
+enum ReportCategory {
+  POLITICS
+  PORNOGRAPHY
+  GAMBLING
+  DRUGS
+  VULGARITY
+  FRAUD
+  MEDICAL
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  RESOLVED
+}
+
+enum ReportResolution {
+  OFFLINE
+  WARN
+  DISMISS
 }
 
 model User {
@@ -63,28 +87,32 @@ model User {
 
   drafts  Draft[]
   prompts Prompt[] @relation("UserPrompts")
+  reports Report[] @relation("UserReports")
 
   @@map("users")
 }
 
 model Draft {
-  id           String      @id @default(cuid())
-  authorId     String
-  mode         DraftMode   @default(FAST)
-  status       DraftStatus @default(DRAFT)
-  title        String
-  body         Json
-  version      Int         @default(1)
-  publishedAt  DateTime?
-  lastReviewId String?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  id            String      @id @default(cuid())
+  authorId      String
+  mode          DraftMode   @default(FAST)
+  status        DraftStatus @default(DRAFT)
+  title         String
+  body          Json
+  version       Int         @default(1)
+  publishedAt   DateTime?
+  lastReviewId  String?
+  offlineReason String?     @db.Text
+  offlineAt     DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 
   author     User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
   versions   DraftVersion[]
   lastReview Review?        @relation("DraftLastReview", fields: [lastReviewId], references: [id])
   reviews    Review[]       @relation("DraftReviews")
   stat       PostStat?
+  reports    Report[]
 
   @@index([authorId])
   @@index([status])
@@ -159,4 +187,27 @@ model PostStat {
   draft Draft @relation(fields: [draftId], references: [id], onDelete: Cascade)
 
   @@map("post_stats")
+}
+
+model Report {
+  id                String                @id @default(cuid())
+  postId            String
+  reporterId        String
+  category          ReportCategory
+  reason            String?               @db.Text
+  status            ReportStatus          @default(PENDING)
+  resolution        ReportResolution?
+  resolverId        String?
+  llmRecommendation ReviewRecommendation?
+  llmReason         String?               @db.Text
+  createdAt         DateTime              @default(now())
+  resolvedAt        DateTime?
+
+  post     Draft @relation(fields: [postId], references: [id], onDelete: Cascade)
+  reporter User  @relation("UserReports", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@unique([reporterId, postId])
+  @@index([postId, status])
+  @@index([status, createdAt])
+  @@map("reports")
 }

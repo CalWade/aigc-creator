@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { IsInt, IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
+import { IsIn, IsInt, IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
 
 export class FeedQueryDto {
   @IsOptional()
@@ -47,7 +47,8 @@ export class AuthorPostsQueryDto {
 export class MeWorksQueryDto {
   @IsOptional()
   @IsString()
-  status?: "DRAFT" | "PUBLISHED" | "ALL";
+  @IsIn(["DRAFT", "PUBLISHED", "OFFLINE", "ALL"])
+  status?: "DRAFT" | "PUBLISHED" | "OFFLINE" | "ALL";
 
   @IsOptional()
   @Type(() => Number)
