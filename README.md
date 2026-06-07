@@ -172,6 +172,22 @@ PRD §4.1.1-4.1.3 三阶段审核全部接通:
 - 报告位置:[`docs/perf/safety-eval-YYYY-MM-DD.md`](./docs/perf/) 类目级 P/R/F1 + 总体 Accuracy
 - **目标 Accuracy ≥ 90%**(PRD §4.4.3 硬指标)
 
+## Phase 2.6 — 发布后举报闭环 + Phase 2.5 收尾
+
+PRD §4.1.4 + §4.2 接通用户举报 → LLM 复审 → admin 处置三段闭环;同时把 Phase 2.5 SectionReviewCard 留下的 3 个 placeholder 按钮真正接通。
+
+- **举报入口**:`/post/:id` 详情页头部 `<ReportButton>`(自己稿件不显示),弹 `ReportDialog` 选 8 类目 + 补充说明(≤500 字) → `POST /posts/:id/reports`。后端 `Report` 表 `@@unique([reporterId, postId])` 防灌水;成功后 fire-and-forget 调 `ReviewService.reviewPostPublish` 复用 7 类目 parser 写回 `llmRecommendation` / `llmReason`。
+- **作者侧**:`/me/reports` 看自己稿件被举报的记录(JOIN draft.authorId 隔离),cursor 翻页;`/me/works` 加 OFFLINE tab + 红底"已下线"角标 + `offlineReason` 横幅。
+- **admin 工作台**:`/admin/reports` 三 tab(PENDING/RESOLVED/ALL),`AdminGuard` 走 `ADMIN_HANDLES` env 白名单 fail-closed,空 env → 403 `ADMIN_REQUIRED`。`ResolveDialog` 选 OFFLINE/WARN/DISMISS + note(≤200 字),OFFLINE 选中时显示红字高危确认。OFFLINE 处置走 `prisma.$transaction` 同时更新 `Report.status=RESOLVED` + `Draft.status=OFFLINE` + `offlineReason`。
+- **SectionReviewCard 3 按钮接通(Phase 2.5 收尾)**:
+  - **重新生成** → `useRegenerateSection` 调 `/drafts/:id/sections/stream` 带 `headings:[heading]`(后端 `ArrayMaxSize(50)` 跳段循环,只 stream 命中段),`editor.commands.setTextSelection + insertContent` 回写 TipTap。
+  - **修改建议** → `setTextSelection + insertContent(item.result.message)`。
+  - **仍要保留** → `dismiss(heading)` 本地 state 折叠,不调后端。
+
+错误码(spec §3.7):`ADMIN_REQUIRED` / `REPORT_DUPLICATE` / `REPORT_ALREADY_RESOLVED` / `REPORT_NOT_FOUND` / `POST_NOT_PUBLISHED` / `CURSOR_INVALID`。
+
+测试基线:api 单测 75 / e2e 94(19 套件) / web 单测 36(9 文件)。
+
 ## 交付物清单
 
 - [x] PRD 终稿

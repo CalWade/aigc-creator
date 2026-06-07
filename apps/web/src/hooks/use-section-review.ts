@@ -8,6 +8,7 @@ import { apiFetch } from "@/lib/auth";
 import { dispatchSetViolations, type Violation } from "@/lib/tiptap/review-decorations";
 
 export interface SectionReviewItem {
+  heading: string;
   range: { from: number; to: number };
   result: SectionReviewResponse;
 }
@@ -17,9 +18,11 @@ export interface UseSectionReviewState {
   reviewSection: (input: {
     draftId: string;
     sessionId: string;
+    heading: string;
     range: { from: number; to: number };
     text: string;
   }) => Promise<SectionReviewResponse | null>;
+  dismiss: (heading: string) => void;
   reset: () => void;
 }
 
@@ -53,7 +56,10 @@ export function useSectionReview(editor: Editor | null): UseSectionReviewState {
           if (v.from < v.to) {
             violationsRef.current = [...violationsRef.current, v];
             dispatchSetViolations(editor, "section", violationsRef.current);
-            setItems((prev) => [...prev, { range: input.range, result: body }]);
+            setItems((prev) => [
+              ...prev,
+              { heading: input.heading, range: input.range, result: body },
+            ]);
           }
         }
         return body;
@@ -64,11 +70,27 @@ export function useSectionReview(editor: Editor | null): UseSectionReviewState {
     [editor],
   );
 
+  const dismiss = useCallback(
+    (heading: string) => {
+      setItems((prev) => {
+        const next = prev.filter((i) => i.heading !== heading);
+        if (editor) {
+          violationsRef.current = violationsRef.current.filter((v) =>
+            next.some((i) => i.range.from === v.from && i.range.to === v.to),
+          );
+          dispatchSetViolations(editor, "section", violationsRef.current);
+        }
+        return next;
+      });
+    },
+    [editor],
+  );
+
   const reset = useCallback(() => {
     violationsRef.current = [];
     setItems([]);
     if (editor) dispatchSetViolations(editor, "section", []);
   }, [editor]);
 
-  return { items, reviewSection, reset };
+  return { items, reviewSection, dismiss, reset };
 }

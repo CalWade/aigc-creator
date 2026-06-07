@@ -3,26 +3,19 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import type { MeWorksItem } from "@bytedance-aigc/shared";
 import { apiFetch, clearToken, getToken } from "@/lib/auth";
-
-interface WorkItem {
-  id: string;
-  title: string;
-  status: "DRAFT" | "PUBLISHED";
-  publishedAt: string | null;
-  qualityOverall: number;
-  updatedAt: string;
-}
 
 type LoadState =
   | { kind: "loading" }
-  | { kind: "ready"; works: WorkItem[] }
+  | { kind: "ready"; works: MeWorksItem[] }
   | { kind: "error"; message: string };
 
 const FILTERS = [
   { key: "ALL", label: "全部" },
   { key: "PUBLISHED", label: "已发布" },
   { key: "DRAFT", label: "草稿" },
+  { key: "OFFLINE", label: "已下线" },
 ] as const;
 
 type Filter = (typeof FILTERS)[number]["key"];
@@ -50,7 +43,7 @@ export default function MyWorksPage() {
           setState({ kind: "error", message: `加载失败 (HTTP ${res.status})` });
           return;
         }
-        const json = (await res.json()) as { items: WorkItem[] };
+        const json = (await res.json()) as { items: MeWorksItem[] };
         if (cancelled) return;
         setState({ kind: "ready", works: json.items });
       })
@@ -90,28 +83,51 @@ export default function MyWorksPage() {
       {state.kind === "ready" && state.works.length > 0 && (
         <ul className="flex flex-col gap-3">
           {state.works.map((w) => (
-            <li key={w.id}>
-              <Link
-                href={w.status === "PUBLISHED" ? `/post/${w.id}` : `/drafts/${w.id}`}
-                className="flex items-center justify-between rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-4 shadow-sm hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors"
-              >
-                <div className="flex flex-col gap-1 min-w-0">
+            <li
+              key={w.id}
+              className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-4 shadow-sm"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex flex-col gap-1 min-w-0 flex-1">
                   <h2 className="text-base font-medium truncate">{w.title}</h2>
                   <p className="text-xs text-zinc-500 font-mono truncate">{w.id}</p>
+                  {w.status === "OFFLINE" && (
+                    <div className="text-xs bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-300 rounded px-2 py-1.5 mt-1">
+                      下线原因:{w.offlineReason ?? "平台审核下线"}
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <span
                     className={
                       w.status === "PUBLISHED"
                         ? "inline-flex items-center rounded-full bg-emerald-100 text-emerald-700 px-2 py-0.5 text-xs font-medium"
-                        : "inline-flex items-center rounded-full bg-zinc-100 text-zinc-700 px-2 py-0.5 text-xs font-medium"
+                        : w.status === "OFFLINE"
+                          ? "inline-flex items-center rounded-full bg-red-600 text-white px-2 py-0.5 text-xs font-medium"
+                          : "inline-flex items-center rounded-full bg-zinc-100 text-zinc-700 px-2 py-0.5 text-xs font-medium"
                     }
                   >
-                    {w.status}
+                    {w.status === "OFFLINE" ? "已下线" : w.status}
                   </span>
                   <span className="text-xs text-zinc-500">Q {w.qualityOverall.toFixed(0)}</span>
                 </div>
-              </Link>
+              </div>
+              <div className="mt-3 flex items-center gap-2">
+                {w.status === "PUBLISHED" && (
+                  <Link
+                    href={`/post/${w.id}`}
+                    className="inline-flex items-center rounded border border-zinc-200 dark:border-zinc-800 px-2.5 py-1 text-xs hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                  >
+                    查看
+                  </Link>
+                )}
+                <Link
+                  href={`/drafts/${w.id}`}
+                  className="inline-flex items-center rounded border border-zinc-200 dark:border-zinc-800 px-2.5 py-1 text-xs hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                >
+                  编辑
+                </Link>
+              </div>
             </li>
           ))}
         </ul>

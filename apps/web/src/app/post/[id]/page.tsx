@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { PostDetailDto } from "@bytedance-aigc/shared";
 import { serverFetchJson } from "@/lib/server-fetch";
+import { ReportButton } from "@/components/post/ReportButton";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,9 @@ export default async function PostPage({ params }: PageProps) {
       <Link href="/" className="text-sm text-gray-500 underline">
         ← 返回信息流
       </Link>
+      <div className="float-right">
+        <ReportButton postId={post.id} authorId={post.authorId} />
+      </div>
       <article className="mt-4">
         <h1 className="text-3xl font-bold mb-3">{post.title}</h1>
         <div className="flex gap-3 text-sm text-gray-500 mb-4">
