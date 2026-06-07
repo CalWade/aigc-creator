@@ -61,7 +61,15 @@ export default function MyWorksPage() {
 
   return (
     <main className="max-w-3xl mx-auto px-6 py-8">
-      <h1 className="text-2xl font-semibold mb-4">我的作品</h1>
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-2xl font-semibold">我的作品</h1>
+        <Link
+          href="/me/dashboard"
+          className="text-sm text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+        >
+          ← 工作台
+        </Link>
+      </div>
       <div className="flex gap-2 mb-4">
         {FILTERS.map((f) => (
           <button

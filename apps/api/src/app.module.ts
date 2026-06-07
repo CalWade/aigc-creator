@@ -5,6 +5,7 @@ import { join } from "node:path";
 
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
+import { AnalyticsModule } from "./analytics/analytics.module";
 import { AssetsModule } from "./assets/assets.module";
 import { AuthModule } from "./auth/auth.module";
 import { JwtAuthGuard } from "./auth/jwt-auth.guard";
@@ -32,6 +33,7 @@ import { ReviewsModule } from "./reviews/reviews.module";
     ReportsModule,
     FeedModule,
     AssetsModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [
