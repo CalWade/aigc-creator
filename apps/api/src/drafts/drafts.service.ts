@@ -2,6 +2,7 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from "@nestjs/common";
 import { Draft, Prisma } from "@prisma/client";
@@ -9,10 +10,16 @@ import { Draft, Prisma } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateDraftDto } from "./dto/create-draft.dto";
 import { UpdateDraftDto } from "./dto/update-draft.dto";
+import { VersionsService } from "./versions/versions.service";
 
 @Injectable()
 export class DraftsService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(DraftsService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly versions: VersionsService,
+  ) {}
 
   async create(authorId: string, dto: CreateDraftDto): Promise<Draft> {
     return this.prisma.draft.create({
@@ -68,7 +75,17 @@ export class DraftsService {
     };
     if (dto.title !== undefined) data.title = dto.title;
     if (dto.body !== undefined) data.body = dto.body as Prisma.InputJsonValue;
-    return this.prisma.draft.update({ where: { id }, data });
+    const updated = await this.prisma.draft.update({ where: { id }, data });
+    // WHY: 自动快照失败不能阻塞 update 主流程(用户的草稿是钱,版本是奢侈品)。
+    // 5 分钟节流在 versions.service 内部判断。
+    if (dto.body !== undefined) {
+      try {
+        await this.versions.snapshotAuto(id, updated.body);
+      } catch (err) {
+        this.logger.error(`snapshotAuto failed for draft ${id}`, err as Error);
+      }
+    }
+    return updated;
   }
 
   /**
@@ -99,6 +116,13 @@ export class DraftsService {
         code: "PREFLIGHT_EXPIRED",
         message: "预检结果已过 24 小时,请重新预检",
       });
+    }
+    // WHY: 在状态机切到 PUBLISHED 之前快照,语义上"发布瞬间"。
+    // 失败也不阻塞发布(同 update 钩子,版本是辅助产物)。
+    try {
+      await this.versions.snapshotPublished(id, draft.body);
+    } catch (err) {
+      this.logger.error(`snapshotPublished failed for draft ${id}`, err as Error);
     }
     const updated = await this.prisma.draft.update({
       where: { id },

@@ -7,11 +7,13 @@ import { DraftsService } from "./drafts.service";
 import { OutlineService } from "./outline.service";
 import { SectionsService } from "./sections.service";
 import { ToolsService } from "./tools.service";
+import { VersionsController } from "./versions/versions.controller";
+import { VersionsService } from "./versions/versions.service";
 
 @Module({
   imports: [AuthModule, PromptsModule],
-  controllers: [DraftsController],
-  providers: [DraftsService, OutlineService, SectionsService, ToolsService],
+  controllers: [DraftsController, VersionsController],
+  providers: [DraftsService, OutlineService, SectionsService, ToolsService, VersionsService],
   exports: [DraftsService],
 })
 export class DraftsModule {}

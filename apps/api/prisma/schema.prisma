@@ -119,15 +119,25 @@ model Draft {
   @@map("drafts")
 }
 
+enum VersionKind {
+  AUTO
+  NAMED
+  PUBLISHED
+}
+
 model DraftVersion {
-  id        String   @id @default(cuid())
+  id        String      @id @default(cuid())
   draftId   String
+  kind      VersionKind @default(AUTO)
   snapshot  Json
-  createdAt DateTime @default(now())
+  note      String?     @db.Text
+  wordCount Int         @default(0)
+  createdAt DateTime    @default(now())
 
   draft Draft @relation(fields: [draftId], references: [id], onDelete: Cascade)
 
   @@index([draftId])
+  @@index([draftId, createdAt])
   @@map("draft_versions")
 }
 
