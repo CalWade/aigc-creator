@@ -105,3 +105,20 @@ jobs:
       # WHY: 用 migrate deploy 不用 migrate dev — 后者会要交互、会写 migration history。
       - run: pnpm --filter @bytedance-aigc/api exec prisma migrate deploy
       - run: pnpm --filter @bytedance-aigc/api test:e2e
+
+  e2e_web:
+    name: E2E (web — playwright)
+    runs-on: ubuntu-latest
+    # WHY: 不依赖 postgres / api — 全部用例在浏览器端 mock fetch,
+    # webServer 只起 Next dev server,/login 作就绪探针(纯 client-only)。
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm prisma:generate
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm e2e

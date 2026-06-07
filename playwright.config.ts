@@ -17,7 +17,8 @@ export default defineConfig({
   ],
   webServer: {
     command: "pnpm --filter @bytedance-aigc/web dev",
-    url: "http://localhost:3000",
+    // WHY: 首页是 SSR 调 /feed,无后端时会 500;用 /login(纯 client-only)做就绪探针。
+    url: "http://localhost:3000/login",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },
