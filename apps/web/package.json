@@ -13,10 +13,12 @@
   },
   "dependencies": {
     "@bytedance-aigc/shared": "workspace:*",
+    "@manuscripts/prosemirror-recreate-steps": "0.1.4",
     "@tiptap/pm": "3.23.6",
     "@tiptap/react": "3.23.6",
     "@tiptap/starter-kit": "3.23.6",
     "next": "16.2.6",
+    "prosemirror-changeset": "2.4.1",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },

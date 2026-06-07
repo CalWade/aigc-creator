@@ -10,6 +10,7 @@ import { useAutosave } from "@/lib/use-autosave";
 
 import { SaveStatus } from "./save-status";
 import { TiptapBody } from "./tiptap-body";
+import { VersionHistoryModal } from "./version-history-modal";
 import { FastModeDialog } from "@/app/drafts/[id]/_components/FastModeDialog";
 import { OutlinePanel } from "@/app/drafts/[id]/_components/OutlinePanel";
 import { SectionStream } from "@/app/drafts/[id]/_components/SectionStream";
@@ -57,6 +58,8 @@ export function DraftEditor({ id }: { id: string }) {
   const [fast, setFast] = useState<FastStage>({ kind: "idle" });
   const [promptDrawerOpen, setPromptDrawerOpen] = useState(false);
   const [preflightOpen, setPreflightOpen] = useState(false);
+  const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
+  const [namingNote, setNamingNote] = useState(false);
 
   const [toolBusy, setToolBusy] = useState<DraftToolType | null>(null);
   const [toolError, setToolError] = useState<string | null>(null);
@@ -207,6 +210,37 @@ export function DraftEditor({ id }: { id: string }) {
     [editor],
   );
 
+  // WHY: 标记命名版本走显式按钮,弹简易 prompt 收 note。
+  // 用 native window.prompt 而非自建对话框 — 训练营 demo 项目,UI 复杂度让位简洁。
+  const markVersion = useCallback(async () => {
+    setNamingNote(true);
+    try {
+      const note = window.prompt("给这个版本起个名字(可留空)") ?? "";
+      if (note === null) return;
+      await flush();
+      const res = await apiFetch(`/drafts/${id}/versions`, {
+        method: "POST",
+        body: JSON.stringify({ note: note.trim() || undefined }),
+      });
+      if (!res.ok) {
+        window.alert(`标记失败 (HTTP ${res.status})`);
+      }
+    } finally {
+      setNamingNote(false);
+    }
+  }, [id, flush]);
+
+  // restore 模态成功后:把后端回的 body 推回 TipTap + 本地 body state。
+  const handleRestored = useCallback(
+    (newBody: JSONContent): void => {
+      setBody(newBody);
+      if (editor) {
+        editor.commands.setContent(newBody);
+      }
+    },
+    [editor],
+  );
+
   if (state.kind === "loading") {
     return <main className="p-6 text-sm text-zinc-500">加载中…</main>;
   }
@@ -245,6 +279,21 @@ export function DraftEditor({ id }: { id: string }) {
           className="text-sm rounded border border-zinc-300 dark:border-zinc-700 px-2.5 py-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-900"
         >
           ⚙
+        </button>
+        <button
+          type="button"
+          onClick={() => setVersionHistoryOpen(true)}
+          className="text-sm rounded border border-zinc-300 dark:border-zinc-700 px-2.5 py-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+        >
+          版本历史
+        </button>
+        <button
+          type="button"
+          onClick={() => void markVersion()}
+          disabled={namingNote}
+          className="text-sm rounded border border-zinc-300 dark:border-zinc-700 px-2.5 py-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-900 disabled:opacity-50"
+        >
+          标记版本
         </button>
         <button
           type="button"
@@ -312,6 +361,14 @@ export function DraftEditor({ id }: { id: string }) {
       <PromptDrawer open={promptDrawerOpen} onClose={() => setPromptDrawerOpen(false)} />
 
       <PreflightDialog draftId={id} open={preflightOpen} onClose={() => setPreflightOpen(false)} />
+
+      <VersionHistoryModal
+        draftId={id}
+        currentBody={body}
+        open={versionHistoryOpen}
+        onClose={() => setVersionHistoryOpen(false)}
+        onRestored={handleRestored}
+      />
     </main>
   );
 }
