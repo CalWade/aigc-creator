@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { Draft, Prisma } from "@prisma/client";
+import { VERSION_CONFLICT } from "@bytedance-aigc/shared";
 
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateDraftDto } from "./dto/create-draft.dto";
@@ -74,7 +75,7 @@ export class DraftsService {
     // 不一致 → 409 + VERSION_CONFLICT,前端进冲突 fork 流。不传则走老路径。
     if (dto.baseVersion !== undefined && dto.baseVersion !== cur.version) {
       throw new ConflictException({
-        message: "VERSION_CONFLICT",
+        message: VERSION_CONFLICT,
         payload: {
           currentVersion: cur.version,
           title: cur.title,

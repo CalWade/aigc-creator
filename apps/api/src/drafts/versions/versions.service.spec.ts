@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/unbound-method */
 import { BadRequestException } from "@nestjs/common";
 import { VersionKind } from "@prisma/client";
 
@@ -8,6 +7,16 @@ import { VersionsService } from "./versions.service";
 
 // Phase 2.14 — createNamed 现在统一处理 NAMED + OFFLINE_CONFLICT。
 // 用 kind + snapshot 入参做窄化,以下三个用例覆盖三条分支。
+
+type DraftVersionCreateArgs = {
+  data: {
+    draftId: string;
+    kind: VersionKind;
+    snapshot: unknown;
+    note: string | null;
+    wordCount: number;
+  };
+};
 
 const DRAFT_BODY = { type: "doc", content: [{ type: "text", text: "线上稿" }] };
 const LOCAL_BODY = { type: "doc", content: [{ type: "text", text: "离线稿" }] };
@@ -62,7 +71,8 @@ describe("createVersion with kind/snapshot narrow", () => {
     });
 
     expect(create).toHaveBeenCalledTimes(1);
-    const data = create.mock.calls[0][0].data;
+    const calls = create.mock.calls as DraftVersionCreateArgs[][];
+    const { data } = calls[0][0];
     expect(data.kind).toBe(VersionKind.OFFLINE_CONFLICT);
     expect(data.snapshot).toEqual(LOCAL_BODY);
     expect(data.note).toBe("本地稿冲突保留");

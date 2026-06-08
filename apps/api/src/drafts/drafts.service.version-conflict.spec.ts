@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/unbound-method */
 import { ConflictException } from "@nestjs/common";
+import { VERSION_CONFLICT } from "@bytedance-aigc/shared";
 
 import { PrismaService } from "../prisma/prisma.service";
 import { DraftsService } from "./drafts.service";
@@ -17,6 +17,15 @@ type DraftStub = {
   updatedAt: Date;
 };
 
+type DraftUpdateArgs = {
+  where: { id: string };
+  data: {
+    title?: string;
+    body?: unknown;
+    version?: { increment: number };
+  };
+};
+
 const STUB_BODY = { type: "doc", content: [] };
 
 function makeStub(overrides: Partial<DraftStub> = {}): DraftStub {
@@ -32,7 +41,7 @@ function makeStub(overrides: Partial<DraftStub> = {}): DraftStub {
 }
 
 function makeService(stub: DraftStub) {
-  // findUnique 会被 assertAuthor 调一次,update 路径再调一次拿当前版本。
+  // assertAuthor 单次 findUnique 即拿到当前版本,update 路径直接复用。
   const findUnique = jest.fn().mockResolvedValue(stub);
   const update = jest
     .fn()
@@ -60,7 +69,8 @@ describe("DraftsService.update with baseVersion", () => {
     const result = await svc.update("d1", "u1", { baseVersion: 3, title: "新标题" });
 
     expect(update).toHaveBeenCalledTimes(1);
-    expect(update.mock.calls[0][0].data.version).toEqual({ increment: 1 });
+    const calls = update.mock.calls as DraftUpdateArgs[][];
+    expect(calls[0][0].data.version).toEqual({ increment: 1 });
     expect(result.version).toBe(4);
   });
 
@@ -89,7 +99,7 @@ describe("DraftsService.update with baseVersion", () => {
         updatedAt: string;
       };
     };
-    expect(response.message).toBe("VERSION_CONFLICT");
+    expect(response.message).toBe(VERSION_CONFLICT);
     expect(response.payload.currentVersion).toBe(5);
     expect(response.payload.title).toBe("服务端标题");
     expect(response.payload.body).toEqual(stub.body);
