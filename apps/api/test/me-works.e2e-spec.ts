@@ -9,7 +9,7 @@ import { applyAllFixtures, cleanupAllFixtures } from "./../prisma/fixtures";
 import { loginAsDemo } from "./helpers/auth";
 
 interface MeWorksResp {
-  items: { id: string; status: "DRAFT" | "PUBLISHED" | "OFFLINE" }[];
+  items: { id: string; status: "DRAFT" | "REVIEWING" | "PUBLISHED" | "OFFLINE" }[];
 }
 
 describe("/me/works (e2e)", () => {

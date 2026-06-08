@@ -128,10 +128,10 @@ export class FeedService {
 
   async getMyWorks(
     userId: string,
-    status: "DRAFT" | "PUBLISHED" | "OFFLINE" | "ALL",
+    status: "DRAFT" | "REVIEWING" | "PUBLISHED" | "OFFLINE" | "ALL",
     limit = 20,
   ): Promise<MeWorksItem[]> {
-    const where: { authorId: string; status?: "DRAFT" | "PUBLISHED" | "OFFLINE" } = {
+    const where: { authorId: string; status?: "DRAFT" | "REVIEWING" | "PUBLISHED" | "OFFLINE" } = {
       authorId: userId,
     };
     if (status !== "ALL") where.status = status;

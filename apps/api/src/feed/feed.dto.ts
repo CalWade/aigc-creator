@@ -47,8 +47,8 @@ export class AuthorPostsQueryDto {
 export class MeWorksQueryDto {
   @IsOptional()
   @IsString()
-  @IsIn(["DRAFT", "PUBLISHED", "OFFLINE", "ALL"])
-  status?: "DRAFT" | "PUBLISHED" | "OFFLINE" | "ALL";
+  @IsIn(["DRAFT", "REVIEWING", "PUBLISHED", "OFFLINE", "ALL"])
+  status?: "DRAFT" | "REVIEWING" | "PUBLISHED" | "OFFLINE" | "ALL";
 
   @IsOptional()
   @Type(() => Number)

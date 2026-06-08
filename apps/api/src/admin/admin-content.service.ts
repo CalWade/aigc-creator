@@ -8,7 +8,7 @@ const DEFAULT_REASON = "平台审核下线";
 export interface AdminPostView {
   id: string;
   title: string;
-  status: "DRAFT" | "PUBLISHED" | "OFFLINE";
+  status: "DRAFT" | "REVIEWING" | "PUBLISHED" | "OFFLINE";
   authorId: string;
   authorHandle: string;
   publishedAt: string | null;

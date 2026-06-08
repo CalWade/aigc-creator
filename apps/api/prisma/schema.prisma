@@ -24,6 +24,7 @@ enum PromptOwner {
 
 enum DraftStatus {
   DRAFT
+  REVIEWING
   PUBLISHED
   OFFLINE
 }
@@ -115,8 +116,11 @@ model Draft {
   mode          DraftMode   @default(FAST)
   status        DraftStatus @default(DRAFT)
   title         String
-  body          Json
-  version       Int         @default(1)
+  body              Json
+  publishedBody     Json?
+  publishedTitle    String?
+  publishedVersion  Int?
+  version           Int         @default(1)
   publishedAt   DateTime?
   lastReviewId  String?
   offlineReason String?     @db.Text
