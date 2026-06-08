@@ -103,6 +103,15 @@ export class DraftsController {
     return this.tools.invoke(id, user.sub, dto);
   }
 
+  @Post(":id/edit")
+  @HttpCode(HttpStatus.OK)
+  edit(
+    @Param("id") id: string,
+    @CurrentUser() user: JwtPayload,
+  ): Promise<{ id: string; status: "DRAFT"; version: number }> {
+    return this.drafts.edit(id, user.sub);
+  }
+
   @Post(":id/publish")
   @HttpCode(HttpStatus.OK)
   publish(
