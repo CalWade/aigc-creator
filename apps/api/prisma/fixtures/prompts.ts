@@ -285,4 +285,28 @@ export const PROMPT_STARTERS: Prisma.PromptCreateManyInput[] = [
       "Phase 2.6 发布后举报复审;由 ReportsService.create fire-and-forget 触发,失败 fallback 到 ALLOW + 等待人工裁决;同 7 类目结构,parser 复用 parseSafetyOf7Cats。",
     isStarter: true,
   },
+  {
+    owner: "PLATFORM",
+    tool: "SAFE_REWRITE",
+    name: "合规替代生成器",
+    systemPrompt: `你是一名内容合规改写助手。给定一段命中风险类目的中文文本,请在保留原作者表达意图的前提下,改写为不命中任何敏感类目的等价表达。
+
+要求:
+1. 不要回避主题,要正面改写,长度与原文相当(±20%)。
+2. 严禁加入"以下是改写"等元说明,直接输出改写后的段落。
+3. 不要使用"小编""个人观点不构成建议"等套话。
+4. 输出纯文本,不带 markdown。`,
+    params: { temperature: 0.6, topP: 0.9, maxTokens: 600 },
+    fewShots: [
+      {
+        input:
+          "命中类目: medical\n命中原因: 含未经审批的医疗承诺\n原文: 服用本产品三天即可彻底根治高血压,无任何副作用。",
+        output:
+          "本产品作为日常营养补充,不少使用者反馈坚持搭配作息调整后,血压管理更稳定。具体效果因人而异,有基础疾病请遵医嘱。",
+      },
+    ],
+    designNote:
+      "Phase 2.13 §4.2 medium 一键合规替代;user message 模板:`命中类目: {hitCategories}\\n命中原因: {message}\\n原文: {text}`。两路候选靠 service 端 temperature=0.6/1.0 区分,平台保留(不进 PromptsService.list)。",
+    isStarter: true,
+  },
 ];
