@@ -8,6 +8,7 @@ import type { Candidate, DraftToolType, OutlineItem } from "@bytedance-aigc/shar
 import { apiFetch, clearToken, getToken } from "@/lib/auth";
 import { clearSnapshot, getSnapshot } from "@/lib/idb-draft-cache";
 import { useAutosave, type SaveResult } from "@/lib/use-autosave";
+import { useDraftPresence } from "@/lib/use-draft-presence";
 
 import { ConflictBanner } from "./conflict-banner";
 import { OfflineBanner } from "./offline-banner";
@@ -71,6 +72,15 @@ export function DraftEditor({ id }: { id: string }) {
   const [toolBusy, setToolBusy] = useState<DraftToolType | null>(null);
   const [toolError, setToolError] = useState<string | null>(null);
   const [toolPanel, setToolPanel] = useState<ToolPanel | null>(null);
+
+  // T8: 多 Tab 抢占检测 — otherTabExists=true 时编辑器切只读 + 显 ReadonlyBanner
+  const { otherTabExists } = useDraftPresence(id);
+
+  // T8: 联动 TipTap editable 状态 — 有他 Tab 时禁编辑,独占时恢复
+  useEffect(() => {
+    if (!editor) return;
+    editor.setEditable(!otherTabExists);
+  }, [editor, otherTabExists]);
 
   // T7: 冲突短期提示(spec §6),5s 后自动消;启动复活与 save 409 fork 都会置 true。
   const [showConflictBanner, setShowConflictBanner] = useState(false);
@@ -378,8 +388,8 @@ export function DraftEditor({ id }: { id: string }) {
   }
 
   // T7: 顶部 Banner stack(spec §6 优先级:Readonly > Offline > Conflict,只显一条)
-  // ReadonlyBanner 当前 stub 为 false,T8 接 useDraftPresence 拿真实多 Tab 抢占状态。
-  const isReadonly = false;
+  // T8: ReadonlyBanner 接入 useDraftPresence 真实多 Tab 抢占状态。
+  const isReadonly = otherTabExists;
   const isOffline = status === "offline";
   const bannerSlot = isReadonly ? (
     <ReadonlyBanner visible={true} />
