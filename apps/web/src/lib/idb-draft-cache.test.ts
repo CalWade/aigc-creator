@@ -1,21 +1,24 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { getSnapshot, putSnapshot, clearSnapshot } from "./idb-draft-cache";
 
-vi.mock("idb-keyval", () => {
-  const store = new Map<string, unknown>();
-  return {
-    createStore: vi.fn(() => "store"),
-    set: vi.fn(async (k: string, v: unknown) => {
-      store.set(k, v);
-    }),
-    get: vi.fn(async (k: string) => store.get(k)),
-    del: vi.fn(async (k: string) => {
-      store.delete(k);
-    }),
-  };
-});
+const { mockStore } = vi.hoisted(() => ({ mockStore: new Map<string, unknown>() }));
+
+vi.mock("idb-keyval", () => ({
+  createStore: vi.fn(() => "store"),
+  set: vi.fn(async (k: string, v: unknown) => {
+    mockStore.set(k, v);
+  }),
+  get: vi.fn(async (k: string) => mockStore.get(k)),
+  del: vi.fn(async (k: string) => {
+    mockStore.delete(k);
+  }),
+}));
 
 describe("idb-draft-cache", () => {
+  beforeEach(() => {
+    mockStore.clear();
+  });
+
   it("put → get round-trip", async () => {
     await putSnapshot("d1", {
       title: "T",
