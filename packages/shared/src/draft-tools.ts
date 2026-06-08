@@ -15,6 +15,7 @@ export const DRAFT_TOOL_TYPES = [
   "ADD_FACTS",
   "ADD_TOPIC",
   "IMAGE_SUGGEST",
+  "SAFE_REWRITE",
 ] as const;
 
 export type DraftToolType = (typeof DRAFT_TOOL_TYPES)[number];

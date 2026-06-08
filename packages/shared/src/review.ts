@@ -110,3 +110,22 @@ export interface SectionReviewResponse {
   abortStream: boolean;
   reviewId: string;
 }
+
+/**
+ * Phase 2.13 — 一键生成合规替代(§4.2 medium)
+ * 端点:POST /reviews/safe-rewrite (SSE)
+ * 单连接两路候选,以 idx 区分
+ */
+export interface SafeRewriteRequest {
+  draftId: string;
+  text: string;
+  hitCategories: SensitiveCategory[];
+  message: string; // 段落审核或安全分给出的命中原因,塞 user prompt
+}
+
+export type SafeRewriteFrame =
+  | { event: "start"; idx: 0 | 1 }
+  | { event: "token"; idx: 0 | 1; delta: string }
+  | { event: "end"; idx: 0 | 1 }
+  | { event: "done" }
+  | { event: "error"; idx?: 0 | 1; message: string };

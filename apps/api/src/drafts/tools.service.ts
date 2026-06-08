@@ -75,6 +75,10 @@ function narrowInput(tool: DraftToolType, input: Record<string, unknown>): Narro
         selectedText: assertSelected(input),
         fullText: assertFull(input),
       };
+    case "SAFE_REWRITE":
+      throw new BadRequestException(
+        "SAFE_REWRITE 不通过 BubbleMenu 工具分发,请使用 /reviews/safe-rewrite",
+      );
     default: {
       // exhaustive guard
       const _never: never = tool;

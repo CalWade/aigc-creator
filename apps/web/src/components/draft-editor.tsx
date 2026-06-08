@@ -162,6 +162,10 @@ export function DraftEditor({ id }: { id: string }) {
               fullText: payload.fullText,
             };
             break;
+          case "SAFE_REWRITE":
+            // SAFE_REWRITE 不通过 BubbleMenu 工具分发,走 /reviews/safe-rewrite。
+            // 这里走到属调用方误用,直接 return 不发请求。
+            return;
         }
         // 当前生效 promptId(以 REWRITE_FLUENT 为例 — 不同工具各自记忆,这里取
         // 通用槽位:invoke 后端按 tool 自己 narrow,单工具调用拿同 tool 的 active id)
