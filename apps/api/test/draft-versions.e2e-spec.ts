@@ -19,7 +19,7 @@ interface DraftResponse {
 
 interface VersionDto {
   id: string;
-  kind: "AUTO" | "NAMED" | "PUBLISHED";
+  kind: "AUTO" | "NAMED" | "PUBLISHED" | "OFFLINE_CONFLICT";
   note: string | null;
   wordCount: number;
   createdAt: string;
@@ -278,5 +278,58 @@ describe("VersionsController (e2e)", () => {
 
   it("DEMO_AUTHOR_ID 与 token 用户一致(防 fixtures 漂移的健全性)", () => {
     expect(DEMO_AUTHOR_ID).toBe("demoauthor000000000000001");
+  });
+
+  // Phase 2.14:OFFLINE_CONFLICT 把本地稿独立存档,带 snapshot,与 NAMED 区分。
+  describe("POST /drafts/:id/versions kind=OFFLINE_CONFLICT", () => {
+    it("OFFLINE_CONFLICT + snapshot → 201,落 DraftVersion 一行,kind=OFFLINE_CONFLICT", async () => {
+      const d = await createDraft();
+      const localSnapshot = {
+        type: "doc",
+        client: 1,
+        content: [{ type: "paragraph", content: [{ type: "text", text: "本地稿" }] }],
+      };
+
+      const created = await request(app.getHttpServer())
+        .post(`/drafts/${d.id}/versions`)
+        .set("Authorization", `Bearer ${token}`)
+        .send({ kind: "OFFLINE_CONFLICT", snapshot: localSnapshot })
+        .expect(201);
+      const v = created.body as VersionDto;
+      expect(v.kind).toBe("OFFLINE_CONFLICT");
+
+      const list = await request(app.getHttpServer())
+        .get(`/drafts/${d.id}/versions`)
+        .set("Authorization", `Bearer ${token}`)
+        .expect(200);
+      const items = (list.body as { items: VersionDto[] }).items;
+      const offline = items.find((x) => x.id === v.id);
+      expect(offline).toBeDefined();
+      expect(offline?.kind).toBe("OFFLINE_CONFLICT");
+
+      const row = await prisma.draftVersion.findUnique({ where: { id: v.id } });
+      expect(row).not.toBeNull();
+      expect(row?.kind).toBe(VersionKind.OFFLINE_CONFLICT);
+      const snap = row?.snapshot as { client?: number };
+      expect(snap.client).toBe(1);
+    });
+
+    it("OFFLINE_CONFLICT 缺 snapshot → 400", async () => {
+      const d = await createDraft();
+      await request(app.getHttpServer())
+        .post(`/drafts/${d.id}/versions`)
+        .set("Authorization", `Bearer ${token}`)
+        .send({ kind: "OFFLINE_CONFLICT" })
+        .expect(400);
+    });
+
+    it("NAMED 带 snapshot → 400", async () => {
+      const d = await createDraft();
+      await request(app.getHttpServer())
+        .post(`/drafts/${d.id}/versions`)
+        .set("Authorization", `Bearer ${token}`)
+        .send({ kind: "NAMED", snapshot: { type: "doc", content: [] } })
+        .expect(400);
+    });
   });
 });

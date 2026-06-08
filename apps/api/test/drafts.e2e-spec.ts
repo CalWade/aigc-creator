@@ -1,5 +1,6 @@
 import { INestApplication, ValidationPipe } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
+import { VERSION_CONFLICT } from "@bytedance-aigc/shared";
 import request from "supertest";
 import { App } from "supertest/types";
 
@@ -177,5 +178,94 @@ describe("DraftsController (e2e)", () => {
       .set("Authorization", `Bearer ${token}`)
       .send({ title: "x" })
       .expect(404);
+  });
+
+  // Phase 2.14:乐观并发 baseVersion 用例。
+  describe("PATCH /drafts/:id with baseVersion", () => {
+    it("baseVersion === current → 200,version+1", async () => {
+      const created = await request(app.getHttpServer())
+        .post("/drafts")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ title: "BV-OK", body: { type: "doc", content: [] } })
+        .expect(201);
+      const draft = created.body as DraftResponse;
+      expect(draft.version).toBe(1);
+
+      const res = await request(app.getHttpServer())
+        .patch(`/drafts/${draft.id}`)
+        .set("Authorization", `Bearer ${token}`)
+        .send({ baseVersion: 1, title: "T2" })
+        .expect(200);
+      const updated = res.body as DraftResponse;
+      expect(updated.title).toBe("T2");
+      expect(updated.version).toBe(2);
+
+      const get = await request(app.getHttpServer())
+        .get(`/drafts/${draft.id}`)
+        .set("Authorization", `Bearer ${token}`)
+        .expect(200);
+      const found = get.body as DraftResponse;
+      expect(found.version).toBe(2);
+      expect(found.title).toBe("T2");
+    });
+
+    it("baseVersion stale → 409 with VERSION_CONFLICT payload", async () => {
+      const created = await request(app.getHttpServer())
+        .post("/drafts")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ title: "BV-CONFLICT", body: { type: "doc", content: [] } })
+        .expect(201);
+      const draft = created.body as DraftResponse;
+
+      // 第一次:baseVersion=1 改云端 → version 上到 2,云端 title=Cloud
+      const cloudBody = {
+        type: "doc",
+        content: [{ type: "paragraph", content: [{ type: "text", text: "云端版本" }] }],
+      };
+      await request(app.getHttpServer())
+        .patch(`/drafts/${draft.id}`)
+        .set("Authorization", `Bearer ${token}`)
+        .send({ baseVersion: 1, title: "Cloud", body: cloudBody })
+        .expect(200);
+
+      // 第二次:还拿 baseVersion=1 提交,本地版本陈旧 → 409
+      const conflict = await request(app.getHttpServer())
+        .patch(`/drafts/${draft.id}`)
+        .set("Authorization", `Bearer ${token}`)
+        .send({ baseVersion: 1, title: "Local", body: { type: "doc", content: [] } })
+        .expect(409);
+      const body = conflict.body as {
+        message: string;
+        payload: {
+          currentVersion: number;
+          title: string;
+          body: unknown;
+          updatedAt: string;
+        };
+      };
+      expect(body.message).toBe(VERSION_CONFLICT);
+      expect(body.payload.currentVersion).toBe(2);
+      expect(body.payload.title).toBe("Cloud");
+      expect(body.payload.body).toEqual(cloudBody);
+      expect(typeof body.payload.updatedAt).toBe("string");
+    });
+
+    it("baseVersion 不传 → 走旧路径,200 version+1(回归保护)", async () => {
+      const created = await request(app.getHttpServer())
+        .post("/drafts")
+        .set("Authorization", `Bearer ${token}`)
+        .send({ title: "BV-LEGACY", body: { type: "doc", content: [] } })
+        .expect(201);
+      const draft = created.body as DraftResponse;
+
+      const res = await request(app.getHttpServer())
+        .patch(`/drafts/${draft.id}`)
+        .set("Authorization", `Bearer ${token}`)
+        .send({ title: "Legacy" })
+        .expect(200);
+      const updated = res.body as DraftResponse;
+      expect(updated.title).toBe("Legacy");
+      expect(updated.version).toBe(draft.version + 1);
+    });
   });
 });
