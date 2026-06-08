@@ -69,7 +69,20 @@ export class DraftsService {
   }
 
   async update(id: string, authorId: string, dto: UpdateDraftDto): Promise<Draft> {
-    await this.assertAuthor(id, authorId);
+    const cur = await this.assertAuthor(id, authorId);
+    // Phase 2.14:乐观并发。客户端带 baseVersion 时,后端比对当前 DB 版本;
+    // 不一致 → 409 + VERSION_CONFLICT,前端进冲突 fork 流。不传则走老路径。
+    if (dto.baseVersion !== undefined && dto.baseVersion !== cur.version) {
+      throw new ConflictException({
+        message: "VERSION_CONFLICT",
+        payload: {
+          currentVersion: cur.version,
+          title: cur.title,
+          body: cur.body,
+          updatedAt: cur.updatedAt.toISOString(),
+        },
+      });
+    }
     const data: Prisma.DraftUpdateInput = {
       version: { increment: 1 },
     };

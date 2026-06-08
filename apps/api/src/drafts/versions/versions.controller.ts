@@ -8,6 +8,7 @@ import {
   Post,
   UseGuards,
 } from "@nestjs/common";
+import type { Prisma } from "@prisma/client";
 
 import { CurrentUser } from "../../auth/current-user.decorator";
 import type { JwtPayload } from "../../auth/jwt-payload.interface";
@@ -51,7 +52,10 @@ export class VersionsController {
     @Body() dto: CreateVersionDto,
   ): Promise<VersionDto> {
     const draft = await this.drafts.assertAuthor(id, user.sub);
-    return this.versions.createNamed(id, draft.body, dto.note);
+    return this.versions.createNamed(id, draft.body, dto.note, {
+      kind: dto.kind,
+      snapshot: dto.snapshot as Prisma.JsonValue | undefined,
+    });
   }
 
   @Post(":vid/restore")

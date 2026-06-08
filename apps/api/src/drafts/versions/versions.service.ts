@@ -1,7 +1,8 @@
-import { Injectable, Logger, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { DraftVersion, Prisma, VersionKind } from "@prisma/client";
 
 import { PrismaService } from "../../prisma/prisma.service";
+import { CreateVersionKind } from "./dto/create-version.dto";
 
 // 5 分钟节流:同一 draft 内最近一个 AUTO 在 5 分钟内则跳过新建。
 const AUTO_THROTTLE_MS = 5 * 60 * 1000;
@@ -59,27 +60,45 @@ export class VersionsService {
   }
 
   /**
-   * 显式建命名版本。5 秒内重复点击返回最近一个 NAMED(防双击)。
+   * 显式建版本。Phase 2.14 起统一处理 NAMED + OFFLINE_CONFLICT 两类:
+   * - NAMED:用户主动命名版本,snapshot 取当前 draft.body(由调用方传入),
+   *   不允许自带 snapshot(controller 已用 draft.body),5 秒防双击。
+   * - OFFLINE_CONFLICT:离线编辑回到线上发现冲突,把本地稿存为独立版本,
+   *   必须自带 snapshot,不走防双击。
    */
   async createNamed(
     draftId: string,
     snapshot: Prisma.JsonValue,
     note: string | undefined,
+    options: { kind?: CreateVersionKind; snapshot?: Prisma.JsonValue } = {},
   ): Promise<VersionDto> {
-    const recent = await this.prisma.draftVersion.findFirst({
-      where: { draftId, kind: VersionKind.NAMED },
-      orderBy: { createdAt: "desc" },
-    });
-    if (recent && Date.now() - recent.createdAt.getTime() < NAMED_DEDUP_MS) {
-      return this.toDto(recent);
+    const kind = options.kind ?? CreateVersionKind.NAMED;
+    if (kind === CreateVersionKind.OFFLINE_CONFLICT && options.snapshot === undefined) {
+      throw new BadRequestException("kind=OFFLINE_CONFLICT 必须带 snapshot");
+    }
+    if (kind === CreateVersionKind.NAMED && options.snapshot !== undefined) {
+      throw new BadRequestException("kind=NAMED 不允许携带 snapshot");
+    }
+    const finalSnapshot = options.snapshot ?? snapshot;
+    if (kind === CreateVersionKind.NAMED) {
+      const recent = await this.prisma.draftVersion.findFirst({
+        where: { draftId, kind: VersionKind.NAMED },
+        orderBy: { createdAt: "desc" },
+      });
+      if (recent && Date.now() - recent.createdAt.getTime() < NAMED_DEDUP_MS) {
+        return this.toDto(recent);
+      }
     }
     const created = await this.prisma.draftVersion.create({
       data: {
         draftId,
-        kind: VersionKind.NAMED,
-        snapshot: snapshot as Prisma.InputJsonValue,
+        kind:
+          kind === CreateVersionKind.OFFLINE_CONFLICT
+            ? VersionKind.OFFLINE_CONFLICT
+            : VersionKind.NAMED,
+        snapshot: finalSnapshot as Prisma.InputJsonValue,
         note: note?.trim() || null,
-        wordCount: this.countWords(snapshot),
+        wordCount: this.countWords(finalSnapshot),
       },
     });
     return this.toDto(created);
