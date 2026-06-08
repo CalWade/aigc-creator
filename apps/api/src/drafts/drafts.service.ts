@@ -125,8 +125,13 @@ export class DraftsService {
   }
 
   /**
-   * Phase 2.3 — 草稿发布。状态机:必须有最近一次 PREFLIGHT review,
+   * Phase 2.3 + 2.15 — 草稿发布。状态机:必须有最近一次 PREFLIGHT review,
    * 推荐值不能是 BLOCK,且 24h 内有效;否则 409 + code 区分原因。
+   *
+   * Phase 2.15 二发分支:
+   * - publishedBody !== null 视为二发;事务内同步快照 publishedBody/Title/Version
+   * - REVIEWING 仅事务内一闪(贴 PRD「Reviewing」语义,无作者侧 UX 暴露)
+   * - 二发 + env REPUBLISH_HOTNESS_INHERIT="false" → PostStat 重置;默认继承
    */
   async publish(id: string, authorId: string): Promise<{ id: string; publishedAt: Date }> {
     await this.assertAuthor(id, authorId);
@@ -153,17 +158,43 @@ export class DraftsService {
         message: "预检结果已过 24 小时,请重新预检",
       });
     }
-    // WHY: 在状态机切到 PUBLISHED 之前快照,语义上"发布瞬间"。
-    // 失败也不阻塞发布(同 update 钩子,版本是辅助产物)。
+
+    // 发布瞬间快照(失败不阻塞 — 同 update 钩子)
     try {
       await this.versions.snapshotPublished(id, draft.body);
     } catch (err) {
       this.logger.error(`snapshotPublished failed for draft ${id}`, err as Error);
     }
-    const updated = await this.prisma.draft.update({
-      where: { id },
-      data: { status: "PUBLISHED", publishedAt: new Date() },
+
+    const isRepublish = draft.publishedBody !== null;
+    const inheritHotness = process.env.REPUBLISH_HOTNESS_INHERIT !== "false";
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      // REVIEWING 一闪 — 单事务内可见,DB 行最终落 PUBLISHED
+      await tx.draft.update({
+        where: { id },
+        data: { status: "REVIEWING" },
+      });
+
+      if (isRepublish && !inheritHotness) {
+        await tx.postStat.updateMany({
+          where: { draftId: id },
+          data: { impression: 0, click: 0, dwellUnit: 0, like: 0 },
+        });
+      }
+
+      return tx.draft.update({
+        where: { id },
+        data: {
+          status: "PUBLISHED",
+          publishedAt: new Date(),
+          publishedBody: draft.body as Prisma.InputJsonValue,
+          publishedTitle: draft.title,
+          publishedVersion: draft.version,
+        },
+      });
     });
+
     return { id: updated.id, publishedAt: updated.publishedAt as Date };
   }
 }
