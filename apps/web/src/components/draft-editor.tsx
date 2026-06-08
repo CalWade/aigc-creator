@@ -204,7 +204,7 @@ export function DraftEditor({ id }: { id: string }) {
     return () => {
       cancelled = true;
     };
-  }, [id, router]);
+  }, [id, router, showConflictBannerWithTimeout]);
 
   const value = useMemo(() => ({ title, body }), [title, body]);
 
@@ -250,7 +250,7 @@ export function DraftEditor({ id }: { id: string }) {
       }
       showConflictBannerWithTimeout();
     },
-    [editor],
+    [editor, showConflictBannerWithTimeout],
   );
 
   const enabledValue = state.kind === "ready" ? value : null;
