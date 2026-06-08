@@ -17,6 +17,8 @@ export function SafeRewriteHintBanner() {
     if (!raw) return;
     try {
       const h = JSON.parse(raw) as Hint;
+      // mount 时一次性读 localStorage 把 hint 同步到 state,只跑一次,无 cascading 风险
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (Date.now() - h.ts < 30 * 60 * 1000) setHint(h);
     } catch {
       /* noop */

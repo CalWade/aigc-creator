@@ -71,7 +71,7 @@ describe("SafeRewriteService.stream", () => {
 
     // 必须有 end×2
     const ends = frames.filter((f) => f.event === "end");
-    expect(ends.map((f) => (f as { event: "end"; idx: 0 | 1 }).idx).sort()).toEqual([0, 1]);
+    expect(ends.map((f) => f.idx).sort()).toEqual([0, 1]);
 
     // token 帧两路都有
     const tokens0 = frames.filter((f) => f.event === "token" && f.idx === 0);
@@ -89,7 +89,9 @@ describe("SafeRewriteService.stream", () => {
     await firstValueFrom(service.stream(INPUT).pipe(toArray()));
 
     expect(chatStream).toHaveBeenCalledTimes(2);
-    const temps = chatStream.mock.calls.map((c) => c[1]?.temperature).sort();
+    const temps = (chatStream.mock.calls as unknown as [unknown, { temperature?: number }?][])
+      .map((c) => c[1]?.temperature)
+      .sort();
     expect(temps).toEqual([0.6, 1.0]);
   });
 
@@ -120,13 +122,14 @@ describe("SafeRewriteService.stream", () => {
         .fn()
         .mockRejectedValueOnce(new NotFoundException("SAFE_REWRITE prompt not configured")),
     } as unknown as PromptsService;
-    const llm = { chatStream: jest.fn() } as unknown as LlmClient;
+    const chatStream = jest.fn();
+    const llm = { chatStream } as unknown as LlmClient;
     const service = new SafeRewriteService(llm, prompts);
 
     const frames = (await firstValueFrom(service.stream(INPUT).pipe(toArray()))) as Frame[];
 
     expect(frames[0].event).toBe("error");
     expect(frames[frames.length - 1]).toEqual({ event: "done" });
-    expect(llm.chatStream).not.toHaveBeenCalled();
+    expect(chatStream).not.toHaveBeenCalled();
   });
 });
