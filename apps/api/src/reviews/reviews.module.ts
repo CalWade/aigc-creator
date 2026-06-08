@@ -5,13 +5,15 @@ import { DraftsModule } from "../drafts/drafts.module";
 import { PromptsModule } from "../prompts/prompts.module";
 import { ReviewsController } from "./reviews.controller";
 import { ReviewsActionController } from "./reviews-action.controller";
+import { SafeRewriteController } from "./safe-rewrite.controller";
 import { ReviewService } from "./review.service";
+import { SafeRewriteService } from "./safe-rewrite.service";
 import { StreamSessionStore } from "./stream-session";
 
 @Module({
   imports: [AuthModule, DraftsModule, PromptsModule],
-  controllers: [ReviewsController, ReviewsActionController],
-  providers: [ReviewService, StreamSessionStore],
+  controllers: [ReviewsController, ReviewsActionController, SafeRewriteController],
+  providers: [ReviewService, StreamSessionStore, SafeRewriteService],
   exports: [ReviewService],
 })
 export class ReviewsModule {}
