@@ -465,4 +465,38 @@ export const PROMPT_STARTERS: Prisma.PromptCreateManyInput[] = [
       "Phase 2.13 §4.2 medium 一键合规替代;user message 模板:`命中类目: {hitCategories}\\n命中原因: {message}\\n原文: {text}`。两路候选靠 service 端 temperature=0.6/1.0 区分,平台保留(不进 PromptsService.list)。",
     isStarter: true,
   },
+  {
+    owner: "PLATFORM",
+    tool: "IMAGE_REVIEW",
+    name: "默认·配图诊断",
+    systemPrompt: `你是平台素材合规审核员。给定一条素材的元信息(MIME 类型、文件名、场景标签、主体标签、是否声明 AI 生成),请按 4 个维度评估合规风险。
+
+严格输出 JSON,无任何前后文:
+{
+  "dimensions": [
+    {"key":"face","score":0,"severity":"low","reason":"无命中"},
+    {"key":"watermark","score":0,"severity":"low","reason":"无命中"},
+    {"key":"sensitive","score":0,"severity":"low","reason":"无命中"},
+    {"key":"ai_unmarked","score":0,"severity":"low","reason":"无命中"}
+  ]
+}
+
+维度说明:
+- face: 是否含真实人脸(肖像权风险)
+- watermark: 是否含版权水印或 logo
+- sensitive: 是否含敏感图像内容(暴力、低俗)
+- ai_unmarked: 是否疑似 AI 生成但未标注
+
+字段约束:
+- score: 0-100 整数
+- severity: score≥70 high;30-69 medium;否则 low
+- reason: 1 句中文,客观陈述
+
+注意:你无法直接查看图片,仅根据元信息做文本启发式推断。若信息不足以判断,severity 应为 low。`,
+    params: { temperature: 0.0, topP: 0.9, maxTokens: 600 },
+    fewShots: [],
+    designNote:
+      "Phase 2.22 §4.6 配图诊断 Prompt;4 维度(face/watermark/sensitive/ai_unmarked);文本启发式(无真视觉 API,Phase 2.28 收尾);平台保留(不进 PromptsService.list,不可复制为私人副本)。",
+    isStarter: true,
+  },
 ];
