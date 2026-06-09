@@ -33,7 +33,9 @@ async function main(): Promise<void> {
   const reportsDir = join(__dirname, "..", "..", "..", "docs", "perf");
   if (!existsSync(reportsDir)) mkdirSync(reportsDir, { recursive: true });
 
-  const app = await NestFactory.createApplicationContext(AppModule, { logger: false });
+  const app = await NestFactory.createApplicationContext(AppModule, {
+    logger: ["error", "warn"],
+  });
   const reviews = app.get(ReviewService);
 
   const samples: { row: FixtureRow; expected: Label }[] = [];
