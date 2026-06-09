@@ -121,18 +121,53 @@ export class PromptsService {
   }
 
   async update(id: string, userSub: string, dto: UpdatePromptDto): Promise<Prompt> {
-    await this.assertOwnPrivate(id, userSub);
-    return this.prisma.prompt.update({
-      where: { id },
-      data: {
+    return this.prisma.$transaction(async (tx) => {
+      const current = await this.assertOwnPrivate(id, userSub, tx);
+      return this.writeWithSnapshot(tx, current, {
         ...(dto.systemPrompt !== undefined ? { systemPrompt: dto.systemPrompt } : {}),
         ...(dto.params !== undefined ? { params: dto.params as Prisma.InputJsonValue } : {}),
         ...(dto.fewShots !== undefined
           ? { fewShots: dto.fewShots as unknown as Prisma.InputJsonValue }
           : {}),
         ...(dto.designNote !== undefined ? { designNote: dto.designNote } : {}),
+      });
+    });
+  }
+
+  /**
+   * Phase 2.17:在事务内
+   *  1) 把 current 写一条 snapshot
+   *  2) 裁剪 snapshot 到最近 3 条
+   *  3) 用 patch 更新 prompt
+   * update 与 restoreSnapshot 共用此方法,避免事务嵌套。
+   */
+  private async writeWithSnapshot(
+    tx: Prisma.TransactionClient,
+    current: Prompt,
+    patch: Prisma.PromptUpdateInput,
+  ): Promise<Prompt> {
+    await tx.promptSnapshot.create({
+      data: {
+        promptId: current.id,
+        systemPrompt: current.systemPrompt,
+        params: current.params as Prisma.InputJsonValue,
+        fewShots: current.fewShots as Prisma.InputJsonValue,
+        designNote: current.designNote,
       },
     });
+    // 裁剪到 3:删第 4 旧及以后(理论 update 前 ≤3,新插入后 ≤4,overflow 至多 1)
+    const overflow = await tx.promptSnapshot.findMany({
+      where: { promptId: current.id },
+      orderBy: { createdAt: "asc" },
+      skip: 3,
+      select: { id: true },
+    });
+    if (overflow.length > 0) {
+      await tx.promptSnapshot.deleteMany({
+        where: { id: { in: overflow.map((s) => s.id) } },
+      });
+    }
+    return tx.prompt.update({ where: { id: current.id }, data: patch });
   }
 
   async deleteOne(id: string, userSub: string): Promise<void> {
