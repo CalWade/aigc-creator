@@ -1,4 +1,5 @@
 import { AssetsService } from "./assets.service";
+import { AssetReviewService } from "./asset-review.service";
 import { AssetTaggingService } from "./asset-tagging.service";
 import { PrismaService } from "../prisma/prisma.service";
 import type { Asset } from "@prisma/client";
@@ -15,6 +16,8 @@ function makeAsset(overrides: Partial<Asset> & { id: string }): Asset {
     aiPrompt: null,
     sceneTags: [],
     subjectTags: [],
+    reviewStatus: "PASSED",
+    reviewNote: null,
     createdAt: new Date(),
     ...overrides,
   };
@@ -33,10 +36,17 @@ describe("AssetsService.recommendForBody", () => {
       put: jest.fn().mockResolvedValue({ url: "https://mock.local/k" }),
     } as unknown as StorageService;
     const tagging = { tag: jest.fn() };
+    const reviewService = {
+      reviewAsset: jest
+        .fn()
+        .mockResolvedValue({ recommendation: "ALLOW", dimensions: [], reason: "合规校验通过" }),
+      recommendationToStatus: jest.fn().mockReturnValue("PASSED"),
+    };
     svc = new AssetsService(
       prisma as unknown as PrismaService,
       storage,
       tagging as unknown as AssetTaggingService,
+      reviewService as unknown as AssetReviewService,
     );
   });
 

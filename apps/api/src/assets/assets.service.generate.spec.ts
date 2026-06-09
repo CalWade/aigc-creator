@@ -1,4 +1,5 @@
 import { AssetsService } from "./assets.service";
+import { AssetReviewService } from "./asset-review.service";
 import { AssetTaggingService } from "./asset-tagging.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { BadRequestException } from "@nestjs/common";
@@ -8,6 +9,7 @@ describe("AssetsService.generateAi", () => {
   let createMock: jest.Mock;
   let storage: StorageService;
   let tagging: { tag: jest.Mock };
+  let reviewService: { reviewAsset: jest.Mock; recommendationToStatus: jest.Mock };
 
   beforeEach(() => {
     createMock = jest.fn().mockResolvedValue({
@@ -25,6 +27,12 @@ describe("AssetsService.generateAi", () => {
     });
     storage = { put: jest.fn().mockResolvedValue({ url: "https://mock.local/k" }) };
     tagging = { tag: jest.fn() };
+    reviewService = {
+      reviewAsset: jest
+        .fn()
+        .mockResolvedValue({ recommendation: "ALLOW", dimensions: [], reason: "合规校验通过" }),
+      recommendationToStatus: jest.fn().mockReturnValue("PASSED"),
+    };
   });
 
   function makeService(): AssetsService {
@@ -53,6 +61,7 @@ describe("AssetsService.generateAi", () => {
       prisma as unknown as PrismaService,
       storage,
       tagging as unknown as AssetTaggingService,
+      reviewService as unknown as AssetReviewService,
     );
   }
 
