@@ -20,6 +20,13 @@ interface PromptItem {
   sourcePromptId: string | null;
 }
 
+interface PromptSnapshot {
+  id: string;
+  systemPrompt: string;
+  designNote: string | null;
+  createdAt: string;
+}
+
 interface PromptDrawerProps {
   open: boolean;
   onClose: () => void;
@@ -81,6 +88,7 @@ export function PromptDrawer({ open, onClose }: PromptDrawerProps) {
   };
 
   const minePerTool = mine.filter((p) => p.tool === tool);
+  const platformDefault = platform.find((p) => p.tool === tool && p.isStarter) ?? null;
 
   return (
     <Drawer open={open} onClose={onClose} title="Prompt 库">
@@ -159,9 +167,12 @@ export function PromptDrawer({ open, onClose }: PromptDrawerProps) {
               key={p.id}
               prompt={p}
               isActive={activeId === p.id}
+              platformDefault={platformDefault}
               onActivate={() => setPromptId(p.id)}
+              onRestoreDefault={(id) => setPromptId(id)}
               onDelete={() => void remove(p.id)}
               onSave={(patch) => void updateField(p.id, patch)}
+              onAfterMutation={() => void reload()}
             />
           ))}
         {tab === "mine" && minePerTool.length === 0 && !loading && (
@@ -175,19 +186,63 @@ export function PromptDrawer({ open, onClose }: PromptDrawerProps) {
 function MyPromptItem({
   prompt,
   isActive,
+  platformDefault,
   onActivate,
+  onRestoreDefault,
   onDelete,
   onSave,
+  onAfterMutation,
 }: {
   prompt: PromptItem;
   isActive: boolean;
+  platformDefault: PromptItem | null;
   onActivate: () => void;
+  onRestoreDefault: (platformId: string) => void;
   onDelete: () => void;
   onSave: (patch: { systemPrompt?: string; designNote?: string }) => void;
+  onAfterMutation: () => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [systemPrompt, setSystemPrompt] = useState(prompt.systemPrompt);
   const [designNote, setDesignNote] = useState(prompt.designNote ?? "");
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [snapshots, setSnapshots] = useState<PromptSnapshot[]>([]);
+
+  const loadHistory = async (): Promise<void> => {
+    const res = await apiFetch(`/prompts/${prompt.id}/snapshots`);
+    if (res.ok) setSnapshots((await res.json()) as PromptSnapshot[]);
+  };
+
+  /* eslint-disable react-hooks/exhaustive-deps, react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (historyOpen) void loadHistory();
+  }, [historyOpen]);
+  /* eslint-enable react-hooks/exhaustive-deps, react-hooks/set-state-in-effect */
+
+  const onRestore = async (snapId: string): Promise<void> => {
+    const res = await apiFetch(`/prompts/${prompt.id}/snapshots/${snapId}/restore`, {
+      method: "POST",
+      body: "{}",
+    });
+    if (res.ok) {
+      onAfterMutation();
+      await loadHistory();
+    }
+  };
+
+  const fmtRel = (iso: string): string => {
+    // 渲染时一次性算相对时间;Date.now 是 impure 但显示足够近似
+    // eslint-disable-next-line react-hooks/purity
+    const ms = Date.now() - new Date(iso).getTime();
+    const sec = Math.round(ms / 1000);
+    const fmt = new Intl.RelativeTimeFormat("zh-CN", { numeric: "auto" });
+    if (sec < 60) return fmt.format(-sec, "second");
+    const min = Math.round(sec / 60);
+    if (min < 60) return fmt.format(-min, "minute");
+    const hr = Math.round(min / 60);
+    if (hr < 24) return fmt.format(-hr, "hour");
+    return fmt.format(-Math.round(hr / 24), "day");
+  };
 
   return (
     <article className="rounded border border-zinc-200 dark:border-zinc-800 p-3 flex flex-col gap-2">
@@ -238,16 +293,59 @@ function MyPromptItem({
           {prompt.designNote && <p className="text-xs text-zinc-400">笔记:{prompt.designNote}</p>}
         </>
       )}
-      <div className="flex justify-end">
-        <button
-          type="button"
-          onClick={onActivate}
-          className={`rounded px-2 py-1 text-xs ${
-            isActive ? "bg-emerald-600 text-white" : "border border-zinc-300 dark:border-zinc-700"
-          }`}
-        >
-          {isActive ? "当前生效" : "设为当前生效"}
-        </button>
+      <div className="flex flex-col gap-2 border-t border-zinc-100 dark:border-zinc-800 pt-2">
+        <div className="flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => platformDefault && onRestoreDefault(platformDefault.id)}
+            disabled={!platformDefault}
+            title={platformDefault ? "切回平台默认款" : "该工具暂无平台默认款"}
+            className="text-xs rounded border border-zinc-300 dark:border-zinc-700 px-2 py-1 disabled:opacity-40"
+          >
+            恢复默认
+          </button>
+          <button
+            type="button"
+            onClick={() => setHistoryOpen((v) => !v)}
+            className="text-xs rounded border border-zinc-300 dark:border-zinc-700 px-2 py-1"
+          >
+            {historyOpen ? "历史 ▴" : "历史 ▾"}
+          </button>
+          <button
+            type="button"
+            onClick={onActivate}
+            className={`rounded px-2 py-1 text-xs ${
+              isActive ? "bg-emerald-600 text-white" : "border border-zinc-300 dark:border-zinc-700"
+            }`}
+          >
+            {isActive ? "当前生效" : "设为当前生效"}
+          </button>
+        </div>
+        {historyOpen && (
+          <ul className="flex flex-col gap-1 text-xs">
+            {snapshots.length === 0 && (
+              <li className="text-zinc-500">暂无历史快照(下次保存后产生)</li>
+            )}
+            {snapshots.map((s) => (
+              <li
+                key={s.id}
+                className="flex items-center justify-between gap-2 rounded border border-zinc-200 dark:border-zinc-800 px-2 py-1"
+              >
+                <span className="flex-1 truncate text-zinc-500">
+                  {fmtRel(s.createdAt)} · {s.systemPrompt.slice(0, 30)}
+                  {s.systemPrompt.length > 30 ? "…" : ""}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => void onRestore(s.id)}
+                  className="text-emerald-600 hover:underline"
+                >
+                  回滚
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </article>
   );
