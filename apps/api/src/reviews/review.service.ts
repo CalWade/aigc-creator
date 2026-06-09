@@ -276,7 +276,7 @@ export class ReviewService {
     try {
       raw = await this.llm.chat(
         [
-          { role: "system", content: prompt.systemPrompt },
+          { role: "system", content: `${prompt.systemPrompt}\n\n${buildPromptHints()}` },
           { role: "user", content: truncated },
         ],
         { temperature: 0.0 },

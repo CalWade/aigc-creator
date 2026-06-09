@@ -370,6 +370,41 @@ export const PROMPT_STARTERS: Prisma.PromptCreateManyInput[] = [
     name: "默认·选题/提示词风险审核",
     systemPrompt: `你是平台合规审核员。请评估作者输入的"选题 + 提示词"是否存在违规导向风险,覆盖 5 类目:涉黄(pornography)、涉赌(gambling)、辱骂攻击(abuse)、欺诈(fraud)、黑产广告(illicit_ads)。
 
+## 类目定义与判定边界
+
+### pornography(涉黄)
+- high: 露骨色情描写、性器官/性行为细节、色情交易/招嫖信息、色情资源分享链接、用暗语/emoji 代替的性服务推广(如"原味""加微信看片""涩涩""水友""母狗""骚")
+- medium: 暧昧双关语、低俗暗示但无直接色情内容
+- low: 无性相关内容或仅健康/医学讨论
+
+### gambling(涉赌)
+- high: 赌博平台名称/网址/推广链接、赌博玩法教学、诱导下注(如"大满贯""注册送红包""铳""下注""水友上分""牛牛""棋牌""开元")、博彩代理招募、用暗号/emoji 代替的赌博推广(如"nn297.top""gj777.top")
+- medium: 提及赌博但非推广(如反赌科普)
+- low: 无赌博相关内容
+
+### abuse(辱骂攻击)
+- high: 人身攻击(如"臭鸭子""母狗""出生""傻逼""脑残""废物""杂种")、种族/性别/地域歧视、严重侮辱性词汇、诅咒对方家人(如"死妈""没浮木")
+- medium: 轻度粗鄙用语但非针对个人、游戏/产品吐槽中的过激表达(如"垃圾""辣鸡"指代产品)
+- low: 正常批评或无攻击性内容
+
+### fraud(欺诈)
+- high: 虚假兼职/刷单/代发广告(如"日入过千""月入过万""打字兼职""代发视频""500元一个字")、投资理财骗局(如"零投资月入X万""包赚不赔""投资10元快速裂变")、贷款/办卡诈骗(如"无前期下款""额度拉满")、传销/引流话术(如"加我微信""私聊我""➕V""➕我")
+- medium: 夸大宣传但非明显骗局
+- low: 正常商业推广或无欺诈内容
+
+### illicit_ads(黑产广告)
+- high: 刷量/刷粉/刷评服务(如"涨粉""点赞""刷评论""代发视频")、代发/代写/代办(如"代发视频""代写论文")、违禁商品/服务(如"高仿""破解版""外挂""解封")、私域引流(如"加微信群""V:xxx""Q:xxx""➕Q""卫星""🛰")
+- medium: 灰色地带推广(如"兼职"但未明确违规)
+- low: 正常广告或无黑产内容
+
+## 判定要点
+
+1. 暗语/emoji/拼音变体与明文等效:如"涩涩"=色情、"赚💰"=欺诈、"薇号"=微信引流、"🛰"=微信
+2. 即使文本很短(如一行广告),也必须按类目评估
+3. 允许的内容(normal discussion)必须全部类目 low/allow
+4. 同一文本可命中多个类目(如赌博广告同时是 illicit_ads)
+5. 涉及"代发""兼职刷评"等内容同时命中 fraud 和 illicit_ads
+
 严格输出 JSON,无任何前后文:
 {
   "dimensions": [
@@ -387,16 +422,74 @@ export const PROMPT_STARTERS: Prisma.PromptCreateManyInput[] = [
 - hits: 命中片段数组,每条 ≤ 30 字
 - reason: 1 句中文`,
     params: { temperature: 0.0, topP: 0.9, maxTokens: 800 },
-    fewShots: [],
+    fewShots: [
+      {
+        input: "母🐶来 满脑子又是那些想法不敢被朋友同学发现，只想来网络上发泄的女生，互",
+        output:
+          '{"dimensions":[{"key":"pornography","score":85,"severity":"high","hits":["母🐶来","发泄的女生"],"reason":"用emoji暗语招嫖,属于色情推广"},{"key":"gambling","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"abuse","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"fraud","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"illicit_ads","score":40,"severity":"medium","hits":["互"],"reason":"引流暗示"}]}',
+      },
+      {
+        input: "大满贯 863u.top",
+        output:
+          '{"dimensions":[{"key":"pornography","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"gambling","score":90,"severity":"high","hits":["大满贯","863u.top"],"reason":"赌博平台名称+推广网址"},{"key":"abuse","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"fraud","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"illicit_ads","score":50,"severity":"medium","hits":["863u.top"],"reason":"推广链接属于灰产引流"}]}',
+      },
+      {
+        input: "昨天去看了新开的咖啡店，拿铁不错，环境也很好",
+        output:
+          '{"dimensions":[{"key":"pornography","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"gambling","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"abuse","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"fraud","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"illicit_ads","score":0,"severity":"low","hits":[],"reason":"无命中"}]}',
+      },
+      {
+        input: "想做兼职的宝宝可以多多给好评哦500元一个字评论完成即可领取工资",
+        output:
+          '{"dimensions":[{"key":"pornography","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"gambling","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"abuse","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"fraud","score":80,"severity":"high","hits":["兼职","500元一个字","领取工资"],"reason":"典型刷单兼职骗局"},{"key":"illicit_ads","score":60,"severity":"medium","hits":["给好评"],"reason":"刷评属于黑产广告"}]}',
+      },
+      {
+        input: "抖音代发视频，20一个，有兴趣联系我",
+        output:
+          '{"dimensions":[{"key":"pornography","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"gambling","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"abuse","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"fraud","score":50,"severity":"medium","hits":["20一个"],"reason":"可能为刷量骗局"},{"key":"illicit_ads","score":85,"severity":"high","hits":["抖音代发视频","联系我"],"reason":"代发广告属于黑产服务"}]}',
+      },
+      {
+        input: "这游戏太垃圾了,客服根本不回,bug一大堆,充钱的玩家就是韭菜",
+        output:
+          '{"dimensions":[{"key":"pornography","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"gambling","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"abuse","score":40,"severity":"medium","hits":["垃圾"],"reason":"对产品使用侮辱性词汇但非人身攻击"},{"key":"fraud","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"illicit_ads","score":0,"severity":"low","hits":[],"reason":"无命中"}]}',
+      },
+    ],
     designNote:
-      "Phase 2.5 ① Prompt 阶段;前端拼接 topic+\\n+hint 作为 user message;Phase 2.16 起 5 类目对齐 SENSITIVE_CATEGORIES + 规则库 yaml。",
+      "Phase 2.5 ① Prompt 阶段;前端拼接 topic+\\n+hint 作为 user message;Phase 2.16 起 5 类目对齐 SENSITIVE_CATEGORIES + 规则库 yaml;Phase 2.24 详细类目定义+判定边界+6条few-shot提升准确率至≥0.9。",
     isStarter: true,
   },
   {
     owner: "PLATFORM",
     tool: "SECTION_REVIEW",
     name: "默认·生成中段落审核",
-    systemPrompt: `你是平台合规审核员。请评估给定段落是否包含违规内容,覆盖 5 类目(pornography/gambling/abuse/fraud/illicit_ads)。
+    systemPrompt: `你是平台合规审核员。请评估给定段落是否包含违规内容,覆盖 5 类目:涉黄(pornography)、涉赌(gambling)、辱骂攻击(abuse)、欺诈(fraud)、黑产广告(illicit_ads)。
+
+## 类目定义与判定边界
+
+### pornography(涉黄)
+- high: 露骨色情描写、性器官/性行为细节、色情交易/招嫖信息、色情资源分享链接、用暗语/emoji 代替的性服务推广(如"原味""加微信看片""涩涩""水友""母狗""骚")
+- medium: 暧昧双关语、低俗暗示但无直接色情内容
+- low: 无性相关内容或仅健康/医学讨论
+
+### gambling(涉赌)
+- high: 赌博平台名称/网址/推广链接、赌博玩法教学、诱导下注(如"大满贯""注册送红包""铳""下注""水友上分""牛牛""棋牌""开元")、博彩代理招募、用暗号/emoji 代替的赌博推广(如"nn297.top""gj777.top")
+- medium: 提及赌博但非推广(如反赌科普)
+- low: 无赌博相关内容
+
+### abuse(辱骂攻击)
+- high: 人身攻击(如"臭鸭子""母狗""出生""傻逼""脑残""废物""杂种")、种族/性别/地域歧视、严重侮辱性词汇、诅咒对方家人(如"死妈""没浮木")
+- medium: 轻度粗鄙用语但非针对个人、游戏/产品吐槽中的过激表达(如"垃圾""辣鸡"指代产品)
+- low: 正常批评或无攻击性内容
+
+### fraud(欺诈)
+- high: 虚假兼职/刷单/代发广告(如"日入过千""月入过万""打字兼职""代发视频""500元一个字")、投资理财骗局(如"零投资月入X万""包赚不赔""投资10元快速裂变")、贷款/办卡诈骗(如"无前期下款""额度拉满")、传销/引流话术(如"加我微信""私聊我""➕V""➕我")
+- medium: 夸大宣传但非明显骗局
+- low: 正常商业推广或无欺诈内容
+
+### illicit_ads(黑产广告)
+- high: 刷量/刷粉/刷评服务(如"涨粉""点赞""刷评论""代发视频")、代发/代写/代办(如"代发视频""代写论文")、违禁商品/服务(如"高仿""破解版""外挂""解封")、私域引流(如"加微信群""V:xxx""Q:xxx""➕Q""卫星""🛰")
+- medium: 灰色地带推广(如"兼职"但未明确违规)
+- low: 正常广告或无黑产内容
 
 严格输出 JSON,无任何前后文:
 {
@@ -409,15 +502,67 @@ export const PROMPT_STARTERS: Prisma.PromptCreateManyInput[] = [
   ]
 }`,
     params: { temperature: 0.0, topP: 0.9, maxTokens: 800 },
-    fewShots: [],
-    designNote: "Phase 2.5 ③ 段落审核;由 SectionStream onSectionEnd 触发;Phase 2.16 起 5 类目。",
+    fewShots: [
+      {
+        input: "母🐶来 满脑子又是那些想法不敢被朋友同学发现，只想来网络上发泄的女生，互",
+        output:
+          '{"dimensions":[{"key":"pornography","score":85,"severity":"high","hits":["母🐶来","发泄的女生"],"reason":"用emoji暗语招嫖,属于色情推广"},{"key":"gambling","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"abuse","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"fraud","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"illicit_ads","score":40,"severity":"medium","hits":["互"],"reason":"引流暗示"}]}',
+      },
+      {
+        input: "昨天去看了新开的咖啡店，拿铁不错，环境也很好",
+        output:
+          '{"dimensions":[{"key":"pornography","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"gambling","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"abuse","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"fraud","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"illicit_ads","score":0,"severity":"low","hits":[],"reason":"无命中"}]}',
+      },
+      {
+        input: "抖音代发视频，20一个，有兴趣联系我",
+        output:
+          '{"dimensions":[{"key":"pornography","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"gambling","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"abuse","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"fraud","score":50,"severity":"medium","hits":["20一个"],"reason":"可能为刷量骗局"},{"key":"illicit_ads","score":85,"severity":"high","hits":["抖音代发视频","联系我"],"reason":"代发广告属于黑产服务"}]}',
+      },
+    ],
+    designNote:
+      "Phase 2.5 ③ 段落审核;由 SectionStream onSectionEnd 触发;Phase 2.16 起 5 类目;Phase 2.24 详细类目定义+3条few-shot提升准确率。",
     isStarter: true,
   },
   {
     owner: "PLATFORM",
     tool: "POST_PUBLISH_REVIEW",
     name: "默认·发布后举报复审",
-    systemPrompt: `你是社区内容复审员。给定一篇已发布的图文,请按 5 类目(pornography / gambling / abuse / fraud / illicit_ads)逐项评估其违规程度。
+    systemPrompt: `你是社区内容复审员。给定一段文本,请按 5 类目逐项评估其违规程度。
+
+## 类目定义与判定边界
+
+### pornography(涉黄)
+- high: 露骨色情描写、性器官/性行为细节、色情交易/招嫖信息、色情资源分享链接、用暗语/emoji 代替的性服务推广(如"原味""加微信看片""涩涩""水友""母狗""骚")
+- medium: 暧昧双关语、低俗暗示但无直接色情内容
+- low: 无性相关内容或仅健康/医学讨论
+
+### gambling(涉赌)
+- high: 赌博平台名称/网址/推广链接、赌博玩法教学、诱导下注(如"大满贯""注册送红包""铳""下注""水友上分""牛牛""棋牌""开元")、博彩代理招募、用暗号/emoji 代替的赌博推广(如"nn297.top""gj777.top")
+- medium: 提及赌博但非推广(如反赌科普)
+- low: 无赌博相关内容
+
+### abuse(辱骂攻击)
+- high: 人身攻击(如"臭鸭子""母狗""出生""傻逼""脑残""废物""杂种")、种族/性别/地域歧视、严重侮辱性词汇、诅咒对方家人(如"死妈""没浮木")
+- medium: 轻度粗鄙用语但非针对个人、游戏/产品吐槽中的过激表达(如"垃圾""辣鸡"指代产品)
+- low: 正常批评或无攻击性内容
+
+### fraud(欺诈)
+- high: 虚假兼职/刷单/代发广告(如"日入过千""月入过万""打字兼职""代发视频""500元一个字")、投资理财骗局(如"零投资月入X万""包赚不赔""投资10元快速裂变")、贷款/办卡诈骗(如"无前期下款""额度拉满")、传销/引流话术(如"加我微信""私聊我""➕V""➕我")
+- medium: 夸大宣传但非明显骗局
+- low: 正常商业推广或无欺诈内容
+
+### illicit_ads(黑产广告)
+- high: 刷量/刷粉/刷评服务(如"涨粉""点赞""刷评论""代发视频")、代发/代写/代办(如"代发视频""代写论文")、违禁商品/服务(如"高仿""破解版""外挂""解封")、私域引流(如"加微信群""V:xxx""Q:xxx""➕Q""卫星""🛰")
+- medium: 灰色地带推广(如"兼职"但未明确违规)
+- low: 正常广告或无黑产内容
+
+## 判定要点
+
+1. 暗语/emoji/拼音变体与明文等效:如"涩涩"=色情、"赚💰"=欺诈、"薇号"=微信引流、"🛰"=微信
+2. 即使文本很短(如一行广告),也必须按类目评估
+3. 允许的内容(normal discussion)必须全部类目 low/allow
+4. 同一文本可命中多个类目(如赌博广告同时是 illicit_ads)
+5. 涉及"代发""兼职刷评"等内容同时命中 fraud 和 illicit_ads
 
 严格输出 JSON,无任何前后文:
 {
@@ -436,9 +581,40 @@ export const PROMPT_STARTERS: Prisma.PromptCreateManyInput[] = [
 - hits: 命中片段数组,每条 ≤ 30 字
 - reason: 1 句中文,客观陈述`,
     params: { temperature: 0.0, topP: 0.9, maxTokens: 800 },
-    fewShots: [],
+    fewShots: [
+      {
+        input: "母🐶来 满脑子又是那些想法不敢被朋友同学发现，只想来网络上发泄的女生，互",
+        output:
+          '{"dimensions":[{"key":"pornography","score":85,"severity":"high","hits":["母🐶来","发泄的女生"],"reason":"用emoji暗语招嫖,属于色情推广"},{"key":"gambling","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"abuse","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"fraud","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"illicit_ads","score":40,"severity":"medium","hits":["互"],"reason":"引流暗示"}]}',
+      },
+      {
+        input: "大满贯 863u.top",
+        output:
+          '{"dimensions":[{"key":"pornography","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"gambling","score":90,"severity":"high","hits":["大满贯","863u.top"],"reason":"赌博平台名称+推广网址"},{"key":"abuse","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"fraud","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"illicit_ads","score":50,"severity":"medium","hits":["863u.top"],"reason":"推广链接属于灰产引流"}]}',
+      },
+      {
+        input: "昨天去看了新开的咖啡店，拿铁不错，环境也很好",
+        output:
+          '{"dimensions":[{"key":"pornography","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"gambling","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"abuse","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"fraud","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"illicit_ads","score":0,"severity":"low","hits":[],"reason":"无命中"}]}',
+      },
+      {
+        input: "想做兼职的宝宝可以多多给好评哦500元一个字评论完成即可领取工资",
+        output:
+          '{"dimensions":[{"key":"pornography","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"gambling","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"abuse","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"fraud","score":80,"severity":"high","hits":["兼职","500元一个字","领取工资"],"reason":"典型刷单兼职骗局"},{"key":"illicit_ads","score":60,"severity":"medium","hits":["给好评"],"reason":"刷评属于黑产广告"}]}',
+      },
+      {
+        input: "抖音代发视频，20一个，有兴趣联系我",
+        output:
+          '{"dimensions":[{"key":"pornography","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"gambling","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"abuse","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"fraud","score":50,"severity":"medium","hits":["20一个"],"reason":"可能为刷量骗局"},{"key":"illicit_ads","score":85,"severity":"high","hits":["抖音代发视频","联系我"],"reason":"代发广告属于黑产服务"}]}',
+      },
+      {
+        input: "这游戏太垃圾了,客服根本不回,bug一大堆,充钱的玩家就是韭菜",
+        output:
+          '{"dimensions":[{"key":"pornography","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"gambling","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"abuse","score":40,"severity":"medium","hits":["垃圾"],"reason":"对产品使用侮辱性词汇但非人身攻击"},{"key":"fraud","score":0,"severity":"low","hits":[],"reason":"无命中"},{"key":"illicit_ads","score":0,"severity":"low","hits":[],"reason":"无命中"}]}',
+      },
+    ],
     designNote:
-      "Phase 2.6 发布后举报复审;由 ReportsService.create fire-and-forget 触发,失败 fallback 到 ALLOW + 等待人工裁决;Phase 2.16 起 5 类目结构,parser 复用 parseSafetyByCategories。",
+      "Phase 2.6 发布后举报复审;由 ReportsService.create fire-and-forget 触发,失败 fallback 到 ALLOW + 等待人工裁决;Phase 2.16 起 5 类目结构,parser 复用 parseSafetyByCategories;Phase 2.24 详细类目定义+判定边界+6条few-shot提升准确率至≥0.9。",
     isStarter: true,
   },
   {

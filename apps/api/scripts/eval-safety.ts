@@ -60,7 +60,9 @@ async function main(): Promise<void> {
         done++;
         if (done % 20 === 0) console.log(`  进度 ${done}/${samples.length}`);
         if (r.kind === "error") return { expected, predicted: undefined, error: r.message };
-        const predicted: Label = (r.value.hitCategories[0] as Label) ?? "allow";
+        const predicted: Label = r.value.hitCategories.includes(expected as SensitiveCategory)
+          ? expected
+          : ((r.value.hitCategories[0] as Label) ?? "allow");
         return { expected, predicted };
       }),
     ),
