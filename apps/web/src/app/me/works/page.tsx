@@ -24,6 +24,28 @@ export default function MyWorksPage() {
   const router = useRouter();
   const [filter, setFilter] = useState<Filter>("ALL");
   const [state, setState] = useState<LoadState>({ kind: "loading" });
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  const handleEdit = async (id: string) => {
+    setEditingId(id);
+    try {
+      const res = await apiFetch(`/drafts/${id}/edit`, { method: "POST" });
+      if (res.status === 200) {
+        router.push(`/drafts/${id}`);
+        return;
+      }
+      if (res.status === 409) {
+        const body = (await res.json().catch(() => ({}))) as { message?: string };
+        window.alert(body.message ?? "当前状态不允许编辑");
+        return;
+      }
+      window.alert(`切回编辑失败 (HTTP ${res.status})`);
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : "网络错误");
+    } finally {
+      setEditingId(null);
+    }
+  };
 
   useEffect(() => {
     if (!getToken()) {
@@ -122,19 +144,32 @@ export default function MyWorksPage() {
               </div>
               <div className="mt-3 flex items-center gap-2">
                 {w.status === "PUBLISHED" && (
+                  <>
+                    <Link
+                      href={`/post/${w.id}`}
+                      className="inline-flex items-center rounded border border-zinc-200 dark:border-zinc-800 px-2.5 py-1 text-xs hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                    >
+                      查看线上
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => void handleEdit(w.id)}
+                      disabled={editingId === w.id}
+                      className="inline-flex items-center rounded border border-zinc-200 dark:border-zinc-800 px-2.5 py-1 text-xs hover:bg-zinc-50 dark:hover:bg-zinc-900 disabled:opacity-50"
+                    >
+                      继续编辑草稿
+                    </button>
+                  </>
+                )}
+                {w.status === "DRAFT" && (
                   <Link
-                    href={`/post/${w.id}`}
+                    href={`/drafts/${w.id}`}
                     className="inline-flex items-center rounded border border-zinc-200 dark:border-zinc-800 px-2.5 py-1 text-xs hover:bg-zinc-50 dark:hover:bg-zinc-900"
                   >
-                    查看
+                    继续编辑草稿
                   </Link>
                 )}
-                <Link
-                  href={`/drafts/${w.id}`}
-                  className="inline-flex items-center rounded border border-zinc-200 dark:border-zinc-800 px-2.5 py-1 text-xs hover:bg-zinc-50 dark:hover:bg-zinc-900"
-                >
-                  编辑
-                </Link>
+                {w.status === "REVIEWING" && <span className="text-xs text-zinc-500">审核中…</span>}
               </div>
             </li>
           ))}
