@@ -155,10 +155,10 @@ export class PromptsService {
         designNote: current.designNote,
       },
     });
-    // 裁剪到 3:删第 4 旧及以后(理论 update 前 ≤3,新插入后 ≤4,overflow 至多 1)
+    // 裁剪到 3:保留最新 3 条,删更旧的(理论 update 前 ≤3,新插入后 ≤4,overflow 至多 1)
     const overflow = await tx.promptSnapshot.findMany({
       where: { promptId: current.id },
-      orderBy: { createdAt: "asc" },
+      orderBy: { createdAt: "desc" },
       skip: 3,
       select: { id: true },
     });
