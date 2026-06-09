@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { DraftToolType, Prisma, Prompt } from "@prisma/client";
+import { DraftToolType, Prisma, Prompt, PromptSnapshot } from "@prisma/client";
 
 import { PrismaService } from "../prisma/prisma.service";
 import { ListPromptsQueryDto } from "./dto/list-prompts-query.dto";
@@ -173,6 +173,35 @@ export class PromptsService {
   async deleteOne(id: string, userSub: string): Promise<void> {
     await this.assertOwnPrivate(id, userSub);
     await this.prisma.prompt.delete({ where: { id } });
+  }
+
+  /** Phase 2.17:列最近 3 条快照(desc by createdAt)。仅作者本人可调。 */
+  async listSnapshots(promptId: string, userSub: string): Promise<PromptSnapshot[]> {
+    await this.assertOwnPrivate(promptId, userSub);
+    return this.prisma.promptSnapshot.findMany({
+      where: { promptId },
+      orderBy: { createdAt: "desc" },
+      take: 3,
+    });
+  }
+
+  /** Phase 2.17:用快照内容走 update 路径 — 当前状态自然入新快照。 */
+  async restoreSnapshot(promptId: string, snapId: string, userSub: string): Promise<Prompt> {
+    return this.prisma.$transaction(async (tx) => {
+      const current = await this.assertOwnPrivate(promptId, userSub, tx);
+      const snap = await tx.promptSnapshot.findFirst({
+        where: { id: snapId, promptId },
+      });
+      if (!snap) {
+        throw new NotFoundException(`Snapshot ${snapId} not found for prompt ${promptId}`);
+      }
+      return this.writeWithSnapshot(tx, current, {
+        systemPrompt: snap.systemPrompt,
+        params: snap.params as Prisma.InputJsonValue,
+        fewShots: snap.fewShots as Prisma.InputJsonValue,
+        designNote: snap.designNote,
+      });
+    });
   }
 
   /** 仅自己的 PRIVATE 才能改/删/列快照/回滚;PLATFORM 一律 403,别人 PRIVATE 也 403。 */
