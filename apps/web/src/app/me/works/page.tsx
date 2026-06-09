@@ -25,6 +25,8 @@ export default function MyWorksPage() {
   const [filter, setFilter] = useState<Filter>("ALL");
   const [state, setState] = useState<LoadState>({ kind: "loading" });
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [takingDownId, setTakingDownId] = useState<string | null>(null);
+  const [restoringId, setRestoringId] = useState<string | null>(null);
 
   const handleEdit = async (id: string) => {
     setEditingId(id);
@@ -44,6 +46,44 @@ export default function MyWorksPage() {
       window.alert(err instanceof Error ? err.message : "网络错误");
     } finally {
       setEditingId(null);
+    }
+  };
+
+  const handleTakedown = async (id: string) => {
+    if (!window.confirm("确认下线?线上读者将看不到")) return;
+    setTakingDownId(id);
+    try {
+      const res = await apiFetch(`/drafts/${id}/takedown`, {
+        method: "POST",
+        body: "{}",
+      });
+      if (res.ok) {
+        router.refresh();
+        return;
+      }
+      window.alert(`下线失败 (HTTP ${res.status})`);
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : "网络错误");
+    } finally {
+      setTakingDownId(null);
+    }
+  };
+
+  const handleRestoreFromOffline = async (id: string) => {
+    setRestoringId(id);
+    try {
+      const res = await apiFetch(`/drafts/${id}/restore-from-offline`, {
+        method: "POST",
+      });
+      if (res.ok) {
+        router.push(`/drafts/${id}`);
+        return;
+      }
+      window.alert(`恢复失败 (HTTP ${res.status})`);
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : "网络错误");
+    } finally {
+      setRestoringId(null);
     }
   };
 
@@ -159,6 +199,14 @@ export default function MyWorksPage() {
                     >
                       继续编辑草稿
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleTakedown(w.id)}
+                      disabled={takingDownId === w.id}
+                      className="inline-flex items-center rounded border border-red-300 dark:border-red-800 px-2.5 py-1 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 disabled:opacity-50"
+                    >
+                      {takingDownId === w.id ? "下线中…" : "下线"}
+                    </button>
                   </>
                 )}
                 {w.status === "DRAFT" && (
@@ -170,6 +218,16 @@ export default function MyWorksPage() {
                   </Link>
                 )}
                 {w.status === "REVIEWING" && <span className="text-xs text-zinc-500">审核中…</span>}
+                {w.status === "OFFLINE" && (
+                  <button
+                    type="button"
+                    onClick={() => void handleRestoreFromOffline(w.id)}
+                    disabled={restoringId === w.id}
+                    className="inline-flex items-center rounded border border-zinc-200 dark:border-zinc-800 px-2.5 py-1 text-xs hover:bg-zinc-50 dark:hover:bg-zinc-900 disabled:opacity-50"
+                  >
+                    {restoringId === w.id ? "恢复中…" : "重新提审"}
+                  </button>
+                )}
               </div>
             </li>
           ))}

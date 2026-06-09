@@ -218,14 +218,19 @@ export function VersionHistoryModal({
                       <span className="ml-2 text-zinc-700 dark:text-zinc-300">{selected.note}</span>
                     )}
                   </div>
-                  <button
-                    type="button"
-                    disabled={restoring}
-                    onClick={() => void handleRestore()}
-                    className="text-sm rounded border border-zinc-300 dark:border-zinc-700 px-3 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900 disabled:opacity-50"
-                  >
-                    {restoring ? "恢复中…" : "恢复为草稿"}
-                  </button>
+                  <div className="flex flex-col items-end gap-1">
+                    <button
+                      type="button"
+                      disabled={restoring}
+                      onClick={() => void handleRestore()}
+                      className="text-sm rounded border border-zinc-300 dark:border-zinc-700 px-3 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900 disabled:opacity-50"
+                    >
+                      {restoring ? "恢复中…" : "恢复为草稿"}
+                    </button>
+                    <p className="text-xs text-zinc-400 dark:text-zinc-500">
+                      回滚后将切回草稿状态,需重新点发布走预检
+                    </p>
+                  </div>
                 </div>
                 <div className="flex-1 overflow-hidden p-3">
                   <VersionDiff oldDoc={selected.snapshot} newDoc={currentBody} />
