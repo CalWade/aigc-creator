@@ -9,11 +9,58 @@ import {
   Query,
   UseGuards,
 } from "@nestjs/common";
+import { IsEnum, IsOptional, IsString, MaxLength, MinLength } from "class-validator";
 import { DraftToolType } from "@prisma/client";
 
 import { UserGuard } from "../../auth/user.guard";
 import { AdminGuard } from "../../reports/admin.guard";
 import { PromptLabService } from "./prompt-lab.service";
+
+class AddTestCaseDto {
+  @IsEnum(DraftToolType)
+  tool!: DraftToolType;
+
+  @IsString()
+  @MinLength(1)
+  @MaxLength(5000)
+  input!: string;
+
+  @IsString()
+  @MinLength(1)
+  @MaxLength(200)
+  expected!: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  category?: string;
+}
+
+class RunEvalDto {
+  @IsEnum(DraftToolType)
+  tool!: DraftToolType;
+
+  @IsString()
+  @MinLength(1)
+  candidatePromptId!: string;
+}
+
+class PromoteDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  note?: string;
+}
+
+class RollbackDto {
+  @IsEnum(DraftToolType)
+  tool!: DraftToolType;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  note?: string;
+}
 
 @Controller("admin/prompt-lab")
 @UseGuards(UserGuard, AdminGuard)
@@ -22,10 +69,8 @@ export class PromptLabController {
 
   @Post("test-cases")
   @HttpCode(HttpStatus.CREATED)
-  addTestCase(
-    @Body() body: { tool: DraftToolType; input: string; expected: string; category?: string },
-  ) {
-    return this.service.addTestCase(body.tool, body.input, body.expected, body.category);
+  addTestCase(@Body() dto: AddTestCaseDto) {
+    return this.service.addTestCase(dto.tool, dto.input, dto.expected, dto.category);
   }
 
   @Get("test-cases")
@@ -43,8 +88,8 @@ export class PromptLabController {
 
   @Post("eval-runs")
   @HttpCode(HttpStatus.OK)
-  runEval(@Body() body: { tool: DraftToolType; candidatePromptId: string }) {
-    return this.service.runEval(body.tool, body.candidatePromptId);
+  runEval(@Body() dto: RunEvalDto) {
+    return this.service.runEval(dto.tool, dto.candidatePromptId);
   }
 
   @Get("eval-runs")
@@ -59,13 +104,13 @@ export class PromptLabController {
 
   @Post("eval-runs/:id/promote")
   @HttpCode(HttpStatus.OK)
-  promoteToLive(@Param("id") id: string, @Body() body: { note?: string }) {
-    return this.service.promoteToLive(id, "admin", body.note);
+  promoteToLive(@Param("id") id: string, @Body() dto: PromoteDto) {
+    return this.service.promoteToLive(id, "admin", dto.note);
   }
 
   @Post("rollback")
   @HttpCode(HttpStatus.OK)
-  rollback(@Body() body: { tool: DraftToolType; note?: string }) {
-    return this.service.rollback(body.tool, "admin", body.note);
+  rollback(@Body() dto: RollbackDto) {
+    return this.service.rollback(dto.tool, "admin", dto.note);
   }
 }

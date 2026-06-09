@@ -195,6 +195,17 @@ export class PromptLabService {
       throw new NotFoundException(`No live prompt for tool ${evalRun.tool}`);
     }
 
+    // 保存上线前快照(用于回滚)
+    const snapshot = await this.prisma.promptSnapshot.create({
+      data: {
+        promptId: current.id,
+        systemPrompt: current.systemPrompt,
+        params: current.params as Prisma.InputJsonValue,
+        fewShots: current.fewShots as Prisma.InputJsonValue,
+        designNote: current.designNote,
+      },
+    });
+
     // 把候选 prompt 内容写入当前线上 prompt
     await this.prisma.prompt.update({
       where: { id: current.id },
@@ -206,12 +217,12 @@ export class PromptLabService {
       },
     });
 
-    // 记录 action
+    // 记录 action,fromPromptId 指向快照 ID(回滚用)
     const action = await this.prisma.promptLabAction.create({
       data: {
         tool: evalRun.tool,
         action: "promote",
-        fromPromptId: current.id,
+        fromPromptId: snapshot.id,
         toPromptId: candidate.id,
         evalRunId: evalRun.id,
         note,
@@ -249,22 +260,22 @@ export class PromptLabService {
       throw new NotFoundException(`No live prompt for tool ${tool}`);
     }
 
-    // fromPrompt:上线前的版本(回滚目标)
-    const fromPrompt = await this.prisma.prompt.findUnique({
+    // fromPromptId 现在指向 promote 时保存的快照
+    const snapshot = await this.prisma.promptSnapshot.findUnique({
       where: { id: lastPromote.fromPromptId },
     });
-    if (!fromPrompt) {
-      throw new NotFoundException(`Rollback target prompt ${lastPromote.fromPromptId} not found`);
+    if (!snapshot) {
+      throw new NotFoundException(`Rollback snapshot ${lastPromote.fromPromptId} not found`);
     }
 
-    // 把 fromPrompt 内容写回当前线上 prompt
+    // 把快照内容写回当前线上 prompt
     await this.prisma.prompt.update({
       where: { id: current.id },
       data: {
-        systemPrompt: fromPrompt.systemPrompt,
-        params: fromPrompt.params as Prisma.InputJsonValue,
-        fewShots: fromPrompt.fewShots as unknown as Prisma.InputJsonValue,
-        designNote: fromPrompt.designNote,
+        systemPrompt: snapshot.systemPrompt,
+        params: snapshot.params as Prisma.InputJsonValue,
+        fewShots: snapshot.fewShots as unknown as Prisma.InputJsonValue,
+        designNote: snapshot.designNote,
       },
     });
 
@@ -274,14 +285,14 @@ export class PromptLabService {
         tool,
         action: "rollback",
         fromPromptId: current.id,
-        toPromptId: fromPrompt.id,
+        toPromptId: snapshot.id,
         note,
         operatedBy,
       },
     });
 
     this.logger.log(
-      `rollback: tool=${tool} from=${current.id} to=${fromPrompt.id} by=${operatedBy}`,
+      `rollback: tool=${tool} from=${current.id} to snapshot=${snapshot.id} by=${operatedBy}`,
     );
 
     return action;

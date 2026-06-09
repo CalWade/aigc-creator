@@ -148,7 +148,13 @@ describe("Phase 2.23 — /admin/prompt-lab (e2e)", () => {
     expect(typeof comparison.accuracyDelta).toBe("number");
   });
 
-  it("POST promote → 线上 prompt 内容更新", async () => {
+  it("POST promote → 线上 prompt 内容更新 + rollback 恢复原始内容", async () => {
+    // 记录 promote 前的 systemPrompt
+    const liveBefore = await prisma.prompt.findFirst({
+      where: { owner: "PLATFORM", tool: "SAFETY_REVIEW", isStarter: true },
+    });
+    const originalSystemPrompt = liveBefore!.systemPrompt;
+
     const evalRunsRes = await request(app.getHttpServer())
       .get("/admin/prompt-lab/eval-runs?tool=SAFETY_REVIEW&limit=1")
       .set("Authorization", `Bearer ${adminToken}`)
@@ -173,25 +179,22 @@ describe("Phase 2.23 — /admin/prompt-lab (e2e)", () => {
     });
     expect(dbAction).toBeTruthy();
     expect(dbAction!.note).toBe("e2e promote test");
-  });
 
-  it("POST rollback → 回到之前版本", async () => {
+    // rollback
     const rollbackRes = await request(app.getHttpServer())
       .post("/admin/prompt-lab/rollback")
       .set("Authorization", `Bearer ${adminToken}`)
       .send({ tool: "SAFETY_REVIEW", note: "e2e rollback test" })
       .expect(200);
 
-    const action = rollbackRes.body as ActionResponse;
-    expect(action.action).toBe("rollback");
-    expect(action.tool).toBe("SAFETY_REVIEW");
+    const rollbackAction = rollbackRes.body as ActionResponse;
+    expect(rollbackAction.action).toBe("rollback");
 
-    // verify action recorded
-    const dbAction = await prisma.promptLabAction.findFirst({
-      where: { action: "rollback", tool: "SAFETY_REVIEW" },
+    // 验证内容已恢复到 promote 前的原始值
+    const liveAfter = await prisma.prompt.findFirst({
+      where: { owner: "PLATFORM", tool: "SAFETY_REVIEW", isStarter: true },
     });
-    expect(dbAction).toBeTruthy();
-    expect(dbAction!.note).toBe("e2e rollback test");
+    expect(liveAfter!.systemPrompt).toBe(originalSystemPrompt);
   });
 
   it("非 admin → 403", async () => {
@@ -200,5 +203,19 @@ describe("Phase 2.23 — /admin/prompt-lab (e2e)", () => {
       .get("/admin/prompt-lab/test-cases")
       .set("Authorization", `Bearer ${demoToken}`)
       .expect(403);
+  });
+
+  it("无效输入 → 400", async () => {
+    await request(app.getHttpServer())
+      .post("/admin/prompt-lab/test-cases")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({ tool: "INVALID_TOOL", input: "x", expected: "low" })
+      .expect(400);
+
+    await request(app.getHttpServer())
+      .post("/admin/prompt-lab/test-cases")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .send({ input: "x" })
+      .expect(400);
   });
 });

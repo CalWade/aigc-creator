@@ -64,6 +64,17 @@ function makePrisma() {
       findFirst: jest.fn().mockResolvedValue(null),
       update: jest.fn().mockResolvedValue({}),
     },
+    promptSnapshot: {
+      create: jest.fn().mockResolvedValue({
+        id: "snap1",
+        promptId: "p1",
+        systemPrompt: "old",
+        params: {},
+        fewShots: [],
+        designNote: null,
+      }),
+      findUnique: jest.fn().mockResolvedValue(null),
+    },
   };
 }
 
@@ -228,10 +239,19 @@ describe("PromptLabService", () => {
         accuracy: 0.8,
       }); // previous
       prisma.prompt.findUnique.mockResolvedValue(candidatePrompt);
+      prisma.promptSnapshot.create.mockResolvedValue({
+        id: "snap1",
+        promptId: "p1",
+        systemPrompt: "old",
+        params: {},
+        fewShots: [],
+        designNote: null,
+      });
 
       const result = await service.promoteToLive("er1", "admin");
       expect(result).toEqual(expect.objectContaining({ action: "promote" }));
       expect(prisma.prompt.update).toHaveBeenCalled();
+      expect(prisma.promptSnapshot.create).toHaveBeenCalled();
     });
 
     it("accuracy 回退 → 拒绝上线", async () => {
@@ -263,20 +283,20 @@ describe("PromptLabService", () => {
         id: "la1",
         tool: "SAFETY_REVIEW" as const,
         action: "promote",
-        fromPromptId: "p1",
+        fromPromptId: "snap1",
         toPromptId: "p2",
       };
       const currentPrompt = {
         id: "p1",
         name: "默认·安全审核",
-        systemPrompt: "current",
+        systemPrompt: "candidate",
         params: {},
         fewShots: [],
         designNote: null,
       };
-      const fromPrompt = {
-        id: "p1",
-        name: "默认·安全审核",
+      const snapshot = {
+        id: "snap1",
+        promptId: "p1",
         systemPrompt: "original",
         params: {},
         fewShots: [],
@@ -285,15 +305,15 @@ describe("PromptLabService", () => {
 
       prisma.promptLabAction.findFirst.mockResolvedValue(lastPromote);
       prisma.prompt.findFirst.mockResolvedValue(currentPrompt);
-      prisma.prompt.findUnique.mockResolvedValue(fromPrompt);
+      prisma.promptSnapshot.findUnique.mockResolvedValue(snapshot);
 
       const result = await service.rollback("SAFETY_REVIEW", "admin");
       expect(result).toEqual(expect.objectContaining({ action: "rollback" }));
-      const updateCall = prisma.prompt.update.mock.calls[0] as [
+      const updateCall = prisma.prompt.update.mock.calls as [
         { where: { id: string }; data: { systemPrompt: string } },
-      ];
-      expect(updateCall[0].where.id).toBe("p1");
-      expect(updateCall[0].data.systemPrompt).toBe("original");
+      ][];
+      expect(updateCall[0][0].where.id).toBe("p1");
+      expect(updateCall[0][0].data.systemPrompt).toBe("original");
     });
   });
 });
