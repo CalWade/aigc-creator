@@ -58,6 +58,7 @@ enum DraftToolType {
   SECTION_REVIEW
   POST_PUBLISH_REVIEW
   SAFE_REWRITE
+  IMAGE_REVIEW
 }
 
 enum ReportCategory {
@@ -94,6 +95,13 @@ enum RuleRecheckRunStatus {
   FAILED
 }
 
+enum AssetReviewStatus {
+  PENDING
+  PASSED
+  WARNED
+  BLOCKED
+}
+
 model User {
   id        String   @id @default(cuid())
   handle    String   @unique
@@ -118,6 +126,8 @@ model Asset {
   aiPrompt    String?  @db.Text
   sceneTags   String[] @default([])
   subjectTags String[] @default([])
+  reviewStatus AssetReviewStatus @default(PENDING)
+  reviewNote  String?  @db.Text
   createdAt   DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
