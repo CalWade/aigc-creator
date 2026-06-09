@@ -15,6 +15,7 @@
 import { PrismaClient } from "@prisma/client";
 
 import { DEMO_DRAFTS } from "./drafts";
+import { DEMO_NOTIFICATIONS } from "./notifications";
 import { PROMPT_STARTERS } from "./prompts";
 import { PROMPT_TEST_CASES } from "./prompt-test-cases";
 import { applyReportFixtures, DEMO_REPORTS } from "./reports";
@@ -25,6 +26,7 @@ export {
   ADMIN_USER_ID,
   DEMO_AUTHOR_ID,
   DEMO_DRAFTS,
+  DEMO_NOTIFICATIONS,
   DEMO_REPORTS,
   DEMO_USERS,
   PROMPT_STARTERS,
@@ -38,6 +40,7 @@ export interface FixtureSummary {
   drafts: number;
   reviews: number;
   reports: number;
+  notifications: number;
 }
 
 export async function cleanupAllFixtures(prisma: PrismaClient): Promise<void> {
@@ -48,6 +51,7 @@ export async function cleanupAllFixtures(prisma: PrismaClient): Promise<void> {
   await prisma.promptTestCase.deleteMany();
   await prisma.sampleAudit.deleteMany();
   await prisma.ruleRecheckRun.deleteMany();
+  await prisma.notification.deleteMany();
   await prisma.report.deleteMany();
   await prisma.review.deleteMany();
   await prisma.draftVersion.deleteMany();
@@ -67,6 +71,7 @@ export async function applyAllFixtures(prisma: PrismaClient): Promise<FixtureSum
   const drafts = await prisma.draft.createMany({ data: DEMO_DRAFTS });
   const reviewCount = await applyReviews(prisma);
   const reportCount = await applyReportFixtures(prisma);
+  const notifications = await prisma.notification.createMany({ data: DEMO_NOTIFICATIONS });
 
   return {
     users: users.count,
@@ -75,5 +80,6 @@ export async function applyAllFixtures(prisma: PrismaClient): Promise<FixtureSum
     drafts: drafts.count,
     reviews: reviewCount,
     reports: reportCount,
+    notifications: notifications.count,
   };
 }

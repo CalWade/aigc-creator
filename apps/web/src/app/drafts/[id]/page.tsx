@@ -1,6 +1,13 @@
 import { DraftEditor } from "@/components/draft-editor";
 
-export default async function DraftDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function DraftDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ tool?: string }>;
+}) {
   const { id } = await params;
-  return <DraftEditor id={id} />;
+  const { tool } = await searchParams;
+  return <DraftEditor id={id} initialTool={tool} />;
 }

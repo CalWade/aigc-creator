@@ -14,6 +14,7 @@ import { PrismaKnownRequestFilter } from "./common/filters/prisma-known-request.
 import { DraftsModule } from "./drafts/drafts.module";
 import { FeedModule } from "./feed/feed.module";
 import { LlmModule } from "./llm/llm.module";
+import { NotificationsModule } from "./notifications/notifications.module";
 import { PrismaModule } from "./prisma/prisma.module";
 import { PromptsModule } from "./prompts/prompts.module";
 import { ReportsModule } from "./reports/reports.module";
@@ -35,6 +36,7 @@ import { ReviewsModule } from "./reviews/reviews.module";
     FeedModule,
     AssetsModule,
     AnalyticsModule,
+    NotificationsModule,
     AdminModule,
   ],
   controllers: [AppController],

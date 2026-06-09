@@ -9,6 +9,7 @@ import { Draft, Prisma } from "@prisma/client";
 import { VERSION_CONFLICT } from "@bytedance-aigc/shared";
 
 import { PrismaService } from "../prisma/prisma.service";
+import { NotificationsService } from "../notifications/notifications.service";
 import { CreateDraftDto } from "./dto/create-draft.dto";
 import { UpdateDraftDto } from "./dto/update-draft.dto";
 import { VersionsService } from "./versions/versions.service";
@@ -20,6 +21,7 @@ export class DraftsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly versions: VersionsService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async create(authorId: string, dto: CreateDraftDto): Promise<Draft> {
@@ -241,6 +243,19 @@ export class DraftsService {
         },
       });
     });
+
+    // WHY: 发布通过后通知作者,与「我的创作」数据回流构成反馈环
+    try {
+      await this.notifications.create({
+        userId: authorId,
+        type: "PUBLISH_APPROVED",
+        title: "发布通过",
+        body: `《${draft.title}》已成功发布`,
+        draftId: id,
+      });
+    } catch (err) {
+      this.logger.error(`publish notification failed for draft ${id}`, err as Error);
+    }
 
     return { id: updated.id, publishedAt: updated.publishedAt as Date };
   }

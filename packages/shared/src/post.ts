@@ -53,6 +53,21 @@ export const WINDOW_HOURS: Record<FeedMode, number> = {
   best: 72,
 };
 
+export interface MeWorksItemStat {
+  impression: number;
+  click: number;
+  dwellUnit: number;
+  like: number;
+  collect: number;
+  share: number;
+}
+
+export interface MeWorksItemDiagnosis {
+  title: string;
+  description: string;
+  toolAction: string;
+}
+
 export interface MeWorksItem {
   id: string;
   title: string;
@@ -64,4 +79,6 @@ export interface MeWorksItem {
   recommendation: "ALLOW" | "WARN" | "BLOCK" | null;
   offlineReason: string | null;
   offlineAt: string | null;
+  stat?: MeWorksItemStat | null;
+  diagnosis?: MeWorksItemDiagnosis | null;
 }

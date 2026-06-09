@@ -16,6 +16,7 @@ import { SAFETY_KEYS, QUALITY_KEYS, SENSITIVE_CATEGORIES } from "@bytedance-aigc
 import { LlmClient } from "../llm/llm.client";
 import { PrismaService } from "../prisma/prisma.service";
 import { PromptsService } from "../prompts/prompts.service";
+import { NotificationsService } from "../notifications/notifications.service";
 import { DraftsService } from "../drafts/drafts.service";
 import { buildPromptHints } from "./rule-loader";
 import { StreamSessionStore } from "./stream-session";
@@ -32,6 +33,7 @@ export class ReviewService {
     private readonly llm: LlmClient,
     private readonly prompts: PromptsService,
     private readonly streamSessions: StreamSessionStore,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async preflight(draftId: string, userSub: string): Promise<PreflightResponse> {
@@ -96,6 +98,21 @@ export class ReviewService {
       await tx.draft.update({ where: { id: draftId }, data: { lastReviewId: created.id } });
       return created;
     });
+
+    // WHY: 预检 BLOCK 时通知作者,及时修改
+    if (recommendation === "BLOCK") {
+      try {
+        await this.notifications.create({
+          userId: userSub,
+          type: "PUBLISH_REJECTED",
+          title: "发布驳回",
+          body: `《${draft.title}》预检未通过,请修改后重试`,
+          draftId,
+        });
+      } catch (err) {
+        this.logger.error(`preflight BLOCK notification failed for draft ${draftId}`, err as Error);
+      }
+    }
 
     return { review: this.toDto(review), recommendation };
   }

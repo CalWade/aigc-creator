@@ -168,22 +168,39 @@ export class FeedService {
         offlineReason: true,
         offlineAt: true,
         lastReview: { select: { quality: true, recommendation: true } },
+        stat: {
+          select: {
+            impression: true,
+            click: true,
+            dwellUnit: true,
+            like: true,
+            collect: true,
+            share: true,
+          },
+        },
       },
       orderBy: { updatedAt: "desc" },
       take: limit,
     });
-    return drafts.map((d) => ({
-      id: d.id,
-      title: d.title,
-      status: d.status,
-      mode: d.mode,
-      publishedAt: d.publishedAt?.toISOString() ?? null,
-      updatedAt: d.updatedAt.toISOString(),
-      qualityOverall: readQualityOverall(d.lastReview?.quality),
-      recommendation: d.lastReview?.recommendation ?? null,
-      offlineReason: d.offlineReason ?? null,
-      offlineAt: d.offlineAt?.toISOString() ?? null,
-    }));
+    return drafts.map((d) => {
+      const qualityOverall = readQualityOverall(d.lastReview?.quality);
+      const stat = d.stat ?? null;
+      const diagnosis = diagnoseWork(stat, qualityOverall);
+      return {
+        id: d.id,
+        title: d.title,
+        status: d.status,
+        mode: d.mode,
+        publishedAt: d.publishedAt?.toISOString() ?? null,
+        updatedAt: d.updatedAt.toISOString(),
+        qualityOverall,
+        recommendation: d.lastReview?.recommendation ?? null,
+        offlineReason: d.offlineReason ?? null,
+        offlineAt: d.offlineAt?.toISOString() ?? null,
+        stat,
+        diagnosis,
+      };
+    });
   }
 }
 
@@ -239,4 +256,72 @@ function collectText(node: unknown): string {
   if (n.type === "text" && typeof n.text === "string") return n.text;
   if (Array.isArray(n.content)) return n.content.map(collectText).join("");
   return "";
+}
+
+// ── Phase 2.25 数据回流诊断 ──
+
+interface PostStatRow {
+  impression: number;
+  click: number;
+  dwellUnit: number;
+  like: number;
+  collect: number;
+  share: number;
+}
+
+interface DiagnosisResult {
+  title: string;
+  description: string;
+  toolAction: string;
+}
+
+/**
+ * PRD §5.5 数据回流诊断:根据 PostStat 数据 + 质量分,给出行动建议。
+ * 优先级:低阅读+高质量 > 高阅读+低完读 > 低阅读+高完读 > 低互动
+ * 本期为硬编码阈值,未来可切换到 DATA_DIAGNOSIS Prompt LLM 诊断。
+ */
+export function diagnoseWork(
+  stat: PostStatRow | null,
+  qualityOverall: number | null,
+): DiagnosisResult | null {
+  if (!stat || qualityOverall === null || qualityOverall === 0) return null;
+
+  const impression = stat.impression;
+  const completionRate = stat.click > 0 ? stat.dwellUnit / stat.click : 0;
+  const engagementRate = stat.click > 0 ? (stat.like + stat.collect + stat.share) / stat.click : 0;
+
+  const isLowImpression = impression < 100;
+  const isHighQuality = qualityOverall >= 70;
+  const isLowCompletion = completionRate < 0.3;
+  const isLowEngagement = engagementRate < 0.1;
+
+  if (isLowImpression && isHighQuality) {
+    return {
+      title: "好文章被埋了",
+      description: "质量分高但阅读量低，换个标题可能让更多人看到",
+      toolAction: "HEADLINE_NEW",
+    };
+  }
+  if (impression >= 100 && isLowCompletion) {
+    return {
+      title: "标题吸引但留不住",
+      description: "读者点进来但没看完，优化开头前 3 句提升留存",
+      toolAction: "REWRITE_OPENING",
+    };
+  }
+  if (isLowImpression && completionRate >= 0.3) {
+    return {
+      title: "写得好但话题冷",
+      description: "完读率高但曝光少，加热门话题标签提升发现概率",
+      toolAction: "ADD_TOPIC",
+    };
+  }
+  if (isLowEngagement) {
+    return {
+      title: "缺少互动钩子",
+      description: "读者看完没互动，补充互动引导提升传播",
+      toolAction: "ADD_TOPIC",
+    };
+  }
+  return null;
 }

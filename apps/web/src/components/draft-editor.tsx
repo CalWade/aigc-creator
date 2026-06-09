@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { JSONContent, Editor } from "@tiptap/react";
+import { DRAFT_TOOL_TYPES } from "@bytedance-aigc/shared";
 import type { Candidate, DraftToolType, OutlineItem } from "@bytedance-aigc/shared";
 
 import { apiFetch, clearToken, getToken } from "@/lib/auth";
@@ -57,7 +58,7 @@ interface ToolPanel {
   candidates: Candidate[];
 }
 
-export function DraftEditor({ id }: { id: string }) {
+export function DraftEditor({ id, initialTool }: { id: string; initialTool?: string }) {
   const router = useRouter();
   const [state, setState] = useState<State>({ kind: "loading" });
   const [title, setTitle] = useState("");
@@ -74,12 +75,25 @@ export function DraftEditor({ id }: { id: string }) {
   const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
   const [namingNote, setNamingNote] = useState(false);
 
+  // Phase 2.25: 从 URL ?tool=HEADLINE_NEW 自动打开 Prompt 库 + 选中对应工具
+  const [toolAutoOpenDone, setToolAutoOpenDone] = useState(false);
+
   const [toolBusy, setToolBusy] = useState<DraftToolType | null>(null);
   const [toolError, setToolError] = useState<string | null>(null);
   const [toolPanel, setToolPanel] = useState<ToolPanel | null>(null);
 
   // T8: 多 Tab 抢占检测 — otherTabExists=true 时编辑器切只读 + 显 ReadonlyBanner
   const { otherTabExists } = useDraftPresence(id);
+
+  // Phase 2.25: URL ?tool=HEADLINE_NEW → 自动打开 Prompt 库,选中对应工具
+  useEffect(() => {
+    if (toolAutoOpenDone || !initialTool) return;
+    // DRAFT_TOOL_TYPES 包含所有合法值;不合法的 tool 参数忽略
+    const validTools: readonly string[] = DRAFT_TOOL_TYPES;
+    if (!validTools.includes(initialTool)) return;
+    setPromptDrawerOpen(true);
+    setToolAutoOpenDone(true);
+  }, [initialTool, toolAutoOpenDone]);
 
   // T8: 联动 TipTap editable 状态 — 有他 Tab 时禁编辑,独占时恢复
   useEffect(() => {
@@ -299,6 +313,9 @@ export function DraftEditor({ id }: { id: string }) {
           case "SAFE_REWRITE":
             // SAFE_REWRITE 不通过 BubbleMenu 工具分发,走 /reviews/safe-rewrite。
             // 这里走到属调用方误用,直接 return 不发请求。
+            return;
+          case "DATA_DIAGNOSIS":
+            // DATA_DIAGNOSIS 是平台保留诊断工具,不通过 BubbleMenu 分发。
             return;
         }
         // 当前生效 promptId(以 REWRITE_FLUENT 为例 — 不同工具各自记忆,这里取

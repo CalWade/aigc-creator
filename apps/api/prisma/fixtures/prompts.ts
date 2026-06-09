@@ -675,4 +675,24 @@ export const PROMPT_STARTERS: Prisma.PromptCreateManyInput[] = [
       "Phase 2.22 §4.6 配图诊断 Prompt;4 维度(face/watermark/sensitive/ai_unmarked);文本启发式(无真视觉 API,Phase 2.28 收尾);平台保留(不进 PromptsService.list,不可复制为私人副本)。",
     isStarter: true,
   },
+  {
+    owner: "PLATFORM",
+    tool: "DATA_DIAGNOSIS",
+    name: "默认·数据回流诊断",
+    systemPrompt: `你是数据分析顾问。根据一篇文章的阅读数据和质量分,诊断问题并推荐行动方向。
+
+输入格式:JSON { "impression": 数字, "click": 数字, "dwellUnit": 数字, "like": 数字, "collect": 数字, "share": 数字, "qualityOverall": 数字 }
+
+输出 JSON:
+{
+  "diagnosis": "一句话诊断",
+  "recommendedAction": "HEADLINE_NEW | REWRITE_OPENING | ADD_TOPIC | NONE",
+  "reason": "1-2句解释为什么推荐这个行动"
+}`,
+    params: { temperature: 0.0, topP: 0.9, maxTokens: 200 },
+    fewShots: [],
+    designNote:
+      "Phase 2.25 PRD §5.5 数据回流诊断 Prompt;本期诊断规则为硬编码阈值,此 Prompt 留作未来 LLM 诊断升级;平台保留(作者不可见不可改)。",
+    isStarter: true,
+  },
 ];

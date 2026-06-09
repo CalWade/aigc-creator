@@ -10,9 +10,10 @@ import { PromptLabController } from "./prompt-lab/prompt-lab.controller";
 import { PromptLabService } from "./prompt-lab/prompt-lab.service";
 import { ReviewsModule } from "../reviews/reviews.module";
 import { PromptsModule } from "../prompts/prompts.module";
+import { NotificationsModule } from "../notifications/notifications.module";
 
 @Module({
-  imports: [ReviewsModule, PromptsModule],
+  imports: [ReviewsModule, PromptsModule, NotificationsModule],
   controllers: [
     AdminContentController,
     SampleAuditController,

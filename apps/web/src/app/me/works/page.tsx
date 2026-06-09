@@ -183,6 +183,25 @@ export default function MyWorksPage() {
                 </div>
               </div>
               <div className="mt-3 flex items-center gap-2">
+                {w.status === "PUBLISHED" && w.diagnosis && (
+                  <div className="w-full rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-200 dark:border-blue-800 px-4 py-3 flex items-center justify-between gap-4 mb-1">
+                    <div className="flex flex-col gap-0.5 min-w-0">
+                      <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                        {w.diagnosis.title}
+                      </span>
+                      <span className="text-xs text-blue-600 dark:text-blue-300">
+                        {w.diagnosis.description}
+                      </span>
+                    </div>
+                    <Link
+                      href={`/drafts/${w.id}?tool=${w.diagnosis.toolAction}`}
+                      className="shrink-0 inline-flex items-center gap-1 rounded-md bg-blue-600 text-white px-3 py-1.5 text-xs font-medium hover:bg-blue-700 transition-colors"
+                    >
+                      去优化
+                      <span aria-hidden="true">&rarr;</span>
+                    </Link>
+                  </div>
+                )}
                 {w.status === "PUBLISHED" && (
                   <>
                     <Link

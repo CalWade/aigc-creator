@@ -59,6 +59,7 @@ enum DraftToolType {
   POST_PUBLISH_REVIEW
   SAFE_REWRITE
   IMAGE_REVIEW
+  DATA_DIAGNOSIS
 }
 
 enum ReportCategory {
@@ -107,10 +108,11 @@ model User {
   handle    String   @unique
   createdAt DateTime @default(now())
 
-  drafts  Draft[]
-  prompts Prompt[] @relation("UserPrompts")
-  reports Report[] @relation("UserReports")
-  assets  Asset[]
+  drafts        Draft[]
+  prompts       Prompt[] @relation("UserPrompts")
+  reports       Report[] @relation("UserReports")
+  assets        Asset[]
+  notifications Notification[]
 
   @@map("users")
 }
@@ -161,6 +163,7 @@ model Draft {
   stat       PostStat?
   reports    Report[]
   sampleAudits SampleAudit[]
+  notifications Notification[]
 
   @@index([authorId])
   @@index([status])
@@ -352,6 +355,32 @@ model PromptLabAction {
 
   @@index([tool, createdAt(sort: Desc)])
   @@map("prompt_lab_actions")
+}
+
+enum NotificationType {
+  PUBLISH_APPROVED
+  PUBLISH_REJECTED
+  POST_TAKEN_DOWN
+  HOT_RANK
+  MILESTONE_VIEWS
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String           @db.Text
+  read      Boolean          @default(false)
+  draftId   String?
+  createdAt DateTime         @default(now())
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  draft Draft? @relation(fields: [draftId], references: [id], onDelete: SetNull)
+
+  @@index([userId, read])
+  @@index([userId, createdAt])
+  @@map("notifications")
 }
 
 model RuleRecheckRun {

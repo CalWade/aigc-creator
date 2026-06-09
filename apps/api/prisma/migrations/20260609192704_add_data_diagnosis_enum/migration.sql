@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "DraftToolType" ADD VALUE 'DATA_DIAGNOSIS';

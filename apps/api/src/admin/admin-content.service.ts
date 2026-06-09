@@ -1,6 +1,7 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import type { Draft, Review } from "@prisma/client";
 
+import { NotificationsService } from "../notifications/notifications.service";
 import { PrismaService } from "../prisma/prisma.service";
 
 const DEFAULT_REASON = "平台审核下线";
@@ -22,7 +23,12 @@ export interface AdminPostView {
 
 @Injectable()
 export class AdminContentService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(AdminContentService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   /**
    * 直接下线作品(不经过举报)。已 OFFLINE 拒绝;PUBLISHED 才允许。
@@ -31,7 +37,7 @@ export class AdminContentService {
   async offlineDraft(draftId: string, reason: string | undefined): Promise<{ ok: true }> {
     const draft = await this.prisma.draft.findUnique({
       where: { id: draftId },
-      select: { id: true, status: true },
+      select: { id: true, status: true, authorId: true, title: true },
     });
     if (!draft) {
       throw new NotFoundException({ code: "DRAFT_NOT_FOUND", message: "作品不存在" });
@@ -56,6 +62,20 @@ export class AdminContentService {
         offlineReason: (reason?.trim() || DEFAULT_REASON).slice(0, 200),
       },
     });
+
+    // WHY: 下线后通知作者,形成审核反馈环
+    try {
+      await this.notifications.create({
+        userId: draft.authorId,
+        type: "POST_TAKEN_DOWN",
+        title: "作品被下线",
+        body: `《${draft.title}》因${reason?.trim() || DEFAULT_REASON}被下线`,
+        draftId,
+      });
+    } catch (err) {
+      this.logger.error(`offline notification failed for draft ${draftId}`, err as Error);
+    }
+
     return { ok: true };
   }
 

@@ -79,6 +79,8 @@ function narrowInput(tool: DraftToolType, input: Record<string, unknown>): Narro
       throw new BadRequestException(
         "SAFE_REWRITE 不通过 BubbleMenu 工具分发,请使用 /reviews/safe-rewrite",
       );
+    case "DATA_DIAGNOSIS":
+      throw new BadRequestException("DATA_DIAGNOSIS 是平台保留诊断工具,不通过 BubbleMenu 工具分发");
     default: {
       // exhaustive guard
       const _never: never = tool;
