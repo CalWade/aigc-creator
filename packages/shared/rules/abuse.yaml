@@ -1,0 +1,21 @@
+- rule_id: SEC-ABUSE-001
+  category: abuse
+  severity: high
+  description: 直接人身攻击 / 恶意贬低他人(种族 / 性别 / 地域 / 身体特征)
+  prompt_hint: |
+    若文本含针对个人或群体的辱骂、贬低、侮辱性表述(如骂街、地域歧视、性别攻击),判 high。
+  examples_positive:
+    - "你这种人就是社会渣滓"
+    - "XX 地方的人都是骗子"
+  examples_negative:
+    - "这个观点我不认同,但理解你的立场"
+- rule_id: SEC-ABUSE-002
+  category: abuse
+  severity: medium
+  description: 粗鄙脏话 / 攻击性词汇(非针对特定个人)
+  prompt_hint: |
+    若文本含明显脏话或攻击性词汇,判 medium。
+  examples_positive:
+    - "草泥马"
+  examples_negative:
+    - "我去,这也行?"

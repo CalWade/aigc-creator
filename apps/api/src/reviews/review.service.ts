@@ -133,7 +133,7 @@ export class ReviewService {
       };
     }
 
-    const safety = this.parseSafetyOf7Cats(raw);
+    const safety = this.parseSafetyByCategories(raw);
     const hitCategories: SensitiveCategory[] = safety.dimensions
       .filter((d) => d.severity === "high" || d.severity === "medium")
       .map((d) => d.key as SensitiveCategory);
@@ -201,7 +201,7 @@ export class ReviewService {
       };
     }
 
-    const safety = this.parseSafetyOf7Cats(raw);
+    const safety = this.parseSafetyByCategories(raw);
     const isHigh = safety.dimensions.some((d) => d.severity === "high");
     const isMedium = !isHigh && safety.dimensions.some((d) => d.severity === "medium");
     const recommendation: "ALLOW" | "WARN" | "BLOCK" = isHigh
@@ -285,7 +285,7 @@ export class ReviewService {
       return fallback(`LLM error: ${(err as Error).message}`);
     }
 
-    const safety = this.parseSafetyOf7Cats(raw);
+    const safety = this.parseSafetyByCategories(raw);
     const hitCategories: SensitiveCategory[] = safety.dimensions
       .filter((d) => d.severity === "high" || d.severity === "medium")
       .map((d) => d.key as SensitiveCategory);
@@ -424,8 +424,8 @@ export class ReviewService {
     };
   }
 
-  /** 7 类目 safety 解析(Phase 2.5 ① ③ 共用)。失败 → fallback 全 high。 */
-  private parseSafetyOf7Cats(raw: string): {
+  /** SENSITIVE_CATEGORIES safety 解析(prompt/section/post-publish 共用)。失败 → fallback 全 high。 */
+  private parseSafetyByCategories(raw: string): {
     overall: number;
     dimensions: {
       key: string;

@@ -11,37 +11,31 @@ import { loginAsDemo } from "./helpers/auth";
 
 const ALL_LOW = JSON.stringify({
   dimensions: [
-    { key: "politics", score: 0, severity: "low", hits: [], reason: "无" },
     { key: "pornography", score: 0, severity: "low", hits: [], reason: "无" },
     { key: "gambling", score: 0, severity: "low", hits: [], reason: "无" },
-    { key: "drugs", score: 0, severity: "low", hits: [], reason: "无" },
-    { key: "vulgarity", score: 0, severity: "low", hits: [], reason: "无" },
+    { key: "abuse", score: 0, severity: "low", hits: [], reason: "无" },
     { key: "fraud", score: 0, severity: "low", hits: [], reason: "无" },
-    { key: "medical", score: 0, severity: "low", hits: [], reason: "无" },
+    { key: "illicit_ads", score: 0, severity: "low", hits: [], reason: "无" },
   ],
 });
 
-const POLITICS_HIGH = JSON.stringify({
+const PORN_HIGH = JSON.stringify({
   dimensions: [
-    { key: "politics", score: 90, severity: "high", hits: ["x"], reason: "命中" },
-    { key: "pornography", score: 0, severity: "low", hits: [], reason: "无" },
+    { key: "pornography", score: 90, severity: "high", hits: ["x"], reason: "命中" },
     { key: "gambling", score: 0, severity: "low", hits: [], reason: "无" },
-    { key: "drugs", score: 0, severity: "low", hits: [], reason: "无" },
-    { key: "vulgarity", score: 0, severity: "low", hits: [], reason: "无" },
+    { key: "abuse", score: 0, severity: "low", hits: [], reason: "无" },
     { key: "fraud", score: 0, severity: "low", hits: [], reason: "无" },
-    { key: "medical", score: 0, severity: "low", hits: [], reason: "无" },
+    { key: "illicit_ads", score: 0, severity: "low", hits: [], reason: "无" },
   ],
 });
 
-const VULGAR_MEDIUM = JSON.stringify({
+const ABUSE_MEDIUM = JSON.stringify({
   dimensions: [
-    { key: "politics", score: 0, severity: "low", hits: [], reason: "无" },
     { key: "pornography", score: 0, severity: "low", hits: [], reason: "无" },
     { key: "gambling", score: 0, severity: "low", hits: [], reason: "无" },
-    { key: "drugs", score: 0, severity: "low", hits: [], reason: "无" },
-    { key: "vulgarity", score: 50, severity: "medium", hits: [], reason: "" },
+    { key: "abuse", score: 50, severity: "medium", hits: [], reason: "" },
     { key: "fraud", score: 0, severity: "low", hits: [], reason: "无" },
-    { key: "medical", score: 0, severity: "low", hits: [], reason: "无" },
+    { key: "illicit_ads", score: 0, severity: "low", hits: [], reason: "无" },
   ],
 });
 
@@ -89,8 +83,8 @@ describe("Phase 2.5 review prompt (e2e)", () => {
     expect(body.hitCategories).toEqual([]);
   });
 
-  it("BLOCK: politics high → recommendation BLOCK + 命中类目", async () => {
-    llmChatMock.mockResolvedValueOnce(POLITICS_HIGH);
+  it("BLOCK: pornography high → recommendation BLOCK + 命中类目", async () => {
+    llmChatMock.mockResolvedValueOnce(PORN_HIGH);
     const res = await request(app.getHttpServer())
       .post("/reviews/prompt")
       .set("Authorization", `Bearer ${token}`)
@@ -98,15 +92,15 @@ describe("Phase 2.5 review prompt (e2e)", () => {
       .expect(200);
     const body = res.body as { recommendation: string; hitCategories: string[] };
     expect(body.recommendation).toBe("BLOCK");
-    expect(body.hitCategories).toContain("politics");
+    expect(body.hitCategories).toContain("pornography");
   });
 
-  it("WARN: vulgarity medium → recommendation WARN", async () => {
-    llmChatMock.mockResolvedValueOnce(VULGAR_MEDIUM);
+  it("WARN: abuse medium → recommendation WARN", async () => {
+    llmChatMock.mockResolvedValueOnce(ABUSE_MEDIUM);
     const res = await request(app.getHttpServer())
       .post("/reviews/prompt")
       .set("Authorization", `Bearer ${token}`)
-      .send({ text: "略低俗" })
+      .send({ text: "略有冒犯" })
       .expect(200);
     expect((res.body as { recommendation: string }).recommendation).toBe("WARN");
   });

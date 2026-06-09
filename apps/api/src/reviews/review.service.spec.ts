@@ -140,26 +140,22 @@ describe("ReviewService.preflight", () => {
 });
 
 describe("reviewPrompt (Phase 2.5 ①)", () => {
-  const ALL_LOW_7CATS = JSON.stringify({
+  const ALL_LOW_5CATS = JSON.stringify({
     dimensions: [
-      { key: "politics", score: 0, severity: "low", hits: [], reason: "无" },
       { key: "pornography", score: 0, severity: "low", hits: [], reason: "无" },
       { key: "gambling", score: 0, severity: "low", hits: [], reason: "无" },
-      { key: "drugs", score: 0, severity: "low", hits: [], reason: "无" },
-      { key: "vulgarity", score: 0, severity: "low", hits: [], reason: "无" },
+      { key: "abuse", score: 0, severity: "low", hits: [], reason: "无" },
       { key: "fraud", score: 0, severity: "low", hits: [], reason: "无" },
-      { key: "medical", score: 0, severity: "low", hits: [], reason: "无" },
+      { key: "illicit_ads", score: 0, severity: "low", hits: [], reason: "无" },
     ],
   });
-  const POLITICS_HIGH_7CATS = JSON.stringify({
+  const PORN_HIGH_5CATS = JSON.stringify({
     dimensions: [
-      { key: "politics", score: 90, severity: "high", hits: ["xxx"], reason: "命中" },
-      { key: "pornography", score: 0, severity: "low", hits: [], reason: "无" },
+      { key: "pornography", score: 90, severity: "high", hits: ["xxx"], reason: "命中" },
       { key: "gambling", score: 0, severity: "low", hits: [], reason: "无" },
-      { key: "drugs", score: 0, severity: "low", hits: [], reason: "无" },
-      { key: "vulgarity", score: 0, severity: "low", hits: [], reason: "无" },
+      { key: "abuse", score: 0, severity: "low", hits: [], reason: "无" },
       { key: "fraud", score: 0, severity: "low", hits: [], reason: "无" },
-      { key: "medical", score: 0, severity: "low", hits: [], reason: "无" },
+      { key: "illicit_ads", score: 0, severity: "low", hits: [], reason: "无" },
     ],
   });
 
@@ -178,30 +174,30 @@ describe("reviewPrompt (Phase 2.5 ①)", () => {
   });
 
   it("ALLOW happy path:全 low → recommendation ALLOW + hitCategories 空", async () => {
-    llm.chat.mockResolvedValueOnce(ALL_LOW_7CATS);
+    llm.chat.mockResolvedValueOnce(ALL_LOW_5CATS);
     const res = await service.reviewPrompt("正常选题文本");
     expect(res.recommendation).toBe("ALLOW");
     expect(res.hitCategories).toEqual([]);
     expect(res.reviewId).toEqual(expect.any(String));
   });
 
-  it("politics high → recommendation BLOCK + hitCategories 包含 politics", async () => {
-    llm.chat.mockResolvedValueOnce(POLITICS_HIGH_7CATS);
+  it("pornography high → recommendation BLOCK + hitCategories 包含 pornography", async () => {
+    llm.chat.mockResolvedValueOnce(PORN_HIGH_5CATS);
     const res = await service.reviewPrompt("敏感选题");
     expect(res.recommendation).toBe("BLOCK");
-    expect(res.hitCategories).toContain("politics");
+    expect(res.hitCategories).toContain("pornography");
   });
 
-  it("system message 拼接规则库 prompt_hint(包含 politics/pornography 提示)", async () => {
-    llm.chat.mockResolvedValueOnce(ALL_LOW_7CATS);
+  it("system message 拼接规则库 prompt_hint(包含 pornography/gambling 提示)", async () => {
+    llm.chat.mockResolvedValueOnce(ALL_LOW_5CATS);
     await service.reviewPrompt("xxx");
     const firstCall = llm.chat.mock.calls[0] as unknown as [
       Array<{ role: string; content: string }>,
     ];
     const calledMessages = firstCall[0];
     const sys = calledMessages.find((m) => m.role === "system")?.content ?? "";
-    expect(sys).toContain("politics");
     expect(sys).toContain("pornography");
+    expect(sys).toContain("gambling");
   });
 });
 
@@ -215,13 +211,13 @@ describe("reviewSection (Phase 2.5 ③)", () => {
       reason: "无",
     })),
   });
-  const SECTION_HIGH_POLITICS = JSON.stringify({
+  const SECTION_HIGH_PORN = JSON.stringify({
     dimensions: SENSITIVE_CATEGORIES_FOR_TEST.map((key) => ({
       key,
-      score: key === "politics" ? 90 : 0,
-      severity: key === "politics" ? "high" : "low",
-      hits: key === "politics" ? ["xxx"] : [],
-      reason: key === "politics" ? "命中" : "无",
+      score: key === "pornography" ? 90 : 0,
+      severity: key === "pornography" ? "high" : "low",
+      hits: key === "pornography" ? ["xxx"] : [],
+      reason: key === "pornography" ? "命中" : "无",
     })),
   });
 
@@ -274,8 +270,8 @@ describe("reviewSection (Phase 2.5 ③)", () => {
     const SECTION_MEDIUM = JSON.stringify({
       dimensions: SENSITIVE_CATEGORIES_FOR_TEST.map((key) => ({
         key,
-        score: key === "vulgarity" ? 50 : 0,
-        severity: key === "vulgarity" ? "medium" : "low",
+        score: key === "abuse" ? 50 : 0,
+        severity: key === "abuse" ? "medium" : "low",
         hits: [],
         reason: "",
       })),
@@ -296,9 +292,9 @@ describe("reviewSection (Phase 2.5 ③)", () => {
 
   it("同 sessionId 连续 3 段 high → abortStream=true", async () => {
     llm.chat
-      .mockResolvedValueOnce(SECTION_HIGH_POLITICS)
-      .mockResolvedValueOnce(SECTION_HIGH_POLITICS)
-      .mockResolvedValueOnce(SECTION_HIGH_POLITICS);
+      .mockResolvedValueOnce(SECTION_HIGH_PORN)
+      .mockResolvedValueOnce(SECTION_HIGH_PORN)
+      .mockResolvedValueOnce(SECTION_HIGH_PORN);
     const sid = "sess-burst-1";
     const r1 = await service.reviewSection({
       draftId: "demodraft0000000000000001",
@@ -327,9 +323,7 @@ describe("reviewSection (Phase 2.5 ③)", () => {
   });
 
   it("不同 sessionId 隔离:互不累计", async () => {
-    llm.chat
-      .mockResolvedValueOnce(SECTION_HIGH_POLITICS)
-      .mockResolvedValueOnce(SECTION_HIGH_POLITICS);
+    llm.chat.mockResolvedValueOnce(SECTION_HIGH_PORN).mockResolvedValueOnce(SECTION_HIGH_PORN);
     const r1 = await service.reviewSection({
       draftId: "demodraft0000000000000001",
       userSub: DEMO_AUTHOR_ID,
@@ -350,37 +344,31 @@ describe("reviewSection (Phase 2.5 ③)", () => {
 });
 
 describe("reviewPostPublish (Phase 2.6)", () => {
-  const ALL_LOW_7CATS = JSON.stringify({
+  const ALL_LOW_5CATS = JSON.stringify({
     dimensions: [
-      { key: "politics", score: 0, severity: "low", hits: [], reason: "无" },
       { key: "pornography", score: 0, severity: "low", hits: [], reason: "无" },
       { key: "gambling", score: 0, severity: "low", hits: [], reason: "无" },
-      { key: "drugs", score: 0, severity: "low", hits: [], reason: "无" },
-      { key: "vulgarity", score: 0, severity: "low", hits: [], reason: "无" },
+      { key: "abuse", score: 0, severity: "low", hits: [], reason: "无" },
       { key: "fraud", score: 0, severity: "low", hits: [], reason: "无" },
-      { key: "medical", score: 0, severity: "low", hits: [], reason: "无" },
+      { key: "illicit_ads", score: 0, severity: "low", hits: [], reason: "无" },
     ],
   });
-  const POLITICS_HIGH_7CATS = JSON.stringify({
+  const PORN_HIGH_5CATS = JSON.stringify({
     dimensions: [
-      { key: "politics", score: 90, severity: "high", hits: ["xxx"], reason: "命中" },
-      { key: "pornography", score: 0, severity: "low", hits: [], reason: "无" },
+      { key: "pornography", score: 90, severity: "high", hits: ["xxx"], reason: "命中" },
       { key: "gambling", score: 0, severity: "low", hits: [], reason: "无" },
-      { key: "drugs", score: 0, severity: "low", hits: [], reason: "无" },
-      { key: "vulgarity", score: 0, severity: "low", hits: [], reason: "无" },
+      { key: "abuse", score: 0, severity: "low", hits: [], reason: "无" },
       { key: "fraud", score: 0, severity: "low", hits: [], reason: "无" },
-      { key: "medical", score: 0, severity: "low", hits: [], reason: "无" },
+      { key: "illicit_ads", score: 0, severity: "low", hits: [], reason: "无" },
     ],
   });
-  const VULGARITY_MEDIUM_7CATS = JSON.stringify({
+  const ABUSE_MEDIUM_5CATS = JSON.stringify({
     dimensions: [
-      { key: "politics", score: 0, severity: "low", hits: [], reason: "无" },
       { key: "pornography", score: 0, severity: "low", hits: [], reason: "无" },
       { key: "gambling", score: 0, severity: "low", hits: [], reason: "无" },
-      { key: "drugs", score: 0, severity: "low", hits: [], reason: "无" },
-      { key: "vulgarity", score: 50, severity: "medium", hits: [], reason: "中等" },
+      { key: "abuse", score: 50, severity: "medium", hits: [], reason: "中等" },
       { key: "fraud", score: 0, severity: "low", hits: [], reason: "无" },
-      { key: "medical", score: 0, severity: "low", hits: [], reason: "无" },
+      { key: "illicit_ads", score: 0, severity: "low", hits: [], reason: "无" },
     ],
   });
 
@@ -409,7 +397,7 @@ describe("reviewPostPublish (Phase 2.6)", () => {
   });
 
   it("ALLOW happy path:全 low → recommendation ALLOW + hitCategories 空", async () => {
-    llm.chat.mockResolvedValueOnce(ALL_LOW_7CATS);
+    llm.chat.mockResolvedValueOnce(ALL_LOW_5CATS);
     const res = await service.reviewPostPublish("正常文章内容");
     expect(res.recommendation).toBe("ALLOW");
     expect(res.hitCategories).toEqual([]);
@@ -417,17 +405,17 @@ describe("reviewPostPublish (Phase 2.6)", () => {
   });
 
   it("medium 命中 → WARN + hitCategories 含命中类目", async () => {
-    llm.chat.mockResolvedValueOnce(VULGARITY_MEDIUM_7CATS);
+    llm.chat.mockResolvedValueOnce(ABUSE_MEDIUM_5CATS);
     const res = await service.reviewPostPublish("内容");
     expect(res.recommendation).toBe("WARN");
-    expect(res.hitCategories).toContain("vulgarity");
+    expect(res.hitCategories).toContain("abuse");
   });
 
   it("high 命中 → BLOCK", async () => {
-    llm.chat.mockResolvedValueOnce(POLITICS_HIGH_7CATS);
+    llm.chat.mockResolvedValueOnce(PORN_HIGH_5CATS);
     const res = await service.reviewPostPublish("内容");
     expect(res.recommendation).toBe("BLOCK");
-    expect(res.hitCategories).toContain("politics");
+    expect(res.hitCategories).toContain("pornography");
   });
 
   it("LLM 抛错 → fallback ALLOW + reason 含'LLM 复审失败'", async () => {

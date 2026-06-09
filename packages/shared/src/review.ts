@@ -73,16 +73,17 @@ export interface PreflightResponse {
 }
 
 /**
- * Phase 2.5 — 7 类目敏感词分类(规则库 yaml + sensitive-words.json 共用)
+ * Phase 2.16 — 5 类目敏感词分类(规则库 yaml + sensitive-words.json 共用)
+ * Phase 2.5 原 7 类目重组:politics/drugs/medical 删除(降级为词库兜底),
+ * vulgarity → abuse(辱骂语义更窄),新增 illicit_ads(黑产广告)。
+ * 详见 docs/superpowers/specs/2026-06-09-phase-2-16-safety-eval-300-design.md §2。
  */
 export const SENSITIVE_CATEGORIES = [
-  "politics",
   "pornography",
   "gambling",
-  "drugs",
-  "vulgarity",
+  "abuse",
   "fraud",
-  "medical",
+  "illicit_ads",
 ] as const;
 export type SensitiveCategory = (typeof SENSITIVE_CATEGORIES)[number];
 

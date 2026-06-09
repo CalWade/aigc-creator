@@ -206,18 +206,16 @@ export const PROMPT_STARTERS: Prisma.PromptCreateManyInput[] = [
     owner: "PLATFORM",
     tool: "PROMPT_REVIEW",
     name: "默认·选题/提示词风险审核",
-    systemPrompt: `你是平台合规审核员。请评估作者输入的"选题 + 提示词"是否存在违规导向风险,覆盖 7 类目:涉政(politics)、涉黄(pornography)、涉赌(gambling)、涉毒(drugs)、低俗(vulgarity)、欺诈(fraud)、医疗(medical)。
+    systemPrompt: `你是平台合规审核员。请评估作者输入的"选题 + 提示词"是否存在违规导向风险,覆盖 5 类目:涉黄(pornography)、涉赌(gambling)、辱骂攻击(abuse)、欺诈(fraud)、黑产广告(illicit_ads)。
 
 严格输出 JSON,无任何前后文:
 {
   "dimensions": [
-    {"key":"politics","score":0,"severity":"low","hits":[],"reason":"无命中"},
     {"key":"pornography","score":0,"severity":"low","hits":[],"reason":"无命中"},
     {"key":"gambling","score":0,"severity":"low","hits":[],"reason":"无命中"},
-    {"key":"drugs","score":0,"severity":"low","hits":[],"reason":"无命中"},
-    {"key":"vulgarity","score":0,"severity":"low","hits":[],"reason":"无命中"},
+    {"key":"abuse","score":0,"severity":"low","hits":[],"reason":"无命中"},
     {"key":"fraud","score":0,"severity":"low","hits":[],"reason":"无命中"},
-    {"key":"medical","score":0,"severity":"low","hits":[],"reason":"无命中"}
+    {"key":"illicit_ads","score":0,"severity":"low","hits":[],"reason":"无命中"}
   ]
 }
 
@@ -229,48 +227,44 @@ export const PROMPT_STARTERS: Prisma.PromptCreateManyInput[] = [
     params: { temperature: 0.0, topP: 0.9, maxTokens: 800 },
     fewShots: [],
     designNote:
-      "Phase 2.5 ① Prompt 阶段;前端拼接 topic+\\n+hint 作为 user message;7 类目对齐规则库 yaml。",
+      "Phase 2.5 ① Prompt 阶段;前端拼接 topic+\\n+hint 作为 user message;Phase 2.16 起 5 类目对齐 SENSITIVE_CATEGORIES + 规则库 yaml。",
     isStarter: true,
   },
   {
     owner: "PLATFORM",
     tool: "SECTION_REVIEW",
     name: "默认·生成中段落审核",
-    systemPrompt: `你是平台合规审核员。请评估给定段落是否包含违规内容,覆盖 7 类目(politics/pornography/gambling/drugs/vulgarity/fraud/medical)。
+    systemPrompt: `你是平台合规审核员。请评估给定段落是否包含违规内容,覆盖 5 类目(pornography/gambling/abuse/fraud/illicit_ads)。
 
 严格输出 JSON,无任何前后文:
 {
   "dimensions": [
-    {"key":"politics","score":0,"severity":"low","hits":[],"reason":"无命中"},
     {"key":"pornography","score":0,"severity":"low","hits":[],"reason":"无命中"},
     {"key":"gambling","score":0,"severity":"low","hits":[],"reason":"无命中"},
-    {"key":"drugs","score":0,"severity":"low","hits":[],"reason":"无命中"},
-    {"key":"vulgarity","score":0,"severity":"low","hits":[],"reason":"无命中"},
+    {"key":"abuse","score":0,"severity":"low","hits":[],"reason":"无命中"},
     {"key":"fraud","score":0,"severity":"low","hits":[],"reason":"无命中"},
-    {"key":"medical","score":0,"severity":"low","hits":[],"reason":"无命中"}
+    {"key":"illicit_ads","score":0,"severity":"low","hits":[],"reason":"无命中"}
   ]
 }`,
     params: { temperature: 0.0, topP: 0.9, maxTokens: 800 },
     fewShots: [],
-    designNote: "Phase 2.5 ③ 段落审核;由 SectionStream onSectionEnd 触发;同 7 类目。",
+    designNote: "Phase 2.5 ③ 段落审核;由 SectionStream onSectionEnd 触发;Phase 2.16 起 5 类目。",
     isStarter: true,
   },
   {
     owner: "PLATFORM",
     tool: "POST_PUBLISH_REVIEW",
     name: "默认·发布后举报复审",
-    systemPrompt: `你是社区内容复审员。给定一篇已发布的图文,请按 7 类目(politics / pornography / gambling / drugs / vulgarity / fraud / medical)逐项评估其违规程度。
+    systemPrompt: `你是社区内容复审员。给定一篇已发布的图文,请按 5 类目(pornography / gambling / abuse / fraud / illicit_ads)逐项评估其违规程度。
 
 严格输出 JSON,无任何前后文:
 {
   "dimensions": [
-    {"key":"politics","score":0,"severity":"low","hits":[],"reason":"无命中"},
     {"key":"pornography","score":0,"severity":"low","hits":[],"reason":"无命中"},
     {"key":"gambling","score":0,"severity":"low","hits":[],"reason":"无命中"},
-    {"key":"drugs","score":0,"severity":"low","hits":[],"reason":"无命中"},
-    {"key":"vulgarity","score":0,"severity":"low","hits":[],"reason":"无命中"},
+    {"key":"abuse","score":0,"severity":"low","hits":[],"reason":"无命中"},
     {"key":"fraud","score":0,"severity":"low","hits":[],"reason":"无命中"},
-    {"key":"medical","score":0,"severity":"low","hits":[],"reason":"无命中"}
+    {"key":"illicit_ads","score":0,"severity":"low","hits":[],"reason":"无命中"}
   ]
 }
 
@@ -282,7 +276,7 @@ export const PROMPT_STARTERS: Prisma.PromptCreateManyInput[] = [
     params: { temperature: 0.0, topP: 0.9, maxTokens: 800 },
     fewShots: [],
     designNote:
-      "Phase 2.6 发布后举报复审;由 ReportsService.create fire-and-forget 触发,失败 fallback 到 ALLOW + 等待人工裁决;同 7 类目结构,parser 复用 parseSafetyOf7Cats。",
+      "Phase 2.6 发布后举报复审;由 ReportsService.create fire-and-forget 触发,失败 fallback 到 ALLOW + 等待人工裁决;Phase 2.16 起 5 类目结构,parser 复用 parseSafetyByCategories。",
     isStarter: true,
   },
   {

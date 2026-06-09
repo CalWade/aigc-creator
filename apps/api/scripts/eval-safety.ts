@@ -35,15 +35,7 @@ interface ResultRow {
   tn: number;
 }
 
-const CATEGORIES = [
-  "politics",
-  "pornography",
-  "gambling",
-  "drugs",
-  "vulgarity",
-  "fraud",
-  "medical",
-] as const;
+const CATEGORIES = ["pornography", "gambling", "abuse", "fraud", "illicit_ads"] as const;
 
 async function main(): Promise<void> {
   const fixturesDir = join(__dirname, "..", "test", "fixtures", "safety-eval");

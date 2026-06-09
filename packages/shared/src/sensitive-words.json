@@ -1,10 +1,6 @@
 {
-  "version": "2026-06-06",
+  "version": "2026-06-09",
   "categories": {
-    "politics": {
-      "severity": "high",
-      "words": ["占位词1", "占位词2", "占位词3"]
-    },
     "pornography": {
       "severity": "high",
       "words": ["占位porn1", "占位porn2"]
@@ -13,21 +9,31 @@
       "severity": "high",
       "words": ["占位gamb1", "占位gamb2"]
     },
-    "drugs": {
-      "severity": "high",
-      "words": ["占位drug1", "占位drug2"]
-    },
-    "vulgarity": {
+    "abuse": {
       "severity": "medium",
-      "words": ["占位俗1", "占位俗2"]
+      "words": ["占位辱骂1", "占位辱骂2"]
     },
     "fraud": {
       "severity": "medium",
       "words": ["秒到账", "包治百病", "暴富"]
     },
-    "medical": {
-      "severity": "medium",
-      "words": ["祖传秘方", "包治"]
+    "illicit_ads": {
+      "severity": "high",
+      "words": [
+        "刷单赚钱",
+        "日入过千",
+        "添加微信",
+        "薇号",
+        "扫码加群",
+        "高仿",
+        "代写论文",
+        "包过包退",
+        "私人订制",
+        "上门服务",
+        "解封技术",
+        "破解版",
+        "外挂"
+      ]
     }
   }
 }

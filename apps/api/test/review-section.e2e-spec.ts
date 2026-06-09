@@ -13,24 +13,24 @@ const DEMO_DRAFT_ID = "demodraft0000000000000001";
 const OTHER_AUTHOR_ID = "otherauthor00000000000003";
 const OTHER_DRAFT_ID = "otherdraftxxxxxxxxxxxxxx3";
 
-const cats = ["politics", "pornography", "gambling", "drugs", "vulgarity", "fraud", "medical"];
+const cats = ["pornography", "gambling", "abuse", "fraud", "illicit_ads"];
 const allLow = JSON.stringify({
   dimensions: cats.map((k) => ({ key: k, score: 0, severity: "low", hits: [], reason: "无" })),
 });
-const politicsHigh = JSON.stringify({
+const pornHigh = JSON.stringify({
   dimensions: cats.map((k) => ({
     key: k,
-    score: k === "politics" ? 90 : 0,
-    severity: k === "politics" ? "high" : "low",
-    hits: k === "politics" ? ["x"] : [],
+    score: k === "pornography" ? 90 : 0,
+    severity: k === "pornography" ? "high" : "low",
+    hits: k === "pornography" ? ["x"] : [],
     reason: "",
   })),
 });
-const vulgarMedium = JSON.stringify({
+const abuseMedium = JSON.stringify({
   dimensions: cats.map((k) => ({
     key: k,
-    score: k === "vulgarity" ? 50 : 0,
-    severity: k === "vulgarity" ? "medium" : "low",
+    score: k === "abuse" ? 50 : 0,
+    severity: k === "abuse" ? "medium" : "low",
     hits: [],
     reason: "",
   })),
@@ -102,12 +102,12 @@ describe("Phase 2.5 review section (e2e)", () => {
   });
 
   it("medium: 落 Review + abortStream=false", async () => {
-    llmChatMock.mockResolvedValueOnce(vulgarMedium);
+    llmChatMock.mockResolvedValueOnce(abuseMedium);
     const res = await post({
       draftId: DEMO_DRAFT_ID,
       sessionId: "sess-medium",
       range: { from: 0, to: 100 },
-      text: "略低俗",
+      text: "略有冒犯",
     }).expect(200);
     const body = res.body as { recommendation: string; abortStream: boolean; reviewId: string };
     expect(body.recommendation).toBe("WARN");
@@ -118,9 +118,9 @@ describe("Phase 2.5 review section (e2e)", () => {
 
   it("连续 3 段 high → 第 3 次 abortStream=true", async () => {
     llmChatMock
-      .mockResolvedValueOnce(politicsHigh)
-      .mockResolvedValueOnce(politicsHigh)
-      .mockResolvedValueOnce(politicsHigh);
+      .mockResolvedValueOnce(pornHigh)
+      .mockResolvedValueOnce(pornHigh)
+      .mockResolvedValueOnce(pornHigh);
     const sid = "sess-burst";
     const r1 = await post({
       draftId: DEMO_DRAFT_ID,

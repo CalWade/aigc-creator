@@ -1,0 +1,22 @@
+- rule_id: SEC-ILLICIT-001
+  category: illicit_ads
+  severity: high
+  description: 黑产 / 灰产引流(刷单、加微信群、私下交易)
+  prompt_hint: |
+    若文本引诱用户脱离平台进行私下交易、加入非官方群组、或推广刷单 / 兼职暴富等灰产引流,判 high。
+  examples_positive:
+    - "想了解更多请加微信 xxx,日入过千不是梦"
+    - "扫码进群,内部资源免费分享"
+  examples_negative:
+    - "欢迎关注我的公众号获取更新"
+- rule_id: SEC-ILLICIT-002
+  category: illicit_ads
+  severity: high
+  description: 违禁商品 / 服务广告(高仿、代写、破解、外挂)
+  prompt_hint: |
+    若文本推广违法 / 灰色商品或服务(如代写论文、破解软件、游戏外挂、高仿商品),判 high。
+  examples_positive:
+    - "代写论文,包过包退,价格优惠"
+    - "破解版游戏,解锁全部功能"
+  examples_negative:
+    - "本月新书发布,欢迎选购"

@@ -1,0 +1,3 @@
+{"text":"占位敏感样本 1","expected_recommendation":"BLOCK","expected_categories":["illicit_ads"],"source":"manual"}
+{"text":"占位敏感样本 2","expected_recommendation":"WARN","expected_categories":["illicit_ads"],"source":"manual"}
+{"text":"占位中性样本","expected_recommendation":"ALLOW","expected_categories":[],"source":"manual"}

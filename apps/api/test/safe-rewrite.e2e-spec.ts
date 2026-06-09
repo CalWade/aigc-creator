@@ -55,7 +55,7 @@ describe("Phase 2.13 safe-rewrite SSE (e2e)", () => {
       .send({
         draftId: DEMO_DRAFT_ID,
         text: "测试文本",
-        hitCategories: ["politics"],
+        hitCategories: ["pornography"],
         message: "命中",
       })
       .expect(401);
@@ -81,7 +81,7 @@ describe("Phase 2.13 safe-rewrite SSE (e2e)", () => {
       .send({
         draftId: DEMO_DRAFT_ID,
         text: "x".repeat(2001),
-        hitCategories: ["politics"],
+        hitCategories: ["pornography"],
         message: "命中",
       })
       .expect(400);
@@ -94,8 +94,8 @@ describe("Phase 2.13 safe-rewrite SSE (e2e)", () => {
       .send({
         draftId: DEMO_DRAFT_ID,
         text: "原文",
-        hitCategories: ["politics"],
-        message: "命中政治类",
+        hitCategories: ["pornography"],
+        message: "命中涉黄类",
       })
       .expect(200);
 
@@ -114,8 +114,8 @@ describe("Phase 2.13 safe-rewrite SSE (e2e)", () => {
       .send({
         draftId: DEMO_DRAFT_ID,
         text: "原文",
-        hitCategories: ["politics"],
-        message: "命中政治类",
+        hitCategories: ["pornography"],
+        message: "命中涉黄类",
       })
       .expect(200);
     const after = await prisma.review.count();

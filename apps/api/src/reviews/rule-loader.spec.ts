@@ -1,7 +1,7 @@
 import { buildPromptHints, loadRules, RULE_CATEGORIES } from "./rule-loader";
 
 describe("rule-loader", () => {
-  it("加载 7 类目 yaml,每类至少 1 条规则", () => {
+  it("加载 5 类目 yaml,每类至少 1 条规则", () => {
     const rules = loadRules();
     for (const cat of RULE_CATEGORIES) {
       expect(rules.get(cat)?.length ?? 0).toBeGreaterThanOrEqual(1);
@@ -23,8 +23,10 @@ describe("rule-loader", () => {
 
   it("buildPromptHints 拼装所有 active 规则的 prompt_hint,按 category 分组", () => {
     const hints = buildPromptHints();
-    expect(hints).toContain("politics");
     expect(hints).toContain("pornography");
+    expect(hints).toContain("gambling");
+    expect(hints).toContain("abuse");
+    expect(hints).toContain("illicit_ads");
     expect(hints.length).toBeGreaterThan(100);
   });
 });
