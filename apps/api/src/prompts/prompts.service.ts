@@ -140,9 +140,13 @@ export class PromptsService {
     await this.prisma.prompt.delete({ where: { id } });
   }
 
-  /** 仅自己的 PRIVATE 才能改/删;PLATFORM 一律 403,别人 PRIVATE 也 403。 */
-  private async assertOwnPrivate(id: string, userSub: string): Promise<Prompt> {
-    const prompt = await this.prisma.prompt.findUnique({ where: { id } });
+  /** 仅自己的 PRIVATE 才能改/删/列快照/回滚;PLATFORM 一律 403,别人 PRIVATE 也 403。 */
+  private async assertOwnPrivate(
+    id: string,
+    userSub: string,
+    db: Prisma.TransactionClient | PrismaService = this.prisma,
+  ): Promise<Prompt> {
+    const prompt = await db.prompt.findUnique({ where: { id } });
     if (!prompt) throw new NotFoundException(`Prompt ${id} not found`);
     if (prompt.owner !== "PRIVATE" || prompt.authorId !== userSub) {
       throw new ForbiddenException("Prompt not editable");
