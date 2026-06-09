@@ -82,6 +82,18 @@ enum ReportResolution {
   DISMISS
 }
 
+enum SampleAuditStatus {
+  PENDING
+  PASSED
+  FAILED
+}
+
+enum RuleRecheckRunStatus {
+  RUNNING
+  DONE
+  FAILED
+}
+
 model User {
   id        String   @id @default(cuid())
   handle    String   @unique
@@ -138,6 +150,7 @@ model Draft {
   reviews    Review[]       @relation("DraftReviews")
   stat       PostStat?
   reports    Report[]
+  sampleAudits SampleAudit[]
 
   @@index([authorId])
   @@index([status])
@@ -262,4 +275,33 @@ model Report {
   @@index([postId, status])
   @@index([status, createdAt])
   @@map("reports")
+}
+
+model SampleAudit {
+  id         String            @id @default(cuid())
+  draftId    String
+  status     SampleAuditStatus @default(PENDING)
+  reviewedAt DateTime?
+  reviewedBy String?
+  note       String?           @db.Text
+  createdAt  DateTime          @default(now())
+
+  draft Draft @relation(fields: [draftId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([draftId])
+  @@map("sample_audits")
+}
+
+model RuleRecheckRun {
+  id           String                @id @default(cuid())
+  ruleVersion  String
+  totalScanned Int                   @default(0)
+  totalOffline Int                   @default(0)
+  status       RuleRecheckRunStatus  @default(RUNNING)
+  startedAt    DateTime              @default(now())
+  finishedAt   DateTime?
+
+  @@index([status])
+  @@map("rule_recheck_runs")
 }

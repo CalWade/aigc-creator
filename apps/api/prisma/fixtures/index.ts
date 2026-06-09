@@ -33,6 +33,8 @@ export interface FixtureSummary {
 export async function cleanupAllFixtures(prisma: PrismaClient): Promise<void> {
   // Draft.lastReviewId → Review FK,先解开避免 review.deleteMany 失败
   await prisma.draft.updateMany({ data: { lastReviewId: null } });
+  await prisma.sampleAudit.deleteMany();
+  await prisma.ruleRecheckRun.deleteMany();
   await prisma.report.deleteMany();
   await prisma.review.deleteMany();
   await prisma.draftVersion.deleteMany();
