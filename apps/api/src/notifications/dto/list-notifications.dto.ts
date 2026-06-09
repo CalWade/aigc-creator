@@ -1,5 +1,5 @@
-import { IsEnum, IsIn, IsOptional, IsString } from "class-validator";
-import { NotificationType } from "@prisma/client";
+import { IsIn, IsInt, IsOptional, IsString, Max, Min } from "class-validator";
+import { Transform } from "class-transformer";
 
 export class ListNotificationsDto {
   @IsOptional()
@@ -11,6 +11,9 @@ export class ListNotificationsDto {
   read?: "true" | "false";
 
   @IsOptional()
-  @IsIn(["10", "20", "50"])
-  limit?: "10" | "20" | "50";
+  @Transform(({ value }) => (value !== undefined ? Number(value) : undefined))
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  limit?: number;
 }

@@ -14,7 +14,7 @@ const SAMPLE_NOTIFICATIONS = {
     {
       id: "n1",
       type: "PUBLISH_APPROVED",
-      title: "发布通过",
+      title: "作品已发布",
       body: "《标题》已成功发布",
       read: false,
       draftId: "d1",
@@ -23,7 +23,7 @@ const SAMPLE_NOTIFICATIONS = {
     {
       id: "n2",
       type: "HOT_RANK",
-      title: "热点榜上榜",
+      title: "登上热点榜",
       body: "《标题》登上了热点榜",
       read: true,
       draftId: "d1",
@@ -66,8 +66,8 @@ describe("NotificationBell", () => {
     fireEvent.click(screen.getByLabelText("通知"));
 
     await waitFor(() => {
-      expect(screen.getByText("发布通过")).toBeInTheDocument();
-      expect(screen.getByText("热点榜上榜")).toBeInTheDocument();
+      expect(screen.getByText("作品已发布")).toBeInTheDocument();
+      expect(screen.getByText("登上热点榜")).toBeInTheDocument();
     });
   });
 
@@ -136,7 +136,8 @@ describe("NotificationBell", () => {
     fireEvent.click(screen.getByLabelText("通知"));
 
     await waitFor(() => {
-      expect(screen.getByText("发布通过")).toBeInTheDocument();
+      // Type label "发布通过" appears in the badge
+      expect(screen.getAllByText("发布通过").length).toBeGreaterThanOrEqual(1);
     });
   });
 });

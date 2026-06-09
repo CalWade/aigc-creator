@@ -3,6 +3,7 @@ import { ConflictException, ForbiddenException } from "@nestjs/common";
 import { DraftsService } from "./drafts.service";
 import { VersionsService } from "./versions/versions.service";
 import { PrismaService } from "../prisma/prisma.service";
+import { NotificationsService } from "../notifications/notifications.service";
 
 describe("DraftsService.edit() — 二次编辑入口", () => {
   let service: DraftsService;
@@ -20,6 +21,10 @@ describe("DraftsService.edit() — 二次编辑入口", () => {
         DraftsService,
         { provide: PrismaService, useValue: prisma },
         { provide: VersionsService, useValue: {} },
+        {
+          provide: NotificationsService,
+          useValue: { create: jest.fn().mockResolvedValue({ id: "n1" }) },
+        },
       ],
     }).compile();
     service = module.get(DraftsService);
@@ -109,6 +114,10 @@ describe("DraftsService.publish() — 首发 / 二发", () => {
         DraftsService,
         { provide: PrismaService, useValue: prisma },
         { provide: VersionsService, useValue: versions },
+        {
+          provide: NotificationsService,
+          useValue: { create: jest.fn().mockResolvedValue({ id: "n1" }) },
+        },
       ],
     }).compile();
     service = module.get(DraftsService);

@@ -70,13 +70,15 @@ export function DraftEditor({ id, initialTool }: { id: string; initialTool?: str
 
   const [fastDialogOpen, setFastDialogOpen] = useState(false);
   const [fast, setFast] = useState<FastStage>({ kind: "idle" });
-  const [promptDrawerOpen, setPromptDrawerOpen] = useState(false);
+  // Phase 2.25: URL ?tool=HEADLINE_NEW → 自动打开 Prompt 库,选中对应工具
+  const [promptDrawerOpen, setPromptDrawerOpen] = useState(() => {
+    if (!initialTool) return false;
+    const validTools: readonly string[] = DRAFT_TOOL_TYPES;
+    return validTools.includes(initialTool);
+  });
   const [preflightOpen, setPreflightOpen] = useState(false);
   const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
   const [namingNote, setNamingNote] = useState(false);
-
-  // Phase 2.25: 从 URL ?tool=HEADLINE_NEW 自动打开 Prompt 库 + 选中对应工具
-  const [toolAutoOpenDone, setToolAutoOpenDone] = useState(false);
 
   const [toolBusy, setToolBusy] = useState<DraftToolType | null>(null);
   const [toolError, setToolError] = useState<string | null>(null);
@@ -84,16 +86,6 @@ export function DraftEditor({ id, initialTool }: { id: string; initialTool?: str
 
   // T8: 多 Tab 抢占检测 — otherTabExists=true 时编辑器切只读 + 显 ReadonlyBanner
   const { otherTabExists } = useDraftPresence(id);
-
-  // Phase 2.25: URL ?tool=HEADLINE_NEW → 自动打开 Prompt 库,选中对应工具
-  useEffect(() => {
-    if (toolAutoOpenDone || !initialTool) return;
-    // DRAFT_TOOL_TYPES 包含所有合法值;不合法的 tool 参数忽略
-    const validTools: readonly string[] = DRAFT_TOOL_TYPES;
-    if (!validTools.includes(initialTool)) return;
-    setPromptDrawerOpen(true);
-    setToolAutoOpenDone(true);
-  }, [initialTool, toolAutoOpenDone]);
 
   // T8: 联动 TipTap editable 状态 — 有他 Tab 时禁编辑,独占时恢复
   useEffect(() => {

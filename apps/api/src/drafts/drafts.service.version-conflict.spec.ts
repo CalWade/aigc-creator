@@ -2,6 +2,7 @@ import { ConflictException } from "@nestjs/common";
 import { VERSION_CONFLICT } from "@bytedance-aigc/shared";
 
 import { PrismaService } from "../prisma/prisma.service";
+import { NotificationsService } from "../notifications/notifications.service";
 import { DraftsService } from "./drafts.service";
 import { VersionsService } from "./versions/versions.service";
 
@@ -57,7 +58,10 @@ function makeService(stub: DraftStub) {
   const versions = {
     snapshotAuto: jest.fn().mockResolvedValue(undefined),
   } as unknown as VersionsService;
-  const svc = new DraftsService(prisma, versions);
+  const notifications = {
+    create: jest.fn().mockResolvedValue({ id: "n1" }),
+  } as unknown as NotificationsService;
+  const svc = new DraftsService(prisma, versions, notifications);
   return { svc, prisma, versions, findUnique, update };
 }
 

@@ -24,7 +24,7 @@ export class NotificationsController {
   list(@CurrentUser() user: JwtPayload, @Query() dto: ListNotificationsDto) {
     return this.notifications.list(user.sub, {
       cursor: dto.cursor,
-      limit: dto.limit ? Number(dto.limit) : 10,
+      limit: dto.limit ?? 10,
       read: dto.read === "true" ? true : dto.read === "false" ? false : undefined,
     });
   }

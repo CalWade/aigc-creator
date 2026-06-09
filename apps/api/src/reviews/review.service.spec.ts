@@ -4,6 +4,7 @@ import { LlmClient } from "../llm/llm.client";
 import { PrismaService } from "../prisma/prisma.service";
 import { PromptsService } from "../prompts/prompts.service";
 import { DraftsService } from "../drafts/drafts.service";
+import { NotificationsService } from "../notifications/notifications.service";
 import { ReviewService } from "./review.service";
 import { StreamSessionStore } from "./stream-session";
 import { DEMO_AUTHOR_ID } from "../../prisma/fixtures";
@@ -75,7 +76,10 @@ function makeService(safetyRaw: string, qualityRaw: string) {
     ),
   } as unknown as PrismaService;
   const store = new StreamSessionStore();
-  return new ReviewService(drafts, prisma, llm, prompts, store);
+  const notifications = {
+    create: jest.fn().mockResolvedValue({ id: "notif1" }),
+  } as unknown as NotificationsService;
+  return new ReviewService(drafts, prisma, llm, prompts, store, notifications);
 }
 
 describe("ReviewService.preflight", () => {
@@ -170,7 +174,17 @@ describe("reviewPrompt (Phase 2.5 ①)", () => {
     } as unknown as PromptsService;
     const prisma = {} as unknown as PrismaService;
     const store = new StreamSessionStore();
-    service = new ReviewService(drafts, prisma, llm as unknown as LlmClient, prompts, store);
+    const notifications = {
+      create: jest.fn().mockResolvedValue({ id: "n1" }),
+    } as unknown as NotificationsService;
+    service = new ReviewService(
+      drafts,
+      prisma,
+      llm as unknown as LlmClient,
+      prompts,
+      store,
+      notifications,
+    );
   });
 
   it("ALLOW happy path:全 low → recommendation ALLOW + hitCategories 空", async () => {
@@ -249,7 +263,17 @@ describe("reviewSection (Phase 2.5 ③)", () => {
     const prisma = { review: { create: reviewCreate } } as unknown as PrismaService;
     store = new StreamSessionStore();
     store.__reset();
-    service = new ReviewService(drafts, prisma, llm as unknown as LlmClient, prompts, store);
+    const notifications = {
+      create: jest.fn().mockResolvedValue({ id: "n1" }),
+    } as unknown as NotificationsService;
+    service = new ReviewService(
+      drafts,
+      prisma,
+      llm as unknown as LlmClient,
+      prompts,
+      store,
+      notifications,
+    );
   });
 
   it("ALLOW 段落:不落 review,abortStream=false", async () => {
@@ -387,12 +411,16 @@ describe("reviewPostPublish (Phase 2.6)", () => {
     };
     const prisma = {} as unknown as PrismaService;
     const store = new StreamSessionStore();
+    const notifications = {
+      create: jest.fn().mockResolvedValue({ id: "n1" }),
+    } as unknown as NotificationsService;
     service = new ReviewService(
       drafts,
       prisma,
       llm as unknown as LlmClient,
       prompts as unknown as PromptsService,
       store,
+      notifications,
     );
   });
 

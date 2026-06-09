@@ -3,7 +3,12 @@ import Image from "next/image";
 import type { PostDto } from "@bytedance-aigc/shared";
 import { QualityBadge } from "./QualityBadge";
 
-export function PostCard({ post }: { post: PostDto }) {
+interface PostCardProps {
+  post: PostDto;
+  priority?: boolean;
+}
+
+export function PostCard({ post, priority = false }: PostCardProps) {
   return (
     <Link
       href={`/post/${post.id}`}
@@ -15,6 +20,7 @@ export function PostCard({ post }: { post: PostDto }) {
           alt=""
           fill
           sizes="(max-width: 768px) 100vw, 33vw"
+          priority={priority}
           className="object-cover rounded"
         />
       </div>

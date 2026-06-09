@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 import { DraftsService } from "./drafts.service";
 import { VersionsService } from "./versions/versions.service";
 import { PrismaService } from "../prisma/prisma.service";
+import { NotificationsService } from "../notifications/notifications.service";
 
 describe("DraftsService.restoreFromOffline() — OFFLINE 恢复为 DRAFT 重新提审", () => {
   let service: DraftsService;
@@ -21,6 +22,10 @@ describe("DraftsService.restoreFromOffline() — OFFLINE 恢复为 DRAFT 重新�
         DraftsService,
         { provide: PrismaService, useValue: prisma },
         { provide: VersionsService, useValue: {} },
+        {
+          provide: NotificationsService,
+          useValue: { create: jest.fn().mockResolvedValue({ id: "n1" }) },
+        },
       ],
     }).compile();
     service = module.get(DraftsService);

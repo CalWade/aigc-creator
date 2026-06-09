@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DRAFT_TOOL_TYPES, type DraftToolType } from "@bytedance-aigc/shared";
+import { DRAFT_TOOL_TYPES, PROMPT_DRAWER_TOOLS, type DraftToolType } from "@bytedance-aigc/shared";
 
 import { apiFetch } from "@/lib/auth";
 import { useActivePromptId } from "@/hooks/use-active-prompt-id";
@@ -100,7 +100,7 @@ export function PromptDrawer({ open, onClose }: PromptDrawerProps) {
             onChange={(e) => setTool(e.target.value as DraftToolType)}
             className="rounded border border-zinc-300 dark:border-zinc-700 bg-transparent px-2 py-1"
           >
-            {DRAFT_TOOL_TYPES.map((t) => (
+            {PROMPT_DRAWER_TOOLS.map((t) => (
               <option key={t} value={t}>
                 {t}
               </option>

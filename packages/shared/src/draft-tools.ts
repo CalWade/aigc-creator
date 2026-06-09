@@ -4,7 +4,7 @@
  * SSE 候选 / DTO narrow 拿到的是同一份契约。
  */
 
-/** 9 种 AI 工具枚举值,顺序与 spec §3.2 BubbleMenu 三组对应。 */
+/** 所有 AI 工具枚举值,含平台保留(不出现在 Prompt 库选择器)。 */
 export const DRAFT_TOOL_TYPES = [
   "REWRITE_FLUENT",
   "EXPAND",
@@ -17,6 +17,19 @@ export const DRAFT_TOOL_TYPES = [
   "IMAGE_SUGGEST",
   "SAFE_REWRITE",
   "DATA_DIAGNOSIS",
+] as const;
+
+/** Prompt 库选择器可见的工具(排除平台保留:SAFE_REWRITE 由审核流程触发,DATA_DIAGNOSIS 由后端诊断)。 */
+export const PROMPT_DRAWER_TOOLS: readonly DraftToolType[] = [
+  "REWRITE_FLUENT",
+  "EXPAND",
+  "TRANSFORM_STYLE",
+  "REWRITE_OPENING",
+  "HEADLINE_SUB",
+  "HEADLINE_NEW",
+  "ADD_FACTS",
+  "ADD_TOPIC",
+  "IMAGE_SUGGEST",
 ] as const;
 
 export type DraftToolType = (typeof DRAFT_TOOL_TYPES)[number];
