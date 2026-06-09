@@ -263,6 +263,15 @@ PRD §4.4.3 硬指标。把 `SENSITIVE_CATEGORIES` 7 类目重组为 5 类目(po
 - **前端**:`/me/works` PUBLISHED 行加「下线」按钮(红字 destructive),OFFLINE 行加「重新提审」按钮;`version-history-modal` 回滚按钮下加灰色提示文案"回滚后将切回草稿状态,需重新点发布走预检"
 - 测试覆盖:api 单测 +10(takedown 6 + restore 4) / e2e +3(完整下线→恢复→重发链路 + 非作者 403×2) / web vitest +2
 
+## Phase 2.19 — 平台内置 Prompt 库风格款 + 设计注释渲染
+
+PRD §3.5.4 落地。每个创作工具配 1 个默认款 + 1 个风格款,全平台 24 条内置 Prompt ≤ 30 条上限。
+
+- **9 条风格款**:每个创作工具(REWRITE_FLUENT / EXPAND / TRANSFORM_STYLE / HEADLINE_SUB / HEADLINE_NEW / REWRITE_OPENING / ADD_FACTS / ADD_TOPIC / IMAGE_SUGGEST)各加 1 条 `isStarter: false` 风格款,总计 15(原有 9 创作 + 6 平台保留)+ 9(新增风格款)= 24 条
+- **设计注释(designNote)**:每条风格款的 `designNote` 是平台 PE 经验沉淀,讲清楚:① 解决什么问题 ② 适合什么品类 ③ 与默认款差异点
+- **前端 PromptDrawer**:platform tab 每条 prompt 渲染 `designNote` 可折叠 `<details>` 块;`isStarter` chip 区分「默认款」(emerald)与「风格款」(blue)
+- 测试覆盖:web vitest +5(PromptDrawer.designNote.test.tsx) / e2e prompts 断言更新(不再硬编码 `isStarter===true`)
+
 ## 交付物清单
 
 - [x] PRD 终稿

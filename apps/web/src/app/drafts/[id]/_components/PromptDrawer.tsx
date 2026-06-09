@@ -144,8 +144,26 @@ export function PromptDrawer({ open, onClose }: PromptDrawerProps) {
                 </button>
               </header>
               <p className="text-xs text-zinc-500 whitespace-pre-wrap">{p.systemPrompt}</p>
+              {p.designNote && (
+                <details className="rounded bg-zinc-50 dark:bg-zinc-900/50 px-2 py-1.5">
+                  <summary className="cursor-pointer text-xs text-zinc-600 dark:text-zinc-400 select-none">
+                    💡 设计注释(平台 PE 经验)
+                  </summary>
+                  <p className="mt-1.5 text-xs text-zinc-600 dark:text-zinc-400 whitespace-pre-wrap leading-relaxed">
+                    {p.designNote}
+                  </p>
+                </details>
+              )}
               <div className="flex justify-between text-xs">
-                <span className="text-zinc-500">{p.isStarter ? "默认款" : ""}</span>
+                <span
+                  className={`rounded px-1.5 py-0.5 text-[11px] ${
+                    p.isStarter
+                      ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                      : "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300"
+                  }`}
+                >
+                  {p.isStarter ? "默认款" : "风格款"}
+                </span>
                 <button
                   type="button"
                   onClick={() => setPromptId(p.id)}
