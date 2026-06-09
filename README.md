@@ -295,6 +295,19 @@ PRD §4.1.5 落地。运营抽样 + 规则版本批量复审两条管线,共用 
 - **前端**:`/admin` 加 2 张 NavCard 入口(抽样巡检 / 规则复审),引导到详细页(详细页本期未做,留作后续 Phase 收尾)
 - 测试覆盖:api 单测 +7(sample-audit 4 + rule-recheck 3) / e2e +4(enqueue + decide PASS + decide FAIL → offline + rule-recheck 触发 offline)
 
+## Phase 2.22 — 素材合规校验(两次校验)
+
+PRD §4.6 落地。入库时拦截 + 插入文章前警告两次校验,4 维度(face/watermark/sensitive/ai_unmarked)3 档结果(ALLOW/WARN/BLOCK)。
+
+- **Schema**:`AssetReviewStatus` enum(PENDING/PASSED/WARNED/BLOCKED);Asset 加 `reviewStatus` + `reviewNote` 两列;`DraftToolType` 加 `IMAGE_REVIEW`;1 条 PLATFORM IMAGE_REVIEW fixture(配图诊断 prompt,4 维 severity JSON 输出)
+- **入库时校验(INGEST)**:`upload` / `generateAi` 入库前调 `AssetReviewService.reviewAsset(stage=INGEST)`;BLOCK → throw 400 不入库;WARN/ALLOW → 正常入库并落 reviewStatus;`upload` 新增可选 `aiDeclared` 参数(默认 false)
+- **插入前校验(PRE_INSERT)**:新端点 `POST /assets/:id/check-for-insert`,拉 asset 元信息调 `reviewAsset(stage=PRE_INSERT)`;high 只 WARN 不 BLOCK(作者可选择「仍使用」);仅返结果不改 Asset 表
+- **AI 未标注硬规则**:LLM 判 `ai_unmarked=high` 且 `aiDeclared=false` 且 `aiGenerated=false` → INGEST 阶段提升至 BLOCK;`aiDeclared=true` 或 `aiGenerated=true` 时自动降级 ai_unmarked 为 low(已声明)
+- **阈值差异**:INGEST 严格 — high→BLOCK,medium→WARN;PRE_INSERT 宽松 — high→WARN,medium→WARN
+- **LLM 启发式**:因项目 LlmClient 仅支持 chat completions(无图像 API),本期喂 mime+文件名+sceneTags+subjectTags+aiDeclared 给 LLM 做文本推断;LLM 失败 fallback ALLOW;真视觉 API 留 Phase 2.28 收尾
+- **平台保留**:IMAGE_REVIEW 加入 PromptsService 隐藏列表(notIn) + copyToPrivate 拒绝列表,作者不可见不可改
+- 测试覆盖:api 单测 +7(review 7) / e2e +6(upload PASSED/BLOCK/WARN + check-for-insert ALLOW/跨用户403 + generateAi PASSED)
+
 ## 交付物清单
 
 - [x] PRD 终稿
