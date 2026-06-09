@@ -209,6 +209,7 @@ model Prompt {
   sourcePrompt Prompt?  @relation("PromptCopy", fields: [sourcePromptId], references: [id])
   copies       Prompt[] @relation("PromptCopy")
   snapshots    PromptSnapshot[]
+  evalRuns     PromptEvalRun[]
 
   @@index([owner, tool])
   @@index([authorId])
@@ -301,6 +302,56 @@ model SampleAudit {
   @@index([status])
   @@index([draftId])
   @@map("sample_audits")
+}
+
+enum PromptEvalRunStatus {
+  RUNNING
+  DONE
+  FAILED
+}
+
+model PromptTestCase {
+  id        String        @id @default(cuid())
+  tool      DraftToolType
+  input     String        @db.Text
+  expected  String        @db.Text
+  category  String?       @db.Text
+  createdAt DateTime      @default(now())
+
+  @@index([tool])
+  @@map("prompt_test_cases")
+}
+
+model PromptEvalRun {
+  id          String               @id @default(cuid())
+  tool        DraftToolType
+  promptId    String
+  totalCases  Int                  @default(0)
+  accuracy    Float                @default(0)
+  stability   Float                @default(0)
+  status      PromptEvalRunStatus  @default(RUNNING)
+  startedAt   DateTime             @default(now())
+  finishedAt  DateTime?
+
+  prompt Prompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
+
+  @@index([tool, startedAt(sort: Desc)])
+  @@map("prompt_eval_runs")
+}
+
+model PromptLabAction {
+  id           String   @id @default(cuid())
+  tool         DraftToolType
+  action       String
+  fromPromptId String?
+  toPromptId   String
+  evalRunId    String?
+  note         String?  @db.Text
+  operatedBy   String
+  createdAt    DateTime @default(now())
+
+  @@index([tool, createdAt(sort: Desc)])
+  @@map("prompt_lab_actions")
 }
 
 model RuleRecheckRun {

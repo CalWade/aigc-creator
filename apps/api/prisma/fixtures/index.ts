@@ -16,15 +16,25 @@ import { PrismaClient } from "@prisma/client";
 
 import { DEMO_DRAFTS } from "./drafts";
 import { PROMPT_STARTERS } from "./prompts";
+import { PROMPT_TEST_CASES } from "./prompt-test-cases";
 import { applyReportFixtures, DEMO_REPORTS } from "./reports";
 import { applyReviews } from "./reviews";
 import { ADMIN_USER_ID, DEMO_AUTHOR_ID, DEMO_USERS } from "./users";
 
-export { ADMIN_USER_ID, DEMO_AUTHOR_ID, DEMO_DRAFTS, DEMO_REPORTS, DEMO_USERS, PROMPT_STARTERS };
+export {
+  ADMIN_USER_ID,
+  DEMO_AUTHOR_ID,
+  DEMO_DRAFTS,
+  DEMO_REPORTS,
+  DEMO_USERS,
+  PROMPT_STARTERS,
+  PROMPT_TEST_CASES,
+};
 
 export interface FixtureSummary {
   users: number;
   prompts: number;
+  testCases: number;
   drafts: number;
   reviews: number;
   reports: number;
@@ -33,6 +43,9 @@ export interface FixtureSummary {
 export async function cleanupAllFixtures(prisma: PrismaClient): Promise<void> {
   // Draft.lastReviewId → Review FK,先解开避免 review.deleteMany 失败
   await prisma.draft.updateMany({ data: { lastReviewId: null } });
+  await prisma.promptLabAction.deleteMany();
+  await prisma.promptEvalRun.deleteMany();
+  await prisma.promptTestCase.deleteMany();
   await prisma.sampleAudit.deleteMany();
   await prisma.ruleRecheckRun.deleteMany();
   await prisma.report.deleteMany();
@@ -50,6 +63,7 @@ export async function applyAllFixtures(prisma: PrismaClient): Promise<FixtureSum
 
   const users = await prisma.user.createMany({ data: DEMO_USERS });
   const prompts = await prisma.prompt.createMany({ data: PROMPT_STARTERS });
+  const testCases = await prisma.promptTestCase.createMany({ data: PROMPT_TEST_CASES });
   const drafts = await prisma.draft.createMany({ data: DEMO_DRAFTS });
   const reviewCount = await applyReviews(prisma);
   const reportCount = await applyReportFixtures(prisma);
@@ -57,6 +71,7 @@ export async function applyAllFixtures(prisma: PrismaClient): Promise<FixtureSum
   return {
     users: users.count,
     prompts: prompts.count,
+    testCases: testCases.count,
     drafts: drafts.count,
     reviews: reviewCount,
     reports: reportCount,
