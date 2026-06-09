@@ -254,6 +254,15 @@ PRD §4.4.3 硬指标。把 `SENSITIVE_CATEGORIES` 7 类目重组为 5 类目(po
 
 文档:[spec](./docs/superpowers/specs/shipped/2026-06-09-phase-2-17-prompt-restore-and-snapshots-design.md) · [plan](./docs/superpowers/plans/shipped/2026-06-09-phase-2-17-prompt-restore-and-snapshots.md)
 
+## Phase 2.18 — 作者主动下线 + OFFLINE 重新提审
+
+补齐 PRD §3.3.4 缺口:
+
+- **作者主动下线**:`POST /drafts/:id/takedown`(PUBLISHED → OFFLINE,写 `offlineReason` + `offlineAt`);非 PUBLISHED 抛 409 `TAKEDOWN_NOT_ALLOWED`,非作者 403
+- **OFFLINE 重新提审**:`POST /drafts/:id/restore-from-offline`(OFFLINE → DRAFT,`version+1`,清空 `publishedBody/Title/Version` + `offlineReason/At`);非 OFFLINE 抛 409 `RESTORE_NOT_ALLOWED`
+- **前端**:`/me/works` PUBLISHED 行加「下线」按钮(红字 destructive),OFFLINE 行加「重新提审」按钮;`version-history-modal` 回滚按钮下加灰色提示文案"回滚后将切回草稿状态,需重新点发布走预检"
+- 测试覆盖:api 单测 +10(takedown 6 + restore 4) / e2e +3(完整下线→恢复→重发链路 + 非作者 403×2) / web vitest +2
+
 ## 交付物清单
 
 - [x] PRD 终稿
