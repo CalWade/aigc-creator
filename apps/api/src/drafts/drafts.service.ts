@@ -91,6 +91,53 @@ export class DraftsService {
     return { id: updated.id, status: "DRAFT", version: updated.version };
   }
 
+  /**
+   * Phase 2.18:作者主动下线。仅 PUBLISHED 可下线;写入 offlineReason + offlineAt。
+   */
+  async takedown(id: string, authorId: string, reason?: string) {
+    const cur = await this.assertAuthor(id, authorId);
+    if (cur.status !== "PUBLISHED") {
+      throw new ConflictException({
+        code: "TAKEDOWN_NOT_ALLOWED",
+        message: "仅 PUBLISHED 状态可由作者主动下线",
+      });
+    }
+    return this.prisma.draft.update({
+      where: { id },
+      data: {
+        status: "OFFLINE",
+        offlineReason: (reason?.trim() || "作者主动下线").slice(0, 200),
+        offlineAt: new Date(),
+      },
+    });
+  }
+
+  /**
+   * Phase 2.18:OFFLINE 恢复为 DRAFT 重新提审。清空 publishedBody/Title/Version,
+   * version+1 使缓存自洽失效。
+   */
+  async restoreFromOffline(id: string, authorId: string) {
+    const cur = await this.assertAuthor(id, authorId);
+    if (cur.status !== "OFFLINE") {
+      throw new ConflictException({
+        code: "RESTORE_NOT_ALLOWED",
+        message: "仅 OFFLINE 状态可恢复为草稿重新提审",
+      });
+    }
+    return this.prisma.draft.update({
+      where: { id },
+      data: {
+        status: "DRAFT",
+        version: { increment: 1 },
+        publishedBody: Prisma.JsonNull,
+        publishedTitle: null,
+        publishedVersion: null,
+        offlineReason: null,
+        offlineAt: null,
+      },
+    });
+  }
+
   async update(id: string, authorId: string, dto: UpdateDraftDto): Promise<Draft> {
     const cur = await this.assertAuthor(id, authorId);
     // Phase 2.14:乐观并发。客户端带 baseVersion 时,后端比对当前 DB 版本;

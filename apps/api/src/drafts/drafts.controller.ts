@@ -26,6 +26,7 @@ import { ToolsService } from "./tools.service";
 import { CreateDraftDto } from "./dto/create-draft.dto";
 import { OutlineRequestDto } from "./dto/outline-request.dto";
 import { SectionsStreamDto } from "./dto/sections-stream.dto";
+import { TakedownDto } from "./dto/takedown.dto";
 import { ToolInvokeDto } from "./dto/tool-invoke.dto";
 import { UpdateDraftDto } from "./dto/update-draft.dto";
 import type { Candidate } from "@bytedance-aigc/shared";
@@ -119,5 +120,17 @@ export class DraftsController {
     @CurrentUser() user: JwtPayload,
   ): Promise<{ id: string; publishedAt: Date }> {
     return this.drafts.publish(id, user.sub);
+  }
+
+  @Post(":id/takedown")
+  @HttpCode(HttpStatus.OK)
+  takedown(@Param("id") id: string, @CurrentUser() user: JwtPayload, @Body() dto: TakedownDto) {
+    return this.drafts.takedown(id, user.sub, dto.reason);
+  }
+
+  @Post(":id/restore-from-offline")
+  @HttpCode(HttpStatus.OK)
+  restoreFromOffline(@Param("id") id: string, @CurrentUser() user: JwtPayload) {
+    return this.drafts.restoreFromOffline(id, user.sub);
   }
 }
