@@ -308,6 +308,24 @@ PRD §4.6 落地。入库时拦截 + 插入文章前警告两次校验,4 维度(
 - **平台保留**:IMAGE_REVIEW 加入 PromptsService 隐藏列表(notIn) + copyToPrivate 拒绝列表,作者不可见不可改
 - 测试覆盖:api 单测 +7(review 7) / e2e +6(upload PASSED/BLOCK/WARN + check-for-insert ALLOW/跨用户403 + generateAi PASSED)
 
+## Phase 2.23 — 平台保留 Prompt 实验室
+
+PRD §4.7.3「PE 工程化:Prompt 实验室」落地。5 步标准化流程:测试集 → 批量评估 → 版本对比 → 人工确认上线 → 可追溯。
+
+- **3 个新模型**:`PromptTestCase`(测试用例,id/tool/input/expected/category) + `PromptEvalRun`(评估运行,id/tool/promptId/accuracy/stability/status) + `PromptLabAction`(操作审计,id/tool/action/fromPromptId/toPromptId/evalRunId/note/operatedBy);`PromptEvalRunStatus` enum(RUNNING/DONE/FAILED)
+- **5 步流程**:
+  1. **测试集**:`PromptTestCase` 按 tool 维护脱敏评估集;本期 fixture 每类 5 条(SAFETY_REVIEW 5 + QUALITY_REVIEW 5 + IMAGE_REVIEW 5)证明链路通;Phase 2.28 补充完整数量(安全≥300 / 质量≥100 / 诊断≥50)
+  2. **批量评估**:`runEval(tool, candidatePromptId)` — p-limit 并发=2,每条用例调 LLM chat,比较输出 severity 与 expected,计算 accuracy=匹配数/总数;stability 本期简化为 0(只跑 1 次)
+  3. **版本对比**:`compareWithCurrent(evalRunId)` — 拉该 evalRun,拉当前线上 prompt(PLATFORM+isStarter),拉上一版 DONE evalRun,返 accuracyDelta + canPromote(accuracyDelta>=0)
+  4. **人工确认上线**:`promoteToLive(evalRunId, operatedBy)` — 检查 canPromote(accuracy 不回退),把候选 prompt 内容写入当前线上 prompt,记录 PromptLabAction(action="promote")
+  5. **可追溯**:全部历史版本、评估运行、操作审计持久化存储;PromptLabAction 记录每次 promote/rollback 的 from/to promptId + evalRunId + operatedBy
+- **runEval 准确率计算**:每条测试用例调用 LLM,从 JSON 输出提取最高 severity(high>medium>low),与 testCase.expected 比对;accuracy = 匹配数 / 总用例数
+- **promote 准入条件**:accuracyDelta >= 0(候选准确率不低于上一版);回退时抛 400 ACCURACY_REGRESSION
+- **rollback**:找最近一次 promote action 的 fromPromptId,把其内容写回当前线上 prompt,记录 PromptLabAction(action="rollback")
+- **端点**:全部 AdminGuard 保护 — `POST /admin/prompt-lab/test-cases` / `GET /admin/prompt-lab/test-cases` / `POST /admin/prompt-lab/eval-runs` / `GET /admin/prompt-lab/eval-runs` / `GET /admin/prompt-lab/eval-runs/:id/compare` / `POST /admin/prompt-lab/eval-runs/:id/promote` / `POST /admin/prompt-lab/rollback`
+- **前端**:`/admin` 加 NavCard「Prompt 实验室」,引导到 `/admin/prompt-lab`(详细页本期未做,留作后续 Phase)
+- 测试增量:api 单测 +7(addTestCase/listTestCases/runEval 正确/runEval 部分不匹配/promote 成功/promote 回退拒绝/rollback) / e2e +6(test-cases CRUD/eval-runs DONE/compare/promote/rollback/非admin 403)
+
 ## 交付物清单
 
 - [x] PRD 终稿
