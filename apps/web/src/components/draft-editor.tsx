@@ -13,6 +13,7 @@ import { useDraftPresence } from "@/lib/use-draft-presence";
 import { ConflictBanner } from "./conflict-banner";
 import { OfflineBanner } from "./offline-banner";
 import { ReadonlyBanner } from "./readonly-banner";
+import { RepublishBanner } from "./republish-banner";
 import { SaveStatus } from "./save-status";
 import { TiptapBody } from "./tiptap-body";
 import { VersionHistoryModal } from "./version-history-modal";
@@ -29,6 +30,10 @@ interface DraftDetail {
   authorId: string;
   title: string;
   body: JSONContent;
+  publishedBody: JSONContent | null;
+  publishedTitle: string | null;
+  publishedVersion: number | null;
+  publishedAt: string | null;
   mode: "FAST" | "FINE";
   version: number;
   updatedAt: string;
@@ -387,16 +392,23 @@ export function DraftEditor({ id }: { id: string }) {
     return <main className="p-6 text-sm text-red-600">{state.message}</main>;
   }
 
-  // T7: 顶部 Banner stack(spec §6 优先级:Readonly > Offline > Conflict,只显一条)
+  // T7: 顶部 Banner stack(spec §6 优先级:Readonly > Offline > Conflict > Republish)
   // T8: ReadonlyBanner 接入 useDraftPresence 真实多 Tab 抢占状态。
+  // Phase 2.15: state.kind === "ready" && publishedAt 非空 → 二发期间显 RepublishBanner
   const isReadonly = otherTabExists;
   const isOffline = status === "offline";
+  const isRepublish = state.kind === "ready" && state.draft.publishedAt != null;
   const bannerSlot = isReadonly ? (
     <ReadonlyBanner visible={true} />
   ) : isOffline ? (
     <OfflineBanner visible={true} />
   ) : showConflictBanner ? (
     <ConflictBanner visible={true} onOpenVersionHistory={() => setVersionHistoryOpen(true)} />
+  ) : isRepublish ? (
+    <RepublishBanner
+      publishedAt={state.kind === "ready" ? state.draft.publishedAt : null}
+      draftId={id}
+    />
   ) : null;
 
   return (
