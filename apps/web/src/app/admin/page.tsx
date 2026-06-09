@@ -20,6 +20,16 @@ export default function AdminHomePage() {
           title="直接下线"
           desc="不经过举报流程,凭 draft id 直接下线已发布作品"
         />
+        <NavCard
+          href="/admin/sample-audits"
+          title="抽样巡检"
+          desc="按 5% 随机抽取已发布作品进行人工复审"
+        />
+        <NavCard
+          href="/admin/rule-rechecks"
+          title="规则复审"
+          desc="规则更新后批量重审已发布作品,命中 BLOCK 自动下线"
+        />
       </div>
     </main>
   );
