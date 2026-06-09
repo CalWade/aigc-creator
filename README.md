@@ -243,6 +243,17 @@ PRD §4.4.3 硬指标。把 `SENSITIVE_CATEGORIES` 7 类目重组为 5 类目(po
 
 测试基线:api 单测 +4(eval-safety-aggregator 聚合函数);现有 e2e/单测全部沿用 5 类目重命名(politics/drugs/medical e2e 已重写为 pornography/abuse/illicit_ads)。
 
+## Phase 2.17 — 作者私人 Prompt「恢复默认」+ 3 快照版本管理
+
+补齐 PRD §3.5.3 极简版本管理:
+
+- 私人 Prompt 每次 PATCH 在事务内自动写一条 snapshot,上限 3 条(超出最旧裁剪)
+- 「恢复默认」按钮把当前工具的 active 切回平台 `isStarter` 默认款,不删私人副本
+- 「历史 ▾」展开列出最近 3 条快照,每条点「回滚」用快照内容覆盖当前 Prompt(同时把"被回滚前"的状态自动记入新快照)
+- 严格不做沙盒、不做 A/B 对照(PRD 明文,复杂能力留给 §4.7.3 平台 Prompt 实验室)
+
+文档:[spec](./docs/superpowers/specs/shipped/2026-06-09-phase-2-17-prompt-restore-and-snapshots-design.md) · [plan](./docs/superpowers/plans/shipped/2026-06-09-phase-2-17-prompt-restore-and-snapshots.md)
+
 ## 交付物清单
 
 - [x] PRD 终稿
