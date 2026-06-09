@@ -214,6 +214,22 @@ PRD §3.3.1 / §3.3.2 落地。
 
 测试基线:api 单测 +5 / e2e +6(`baseVersion` 冲突 + OFFLINE_CONFLICT 版本) / web vitest +12(idb-draft-cache + useAutosave + useDraftPresence) / playwright +1 文件 ~2 用例(offline-autosave)。
 
+## Phase 2.15 — 发布后二次编辑
+
+PRD §3.3.3 落地。已发布稿允许作者直接改回草稿编辑;线上版本(`publishedBody/publishedTitle`)在重新通过审核前保留可见,二发完整复用 §4.1.4 preflight。
+
+- **数据模型**:`Draft` 加 `publishedBody/publishedTitle/publishedVersion` 三字段保留线上快照;`DraftStatus` 增 `REVIEWING` 仅事务内出现(`$transaction` 内 `publish()` 一更状态、二写线上快照,外部观察者永远见不到)
+- **端点**:
+  - `POST /drafts/:id/edit` — PUBLISHED → DRAFT,`version+1`,保留 `publishedBody`;非 PUBLISHED 抛 409 `EDIT_NOT_ALLOWED`
+  - `POST /drafts/:id/publish` — 二发分支(原 status=DRAFT 且 `publishedBody` 非空):走完整 preflight,通过后覆盖 `publishedBody/Title/Version`
+- **B-path 公开读**:`getPostDetail` / `getFeed` / `getAuthorPosts` 接受 PUBLISHED ∪(DRAFT/REVIEWING ∩ `publishedBody!=null`),`title=publishedTitle ?? title`,`body=publishedBody ?? body` — 二发期间 `/post/:id` 仍展示老版直至新版通过
+- **热度继承**:env `REPUBLISH_HOTNESS_INHERIT`(默认 `true`);设 `false` 则二发时 `PostStat.{impression,click,dwellUnit,like}` 清零
+- **前端**:
+  - `/me/works` PUBLISHED 项双 Action「查看线上」+「继续编辑草稿」(后者调 `POST /edit`,200 跳 `/drafts/:id`,409 弹 message);REVIEWING 项显「审核中…」
+  - 编辑器 `publishedAt` 非空 → `RepublishBanner`(蓝)显「你正在编辑已发布版本。线上仍保留原版直到你重新发布通过审核」+「查看线上 →」;Banner 优先级 Readonly > Offline > Conflict > Republish
+
+测试基线:api 单测 +7(`drafts.service.republish.spec.ts`) / e2e +3(`republish.e2e-spec.ts` 含双 publish 全链路) / web vitest +2(RepublishBanner) / playwright +1 文件 2 用例(republish)。
+
 ## 交付物清单
 
 - [x] PRD 终稿
