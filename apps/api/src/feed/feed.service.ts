@@ -176,10 +176,12 @@ function toPostDto(
   draft: {
     id: string;
     title: string;
+    publishedTitle: string | null;
     authorId: string;
     publishedAt: Date | null;
     updatedAt: Date;
     body: unknown;
+    publishedBody: unknown;
     author: { id: string; handle: string };
     lastReview: { quality: unknown } | null;
   },
@@ -189,14 +191,14 @@ function toPostDto(
   const hotnessMock = normalizeHotness(hotnessRaw, hotnessPool);
   return {
     id: draft.id,
-    title: draft.title,
+    title: draft.publishedTitle ?? draft.title,
     authorId: draft.authorId,
     authorHandle: draft.author.handle,
     publishedAt: (draft.publishedAt ?? draft.updatedAt).toISOString(),
     qualityOverall: readQualityOverall(draft.lastReview?.quality),
     hotnessMock,
     coverIndex: pickCoverIndex(draft.id),
-    excerpt: extractExcerpt(draft.body),
+    excerpt: extractExcerpt(draft.publishedBody ?? draft.body),
   };
 }
 
