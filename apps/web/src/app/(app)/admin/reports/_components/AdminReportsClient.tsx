@@ -2,6 +2,9 @@
 
 import { useEffect } from "react";
 
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAdminReports, type AdminReportFilter } from "@/hooks/use-admin-reports";
 
 import { ReportRow } from "./ReportRow";
@@ -21,30 +24,23 @@ export function AdminReportsClient() {
   }, []);
 
   if (error === "无管理员权限") {
-    return <p className="text-red-600 text-sm">无管理员权限,请联系运维。</p>;
+    return <p className="text-destructive text-sm">无管理员权限,请联系运维。</p>;
   }
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex gap-2 border-b border-zinc-200 dark:border-zinc-800 pb-2">
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            type="button"
-            onClick={() => void load(t.key, true)}
-            className={`rounded px-3 py-1.5 text-sm ${
-              status === t.key
-                ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                : "border border-zinc-300 dark:border-zinc-700"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      <Tabs value={status} onValueChange={(v) => void load(v as AdminReportFilter, true)}>
+        <TabsList variant="line">
+          {TABS.map((t) => (
+            <TabsTrigger key={t.key} value={t.key}>
+              {t.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
+      {error && <p className="text-sm text-destructive">{error}</p>}
       {!loading && items.length === 0 && !error && (
-        <p className="text-sm text-zinc-500">暂无举报。</p>
+        <p className="text-sm text-muted-foreground">暂无举报。</p>
       )}
       <ul className="flex flex-col gap-3">
         {items.map((r) => (
@@ -55,16 +51,16 @@ export function AdminReportsClient() {
       </ul>
       <div className="flex justify-center">
         {cursor && (
-          <button
-            type="button"
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => void load(status, false)}
             disabled={loading}
-            className="rounded border border-zinc-300 dark:border-zinc-700 px-4 py-1.5 text-sm disabled:opacity-50"
           >
             {loading ? "加载中…" : "加载更多"}
-          </button>
+          </Button>
         )}
-        {!cursor && loading && <span className="text-sm text-zinc-500">加载中…</span>}
+        {!cursor && loading && <span className="text-sm text-muted-foreground">加载中…</span>}
       </div>
     </div>
   );

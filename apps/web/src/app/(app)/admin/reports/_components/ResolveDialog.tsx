@@ -3,6 +3,16 @@
 import { useState } from "react";
 import type { ReportResolution } from "@bytedance-aigc/shared";
 
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { useResolveReport } from "@/hooks/use-admin-reports";
 
 interface ResolveDialogProps {
@@ -23,8 +33,6 @@ export function ResolveDialog({ reportId, open, onClose, onResolved }: ResolveDi
   const [note, setNote] = useState("");
   const { loading, error, run } = useResolveReport();
 
-  if (!open) return null;
-
   const handleClose = (): void => {
     setResolution("WARN");
     setNote("");
@@ -40,19 +48,23 @@ export function ResolveDialog({ reportId, open, onClose, onResolved }: ResolveDi
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/40" onClick={handleClose} />
-      <div className="relative w-full max-w-md rounded-lg bg-white dark:bg-zinc-950 shadow-xl border border-zinc-200 dark:border-zinc-800 p-5 flex flex-col gap-4">
-        <h2 className="text-lg font-semibold">处置举报</h2>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) handleClose();
+      }}
+    >
+      <DialogContent showCloseButton={false}>
+        <DialogHeader>
+          <DialogTitle>处置举报</DialogTitle>
+          <DialogDescription className="sr-only">处置类型</DialogDescription>
+        </DialogHeader>
         <fieldset className="flex flex-col gap-2 text-sm">
-          <legend className="sr-only">处置类型</legend>
           {OPTIONS.map((o) => (
             <label
               key={o.value}
               className={`flex items-center gap-2 rounded border px-3 py-2 cursor-pointer ${
-                resolution === o.value
-                  ? "border-zinc-900 dark:border-zinc-100"
-                  : "border-zinc-300 dark:border-zinc-700"
+                resolution === o.value ? "border-foreground" : "border-border"
               }`}
             >
               <input
@@ -73,33 +85,26 @@ export function ResolveDialog({ reportId, open, onClose, onResolved }: ResolveDi
             onChange={(e) => setNote(e.target.value)}
             maxLength={200}
             rows={3}
-            className="rounded border border-zinc-300 dark:border-zinc-700 bg-transparent px-2 py-1.5 outline-none focus:border-zinc-500"
+            className="rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
             placeholder="例:确认低俗描写,予以下线"
           />
-          <span className="text-xs text-zinc-500 self-end">{note.length}/200</span>
+          <span className="text-xs text-muted-foreground self-end">{note.length}/200</span>
         </label>
         {resolution === "OFFLINE" && (
-          <p className="text-sm text-red-600">此操作会下线该稿件,作者将在 /me/works 看到下线提示</p>
+          <p className="text-sm text-destructive">
+            此操作会下线该稿件,作者将在 /me/works 看到下线提示
+          </p>
         )}
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <div className="flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={handleClose}
-            className="rounded border border-zinc-300 dark:border-zinc-700 px-3 py-1.5 text-sm"
-          >
+        {error && <p className="text-sm text-destructive">{error}</p>}
+        <DialogFooter>
+          <Button variant="outline" size="sm" onClick={handleClose}>
             取消
-          </button>
-          <button
-            type="button"
-            onClick={() => void handleSubmit()}
-            disabled={loading}
-            className="rounded bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 px-3 py-1.5 text-sm disabled:opacity-50"
-          >
+          </Button>
+          <Button size="sm" onClick={() => void handleSubmit()} disabled={loading}>
             {loading ? "提交中…" : "提交"}
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

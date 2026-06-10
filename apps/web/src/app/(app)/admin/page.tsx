@@ -1,12 +1,14 @@
 import Link from "next/link";
 
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
 export const dynamic = "force-dynamic";
 
 export default function AdminHomePage() {
   return (
     <main className="max-w-3xl mx-auto px-6 py-8">
-      <h1 className="text-2xl font-bold mb-6">平台管理后台</h1>
-      <p className="text-sm text-zinc-500 mb-6">
+      <h1 className="text-lg font-semibold mb-1">平台管理后台</h1>
+      <p className="text-sm text-muted-foreground mb-6">
         访问需要 admin 权限(白名单 handle 由后端 ADMIN_HANDLES 控制)。
       </p>
       <div className="grid sm:grid-cols-2 gap-3">
@@ -42,12 +44,13 @@ export default function AdminHomePage() {
 
 function NavCard({ href, title, desc }: { href: string; title: string; desc: string }) {
   return (
-    <Link
-      href={href}
-      className="block rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-4 hover:border-zinc-400 dark:hover:border-zinc-600"
-    >
-      <div className="text-base font-medium">{title}</div>
-      <div className="text-xs text-zinc-500 mt-1">{desc}</div>
+    <Link href={href}>
+      <Card className="transition-colors hover:border-foreground/20">
+        <CardHeader>
+          <CardTitle className="text-sm">{title}</CardTitle>
+          <CardDescription>{desc}</CardDescription>
+        </CardHeader>
+      </Card>
     </Link>
   );
 }
