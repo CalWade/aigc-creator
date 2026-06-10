@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { FeedResponse } from "@bytedance-aigc/shared";
 import { DEFAULT_FEED_WEIGHTS } from "@bytedance-aigc/shared";
 import { serverFetchJson } from "@/lib/server-fetch";
+import { Card, CardContent } from "@/components/ui/card";
 import { FeedList } from "./_components/FeedList";
 import { FeedSkeleton } from "./_components/FeedSkeleton";
 import { LoadMore } from "./_components/LoadMore";
@@ -37,15 +38,17 @@ async function FeedSection({ searchParams }: PageProps) {
     data = await serverFetchJson<FeedResponse>(`/feed?${qs.toString()}`);
   } catch {
     return (
-      <div className="card p-8 text-center">
-        <p className="text-[15px] text-[var(--text-2)]">加载失败,请刷新重试</p>
-        <p className="text-[12px] text-[var(--text-3)] mt-1">请确认 API 服务已在 :4000 端口启动</p>
-      </div>
+      <Card className="p-8 text-center">
+        <p className="text-[15px] text-muted-foreground">加载失败,请刷新重试</p>
+        <p className="text-[12px] text-muted-foreground/70 mt-1">
+          请确认 API 服务已在 :4000 端口启动
+        </p>
+      </Card>
     );
   }
 
   if (data.items.length === 0) {
-    return <p className="text-center py-16 text-[14px] text-[var(--text-3)]">暂无文章</p>;
+    return <p className="text-center py-16 text-[14px] text-muted-foreground">暂无文章</p>;
   }
 
   return (
@@ -62,18 +65,18 @@ export default async function HomePage({ searchParams }: PageProps) {
       {/* 子工具条:子分类 + 权重 */}
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div className="flex items-center gap-1 text-[13px]">
-          <span className="px-2.5 py-1 rounded-md bg-[var(--brand-soft)] text-[var(--brand)] font-medium">
+          <span className="px-2.5 py-1 rounded-md bg-brand/10 text-brand font-medium">
             综合推荐
           </span>
           <Link
             href="/rank/hot"
-            className="px-2.5 py-1 rounded-md text-[var(--text-2)] hover:bg-[var(--surface)] transition-colors"
+            className="px-2.5 py-1 rounded-md text-muted-foreground hover:bg-accent transition-colors"
           >
             最热
           </Link>
           <Link
             href="/rank/best"
-            className="px-2.5 py-1 rounded-md text-[var(--text-2)] hover:bg-[var(--surface)] transition-colors"
+            className="px-2.5 py-1 rounded-md text-muted-foreground hover:bg-accent transition-colors"
           >
             高质
           </Link>

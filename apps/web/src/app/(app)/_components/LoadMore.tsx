@@ -62,17 +62,17 @@ export function LoadMore({
           ))}
         </div>
       )}
-      {err && <p className="text-sm text-red-600 mt-4">{err}</p>}
+      {err && <p className="text-sm text-destructive mt-4">{err}</p>}
       {!done && (
         <div
           ref={sentinel}
-          className="h-8 flex items-center justify-center text-xs text-gray-400 mt-4"
+          className="h-8 flex items-center justify-center text-xs text-muted-foreground mt-4"
         >
           {loading ? "加载中…" : "下拉加载更多"}
         </div>
       )}
       {done && items.length > 0 && (
-        <p className="text-center text-xs text-gray-400 mt-4">没有更多了</p>
+        <p className="text-center text-xs text-muted-foreground mt-4">没有更多了</p>
       )}
     </>
   );
