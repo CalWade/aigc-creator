@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSyncExternalStore } from "react";
-import { getUser, getToken, clearToken, type AuthUser } from "@/lib/auth";
+import { clearToken, type AuthUser } from "@/lib/auth";
 
 const NAV = [
   { href: "/", label: "信息流", en: "Feed" },
@@ -33,13 +33,46 @@ function subscribeAuth(cb: () => void) {
   return () => window.removeEventListener("storage", cb);
 }
 
-function readAuth(): { user: AuthUser | null; hasToken: boolean } {
-  if (typeof window === "undefined") return { user: null, hasToken: false };
-  return { user: getUser(), hasToken: !!getToken() };
+interface AuthSnapshot {
+  user: AuthUser | null;
+  hasToken: boolean;
 }
 
-const EMPTY = { user: null as AuthUser | null, hasToken: false };
-function getServerSnapshot() {
+const EMPTY: AuthSnapshot = { user: null, hasToken: false };
+
+// useSyncExternalStore 要求 getSnapshot 在数据未变时返回引用相等的对象,
+// 否则会触发"getSnapshot should be cached"无限循环。这里把上次返回的快照
+// 缓存住,只在 token / handle 字面变化时才生成新对象。
+let cachedSnap: AuthSnapshot = EMPTY;
+
+function readAuth(): AuthSnapshot {
+  if (typeof window === "undefined") return EMPTY;
+  const token = window.localStorage.getItem("bytedance-aigc.accessToken");
+  const userRaw = window.localStorage.getItem("bytedance-aigc.user");
+  const hasToken = !!token;
+  const userId = cachedSnap.user?.id ?? null;
+  const userHandle = cachedSnap.user?.handle ?? null;
+  let parsed: AuthUser | null = null;
+  if (userRaw) {
+    try {
+      parsed = JSON.parse(userRaw) as AuthUser;
+    } catch {
+      parsed = null;
+    }
+  }
+  // 字面无变化 → 返回缓存(引用相等),React 不重渲
+  if (
+    cachedSnap.hasToken === hasToken &&
+    userId === (parsed?.id ?? null) &&
+    userHandle === (parsed?.handle ?? null)
+  ) {
+    return cachedSnap;
+  }
+  cachedSnap = { user: parsed, hasToken };
+  return cachedSnap;
+}
+
+function getServerSnapshot(): AuthSnapshot {
   return EMPTY;
 }
 
