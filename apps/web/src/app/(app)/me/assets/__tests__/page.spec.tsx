@@ -114,9 +114,9 @@ describe("/me/assets page", () => {
     const generateBtn = screen.getByText("AI 生图");
     fireEvent.click(generateBtn);
 
-    // Modal should appear with textarea
-    const textarea = await screen.findByPlaceholderText("描述你想生成的图片...");
-    fireEvent.change(textarea, { target: { value: "一只猫在办公室" } });
+    // Modal should appear with prompt input
+    const promptInput = await screen.findByPlaceholderText("如:晨雾中的山间小路,胶片质感");
+    fireEvent.change(promptInput, { target: { value: "一只猫在办公室" } });
 
     // Click "生成" button in modal
     const submitBtn = screen.getByText("生成");
