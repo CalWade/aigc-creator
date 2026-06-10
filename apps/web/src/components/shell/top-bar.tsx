@@ -1,11 +1,11 @@
 "use client";
 
-import { Bell, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Search } from "lucide-react";
 import { Breadcrumb } from "./breadcrumb";
 import { ThemeToggle } from "./theme-toggle";
 import { UserMenu } from "./user-menu";
 import { Kbd } from "@/components/ui/kbd";
+import { NotificationBell } from "@/components/notification-bell";
 
 export function TopBar() {
   return (
@@ -26,9 +26,7 @@ export function TopBar() {
           <Kbd>⌘K</Kbd>
         </button>
 
-        <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="通知">
-          <Bell className="h-4 w-4" aria-hidden />
-        </Button>
+        <NotificationBell />
 
         <ThemeToggle />
 
