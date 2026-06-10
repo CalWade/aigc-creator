@@ -9,25 +9,27 @@ vi.mock("next/navigation", () => ({
 
 const KEY = "phase24:feed-weights";
 
+const TRIGGER = /排序权重/;
+
 describe("WeightDrawer", () => {
   beforeEach(() => {
     localStorage.clear();
     replace.mockClear();
   });
 
-  it("打开抽屉显示三个滑块", () => {
+  it("打开抽屉显示三个权重滑块", () => {
     render(<WeightDrawer />);
-    fireEvent.click(screen.getByText("权重设置"));
-    expect(screen.getByText(/alpha/)).toBeInTheDocument();
-    expect(screen.getByText(/beta/)).toBeInTheDocument();
-    expect(screen.getByText(/gamma/)).toBeInTheDocument();
+    fireEvent.click(screen.getByText(TRIGGER));
+    expect(screen.getByText("Quality")).toBeInTheDocument();
+    expect(screen.getByText("Hotness")).toBeInTheDocument();
+    expect(screen.getByText("Recency")).toBeInTheDocument();
   });
 
-  it("点击 应用 写入 localStorage 并 replace router", () => {
+  it("点击 付印·Apply 写入 localStorage 并 replace router", () => {
     render(<WeightDrawer />);
-    fireEvent.click(screen.getByText("权重设置"));
+    fireEvent.click(screen.getByText(TRIGGER));
     act(() => {
-      fireEvent.click(screen.getByText("应用"));
+      fireEvent.click(screen.getByText(/付印/));
     });
     const stored = localStorage.getItem(KEY);
     expect(stored).not.toBeNull();
@@ -38,17 +40,17 @@ describe("WeightDrawer", () => {
     expect(replace).toHaveBeenCalledWith(expect.stringMatching(/alpha=0\.5/));
   });
 
-  it("初始化从 localStorage 读取", () => {
+  it("初始化从 localStorage 读取并显示当前值", () => {
     localStorage.setItem(KEY, JSON.stringify({ alpha: 0.7, beta: 0.2, gamma: 0.1 }));
     render(<WeightDrawer />);
-    fireEvent.click(screen.getByText("权重设置"));
-    expect(screen.getByText(/alpha \(0\.70\)/)).toBeInTheDocument();
+    fireEvent.click(screen.getByText(TRIGGER));
+    expect(screen.getByText("0.70")).toBeInTheDocument();
   });
 
   it("恢复默认 重置为 0.5/0.3/0.2", () => {
     localStorage.setItem(KEY, JSON.stringify({ alpha: 0.9, beta: 0.05, gamma: 0.05 }));
     render(<WeightDrawer />);
-    fireEvent.click(screen.getByText("权重设置"));
+    fireEvent.click(screen.getByText(TRIGGER));
     act(() => {
       fireEvent.click(screen.getByText("恢复默认"));
     });

@@ -21,7 +21,7 @@ describe("SafeRewriteHintBanner", () => {
     localStorage.setItem("safeRewriteHint", JSON.stringify(hint));
     render(<SafeRewriteHintBanner />);
     expect(screen.queryByText(/敏感词/)).not.toBeNull();
-    const link = screen.getByText("回到草稿") as HTMLAnchorElement;
+    const link = screen.getByText(/回到草稿/) as HTMLAnchorElement;
     expect(link.href).toContain("/drafts/abc123");
   });
 

@@ -39,7 +39,7 @@ export function setUser(user: AuthUser): void {
 }
 
 export function apiBaseUrl(): string {
-  return process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3000";
+  return process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
 }
 
 export interface ApiFetchOptions extends RequestInit {

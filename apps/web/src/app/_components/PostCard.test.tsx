@@ -8,7 +8,7 @@ const mock: PostDto = {
   title: "测试标题",
   excerpt: "测试摘要",
   authorId: "a1",
-  authorHandle: "@author",
+  authorHandle: "demo-author",
   coverIndex: 1,
   qualityOverall: 87,
   hotnessMock: 42,
@@ -20,13 +20,13 @@ describe("PostCard", () => {
     render(<PostCard post={mock} />);
     expect(screen.getByText("测试标题")).toBeInTheDocument();
     expect(screen.getByText("测试摘要")).toBeInTheDocument();
-    expect(screen.getByText("@author")).toBeInTheDocument();
+    expect(screen.getByText(/demo-author/)).toBeInTheDocument();
   });
 
   it("展示 Q/H 评分", () => {
     render(<PostCard post={mock} />);
-    expect(screen.getByText(/Q 87/)).toBeInTheDocument();
-    expect(screen.getByText(/H 42/)).toBeInTheDocument();
+    expect(screen.getByText(/Q · 87/)).toBeInTheDocument();
+    expect(screen.getByText(/H · 42/)).toBeInTheDocument();
   });
 
   it("链接指向 /post/:id", () => {

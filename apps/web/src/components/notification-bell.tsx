@@ -48,11 +48,15 @@ export function NotificationBell() {
   }, []);
 
   useEffect(() => {
+    // 异步 fetch 后 setState 在 microtask,非同步 cascade;lint 静态分析无法识别
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchUnreadCount();
   }, [fetchUnreadCount]);
 
   useEffect(() => {
     if (!open) return;
+    // 同上:open 切换时拉取列表,异步 setState
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchList();
   }, [open, fetchList]);
 

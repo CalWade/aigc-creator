@@ -33,19 +33,27 @@ export function SafeRewriteHintBanner() {
   };
 
   return (
-    <div className="rounded border border-amber-400 bg-amber-50 px-3 py-2 mb-4 flex items-center justify-between text-sm">
-      <span>
-        发布前审核检测到「{hint.category}」类风险,可在草稿内段落使用「合规替代」工具改写。
+    <div className="border border-[color:var(--vermilion)]/40 bg-[color:var(--vermilion)]/5 px-5 py-3 mb-8 flex items-center justify-between">
+      <span className="font-editorial italic text-[15px] text-[color:var(--ink-2)]">
+        发布前审核检测到「
+        <span className="text-[color:var(--vermilion)] not-italic font-mono text-[12px] uppercase tracking-wider">
+          {hint.category}
+        </span>
+        」类风险,可在草稿内段落使用「合规替代」工具改写。
       </span>
-      <span className="flex gap-2">
+      <span className="flex items-center gap-3 shrink-0 ml-4">
         <Link
           href={`/drafts/${hint.draftId}`}
-          className="rounded bg-amber-600 text-white text-xs px-2 py-1"
+          className="btn-ink px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.2em]"
           onClick={dismiss}
         >
-          回到草稿
+          回到草稿 →
         </Link>
-        <button type="button" onClick={dismiss} className="text-xs text-zinc-500">
+        <button
+          type="button"
+          onClick={dismiss}
+          className="font-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--ink-3)] link-rule"
+        >
           关闭
         </button>
       </span>
