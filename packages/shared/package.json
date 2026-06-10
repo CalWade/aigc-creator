@@ -2,12 +2,24 @@
   "name": "@bytedance-aigc/shared",
   "version": "0.1.0",
   "private": true,
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "source": "./src/index.ts",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
   "scripts": {
+    "build": "tsc -p tsconfig.json && cp src/sensitive-words.json dist/sensitive-words.json",
+    "build:watch": "tsc -p tsconfig.json --watch",
+    "clean": "rm -rf dist",
     "validate:words": "tsx scripts/validate-words.ts"
   },
   "devDependencies": {
-    "tsx": "^4.22.4"
+    "tsx": "^4.22.4",
+    "typescript": "^5.7.3"
   }
 }

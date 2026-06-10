@@ -7,6 +7,7 @@ export class ListNotificationsDto {
   cursor?: string;
 
   @IsOptional()
+  @IsString()
   @IsIn(["true", "false"])
   read?: "true" | "false";
 

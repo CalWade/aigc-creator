@@ -6,6 +6,7 @@ import { IsEmail, IsIn, IsOptional, IsString, Length, Matches, MaxLength } from 
  * - method=email → 邮箱 + 密码 + 期望 handle(可选)
  */
 export class RegisterDto {
+  @IsString()
   @IsIn(["phone", "email"])
   method!: "phone" | "email";
 
@@ -16,10 +17,12 @@ export class RegisterDto {
   handle?: string;
 
   @IsOptional()
+  @IsString()
   @Matches(/^1[3-9]\d{9}$/, { message: "手机号格式不正确" })
   phone?: string;
 
   @IsOptional()
+  @IsString()
   @Matches(/^\d{6}$/, { message: "验证码必须是 6 位数字" })
   code?: string;
 

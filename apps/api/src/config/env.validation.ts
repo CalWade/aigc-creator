@@ -1,0 +1,71 @@
+import * as Joi from "joi";
+
+/**
+ * 环境变量 schema:进程启动时一次性校验,任一项缺失或类型错误立刻拒绝启动。
+ *
+ * 设计原则:
+ * - 关键变量(PORT/JWT/DB)必填,无默认值,缺了启动失败而非走兜底。
+ * - STORAGE_DRIVER=mock 时 S3_* 整组豁免(给 CI / e2e 留口)。
+ * - LLM_* 必填,因为代码路径里全是 getOrThrow,提前在启动期暴露。
+ * - 其它带合理默认的(JWT_EXPIRES_IN / S3_FORCE_PATH_STYLE)给默认值。
+ */
+export const envValidationSchema = Joi.object({
+  NODE_ENV: Joi.string().valid("development", "production", "test").default("development"),
+
+  PORT: Joi.number().integer().min(1).max(65535).required(),
+
+  DATABASE_URL: Joi.string()
+    .uri({ scheme: ["postgresql", "postgres"] })
+    .required(),
+
+  JWT_SECRET: Joi.string().min(32).required(),
+  JWT_EXPIRES_IN: Joi.string().default("7d"),
+
+  LLM_BASE_URL: Joi.string().uri().required(),
+  LLM_API_KEY: Joi.string().required(),
+  LLM_MODEL: Joi.string().required(),
+
+  STORAGE_DRIVER: Joi.string().valid("s3", "mock").default("s3"),
+  S3_ENDPOINT: Joi.string().uri().when("STORAGE_DRIVER", {
+    is: "s3",
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
+  S3_REGION: Joi.string().when("STORAGE_DRIVER", {
+    is: "s3",
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
+  S3_BUCKET: Joi.string().when("STORAGE_DRIVER", {
+    is: "s3",
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
+  S3_ACCESS_KEY: Joi.string().when("STORAGE_DRIVER", {
+    is: "s3",
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
+  S3_SECRET_KEY: Joi.string().when("STORAGE_DRIVER", {
+    is: "s3",
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
+  S3_PUBLIC_URL: Joi.string().uri().when("STORAGE_DRIVER", {
+    is: "s3",
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
+  S3_FORCE_PATH_STYLE: Joi.string().valid("true", "false").default("true"),
+
+  REDIS_URL: Joi.string()
+    .uri({ scheme: ["redis", "rediss"] })
+    .optional(),
+
+  // Admin 白名单(逗号分隔的 handle);空白名单 = 拒绝所有人(fail-closed)。
+  // 必填以强制开发者显式声明,避免误以为"没配 = 全开"。
+  ADMIN_HANDLES: Joi.string().allow("").required(),
+
+  // 二发热度继承开关:"true"(默认)沿用旧 PostStat;"false"清零。
+  REPUBLISH_HOTNESS_INHERIT: Joi.string().valid("true", "false").default("true"),
+}).unknown(true);

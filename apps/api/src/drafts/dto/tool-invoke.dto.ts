@@ -6,6 +6,7 @@ import { DRAFT_TOOL_TYPES, type DraftToolType } from "@bytedance-aigc/shared";
  * service 入口手写 narrow(避免 class-transformer discriminator 复杂度)。
  */
 export class ToolInvokeDto {
+  @IsString()
   @IsIn(DRAFT_TOOL_TYPES as readonly string[])
   tool!: DraftToolType;
 

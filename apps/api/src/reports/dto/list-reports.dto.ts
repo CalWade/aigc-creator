@@ -9,6 +9,7 @@ export type ReportListStatus = "PENDING" | "RESOLVED" | "ALL";
 
 export class ListReportsDto {
   @IsOptional()
+  @IsString()
   @IsIn(["PENDING", "RESOLVED", "ALL"])
   status?: ReportListStatus;
 
