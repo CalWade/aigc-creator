@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import type { PostDetailDto } from "@bytedance-aigc/shared";
 import { serverFetchJson } from "@/lib/server-fetch";
 import { ReportButton } from "@/components/post/ReportButton";
+import { PostBody } from "@/components/post/PostBody";
 import { QualityBadge } from "@/app/(app)/_components/QualityBadge";
 
 export const dynamic = "force-dynamic";
@@ -22,16 +23,13 @@ export default async function PostPage({ params }: PageProps) {
   }
   return (
     <main className="max-w-3xl mx-auto px-6 py-8">
-      <Link href="/" className="text-sm text-gray-500 underline">
+      <Link href="/" className="text-sm text-muted-foreground hover:text-foreground transition">
         ← 返回信息流
       </Link>
-      <div className="float-right">
-        <ReportButton postId={post.id} authorId={post.authorId} />
-      </div>
       <article className="mt-4">
-        <h1 className="text-3xl font-bold mb-3">{post.title}</h1>
-        <div className="flex gap-3 text-sm text-gray-500 mb-4">
-          <Link href={`/authors/${post.authorId}`} className="underline">
+        <h1 className="text-3xl font-bold tracking-tight mb-3">{post.title}</h1>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground mb-4">
+          <Link href={`/authors/${post.authorId}`} className="hover:text-foreground underline">
             {post.authorHandle}
           </Link>
           <span className="inline-flex items-center gap-1.5">
@@ -51,13 +49,10 @@ export default async function PostPage({ params }: PageProps) {
             className="object-cover rounded-lg"
           />
         </div>
-        <p className="text-base text-gray-700 dark:text-gray-300 leading-7">{post.excerpt}</p>
-        <details className="mt-6 text-xs text-gray-400">
-          <summary>原文 JSON(开发预览)</summary>
-          <pre className="overflow-x-auto p-3 bg-gray-50 dark:bg-zinc-900 rounded mt-2">
-            {JSON.stringify(post.body, null, 2)}
-          </pre>
-        </details>
+        <PostBody body={post.body} />
+        <div className="mt-10 pt-6 border-t border-border flex items-center justify-end gap-2">
+          <ReportButton postId={post.id} authorId={post.authorId} />
+        </div>
       </article>
     </main>
   );
