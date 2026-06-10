@@ -43,15 +43,17 @@ export class AuthService {
   // ---------- 登录 ----------
 
   async login(dto: LoginDto, ctx: AuditContext): Promise<LoginResult> {
-    if (dto.method === "handle") {
+    // 缺省 method 视为 handle,兼容 e2e helpers(loginAsDemo 等)发的 `{handle}` body
+    const method = dto.method ?? "handle";
+    if (method === "handle") {
       if (!dto.handle) throw new BadRequestException("handle 必填");
       return this.loginByHandle(dto.handle, ctx);
     }
-    if (dto.method === "phone") {
+    if (method === "phone") {
       if (!dto.phone || !dto.code) throw new BadRequestException("手机号与验证码必填");
       return this.loginByPhone(dto.phone, dto.code, ctx);
     }
-    if (dto.method === "email") {
+    if (method === "email") {
       if (!dto.email || !dto.password) throw new BadRequestException("邮箱与密码必填");
       return this.loginByEmail(dto.email, dto.password, ctx);
     }

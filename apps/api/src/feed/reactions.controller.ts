@@ -1,21 +1,15 @@
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  Delete,
-  Param,
-  Post,
-  UseGuards,
-} from "@nestjs/common";
+import { BadRequestException, Body, Controller, Delete, Param, Post } from "@nestjs/common";
 import { ReactionKind } from "@prisma/client";
 import type { PostReactionsDto } from "@bytedance-aigc/shared";
-import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { CurrentUser } from "../auth/current-user.decorator";
 import type { JwtPayload } from "../auth/jwt-payload.interface";
 import { ReactionsService } from "./reactions.service";
 
+/**
+ * 全局 APP_GUARD JwtAuthGuard 已强制鉴权;此处不再加 @UseGuards 避免 FeedModule
+ * 局部需要 JwtService 而触发 DI 解析失败。
+ */
 @Controller("post/:id/reactions")
-@UseGuards(JwtAuthGuard)
 export class ReactionsController {
   constructor(private readonly reactions: ReactionsService) {}
 

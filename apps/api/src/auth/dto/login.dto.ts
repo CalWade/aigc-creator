@@ -9,8 +9,12 @@ import { IsEmail, IsIn, IsOptional, IsString, Length, Matches, MaxLength } from 
  * 各 method 必填字段在 service 层运行时校验,DTO 这里只做类型 + 格式 + 长度。
  */
 export class LoginDto {
+  /**
+   * 缺省时按 handle 走,兼容旧 e2e helpers(loginAsDemo / loginAsAdmin)发送的 `{handle}` body。
+   */
+  @IsOptional()
   @IsIn(["handle", "phone", "email"])
-  method!: "handle" | "phone" | "email";
+  method?: "handle" | "phone" | "email";
 
   @IsOptional()
   @IsString()

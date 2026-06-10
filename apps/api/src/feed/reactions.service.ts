@@ -8,15 +8,16 @@ export class ReactionsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getForPost(postId: string, viewerId: string | null): Promise<PostReactionsDto> {
+    const ownPromise: Promise<{ kind: ReactionKind }[]> = viewerId
+      ? this.prisma.reaction.findMany({
+          where: { postId, userId: viewerId },
+          select: { kind: true },
+        })
+      : Promise.resolve([]);
     const [likeCount, collectCount, viewerOwn] = await Promise.all([
       this.prisma.reaction.count({ where: { postId, kind: ReactionKind.LIKE } }),
       this.prisma.reaction.count({ where: { postId, kind: ReactionKind.COLLECT } }),
-      viewerId
-        ? this.prisma.reaction.findMany({
-            where: { postId, userId: viewerId },
-            select: { kind: true },
-          })
-        : Promise.resolve([]),
+      ownPromise,
     ]);
     const liked = viewerOwn.some((r) => r.kind === ReactionKind.LIKE);
     const collected = viewerOwn.some((r) => r.kind === ReactionKind.COLLECT);
