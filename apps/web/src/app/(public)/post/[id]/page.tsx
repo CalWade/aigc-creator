@@ -5,7 +5,7 @@ import type { PostDetailDto } from "@bytedance-aigc/shared";
 import { serverFetchJson } from "@/lib/server-fetch";
 import { ReactionBar } from "@/components/post/ReactionBar";
 import { PostBody } from "@/components/post/PostBody";
-import { QualityBadge } from "@/app/(app)/_components/QualityBadge";
+import { QualityBadge } from "@/components/feed/QualityBadge";
 
 export const dynamic = "force-dynamic";
 

@@ -4,11 +4,11 @@ import type { FeedResponse } from "@bytedance-aigc/shared";
 import { DEFAULT_FEED_WEIGHTS } from "@bytedance-aigc/shared";
 import { serverFetchJson } from "@/lib/server-fetch";
 import { Card, CardContent } from "@/components/ui/card";
-import { FeedList } from "./_components/FeedList";
-import { FeedSkeleton } from "./_components/FeedSkeleton";
-import { LoadMore } from "./_components/LoadMore";
+import { FeedList } from "@/components/feed/FeedList";
+import { FeedSkeleton } from "@/components/feed/FeedSkeleton";
+import { LoadMore } from "@/components/feed/LoadMore";
 import { SafeRewriteHintBanner } from "./_components/SafeRewriteHintBanner";
-import { WeightDrawer } from "./_components/WeightDrawer";
+import { WeightDrawer } from "@/components/feed/WeightDrawer";
 
 /** ISR 30s — CDN 边缘缓存 */
 export const revalidate = 30;

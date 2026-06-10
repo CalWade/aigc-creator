@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import type { DouyinTrendingResult } from "@/app/(app)/_components/external-trending-types";
+import type { DouyinTrendingResult } from "@/components/feed/external-trending-types";
 
 const LABEL_VARIANT: Record<string, "destructive" | "outline" | "secondary"> = {
   爆: "destructive",

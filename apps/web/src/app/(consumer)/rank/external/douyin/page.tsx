@@ -2,8 +2,8 @@ import { Suspense } from "react";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { serverFetchJson } from "@/lib/server-fetch";
-import { RankTabs } from "@/app/(app)/_components/RankTabs";
-import type { DouyinTrendingResult } from "@/app/(app)/_components/external-trending-types";
+import { RankTabs } from "@/components/feed/RankTabs";
+import type { DouyinTrendingResult } from "@/components/feed/external-trending-types";
 import { DouyinHotList } from "./_components/DouyinHotList";
 
 /**

@@ -3,9 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Compass,
-  TrendingUp,
-  Flame,
   PenLine,
   LayoutDashboard,
   FileText,
@@ -17,6 +14,7 @@ import {
   ListChecks,
   RotateCcw,
   Sparkles,
+  ArrowLeftCircle,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -34,15 +32,9 @@ interface NavGroup {
   items: NavItem[];
 }
 
+// B 段(创作者 / 工作台 / 管理)侧边栏。
+// "发现"已搬到 C 段顶部水平导航,这里不再出现。"返回阅读端"是连回 C 段的反向入口。
 const GROUPS: NavGroup[] = [
-  {
-    title: "发现",
-    items: [
-      { href: "/", label: "推荐", icon: Compass, exact: true },
-      { href: "/rank/hot", label: "热点榜", icon: Flame },
-      { href: "/rank/best", label: "爆文榜", icon: TrendingUp },
-    ],
-  },
   {
     title: "创作",
     items: [{ href: "/drafts/mine", label: "我的草稿", icon: PenLine }],
@@ -69,6 +61,14 @@ const GROUPS: NavGroup[] = [
   },
 ];
 
+// 顶部独立分组 — 引导回阅读端,做反向闭环。
+const BACK_TO_CONSUMER: NavItem = {
+  href: "/",
+  label: "返回阅读端",
+  icon: ArrowLeftCircle,
+  exact: true,
+};
+
 function isActive(pathname: string, href: string, exact?: boolean) {
   if (exact) return pathname === href;
   return pathname === href || pathname.startsWith(`${href}/`);
@@ -79,6 +79,34 @@ export function SidebarNav() {
 
   return (
     <nav className="flex flex-col gap-1 py-2">
+      <SidebarSection title="导航">
+        {(() => {
+          const Icon = BACK_TO_CONSUMER.icon;
+          const active = isActive(pathname, BACK_TO_CONSUMER.href, BACK_TO_CONSUMER.exact);
+          return (
+            <Link
+              href={BACK_TO_CONSUMER.href}
+              aria-current={active ? "page" : undefined}
+              className={cn(
+                "group flex items-center gap-2.5 h-8 px-2.5 rounded-lg text-[13px] transition-all",
+                "active:scale-[0.98]",
+                active
+                  ? "bg-accent text-accent-foreground font-medium"
+                  : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+              )}
+            >
+              <Icon
+                className={cn(
+                  "h-4 w-4 shrink-0 transition-colors",
+                  active ? "text-foreground" : "text-muted-foreground group-hover:text-foreground",
+                )}
+                aria-hidden
+              />
+              <span className="truncate">{BACK_TO_CONSUMER.label}</span>
+            </Link>
+          );
+        })()}
+      </SidebarSection>
       {GROUPS.map((group) => (
         <SidebarSection key={group.title} title={group.title}>
           {group.items.map((item) => {

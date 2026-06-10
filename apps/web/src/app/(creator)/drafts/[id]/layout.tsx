@@ -3,7 +3,7 @@ import * as React from "react";
 /**
  * 编辑器专注模式 layout (Notion DNA)。
  *
- * (app)/layout.tsx 已套了 AppShell(sidebar + topbar),这一层只负责把
+ * (creator)/layout.tsx 已套了 AppShell(sidebar + topbar),这一层只负责把
  * 主区收成 Notion-like 阅读容器:
  *   - 浅色背景沿用 root background
  *   - max-w-[820px] 居中,顶部 24px、左右 32px
