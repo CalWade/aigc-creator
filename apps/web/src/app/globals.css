@@ -1,240 +1,137 @@
 @import "tailwindcss";
 
 /* =============================================================
-   编辑部 / Editorial 主题
-   纸面 + 墨黑 + 朱砂红强调,衬线 Display + 等宽 mono 标签
-   不依赖 Geist;通过 next/font 注入 Fraunces / Instrument Serif / IBM Plex Mono
+   今日头条创作中心风 — 实用产品界面
+   - 浅灰背景 + 白色卡片 + 红色品牌强调
+   - 系统中文字体优先(PingFang / 思源)
+   - 紧凑信息密度,无装饰元素
    ============================================================= */
 
 :root {
-  /* 纸面色阶 — 不是纯白,带一点奶油 */
-  --paper: #f4efe6;
-  --paper-2: #ebe4d6;
-  --paper-3: #ddd2bd;
-  --rule: #1a1714;
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --surface-hover: #fafafa;
+  --border: #e8e8ea;
+  --border-strong: #d6d6da;
 
-  /* 墨色 */
-  --ink: #1a1714;
-  --ink-2: #3d3530;
-  --ink-3: #6f6457;
-  --ink-mute: #9a8d7c;
+  --text: #222226;
+  --text-2: #4e5058;
+  --text-3: #86888f;
+  --text-mute: #b5b6bb;
 
-  /* 朱砂红 — 唯一强调色,克制使用 */
-  --vermilion: #c8341e;
-  --vermilion-deep: #8e2414;
+  /* 品牌红 — 头条/抖音系 */
+  --brand: #ed3232;
+  --brand-hover: #d42929;
+  --brand-soft: #fff1f0;
 
-  /* 米色高光 */
-  --cream: #fbf8f1;
+  --link: #2f6cf0;
 
-  /* 字体 — 由 next/font 在 layout 中注入 CSS 变量 */
-  --font-display: var(--font-fraunces), "Times New Roman", serif;
-  --font-editorial: var(--font-instrument), "Times New Roman", serif;
-  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
-  --font-body: var(--font-noto-serif), "Songti SC", "Noto Serif CJK SC", serif;
+  --radius: 6px;
+  --radius-lg: 10px;
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-pop: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
 @theme inline {
-  --color-paper: var(--paper);
-  --color-paper-2: var(--paper-2);
-  --color-paper-3: var(--paper-3);
-  --color-ink: var(--ink);
-  --color-ink-2: var(--ink-2);
-  --color-ink-3: var(--ink-3);
-  --color-ink-mute: var(--ink-mute);
-  --color-vermilion: var(--vermilion);
-  --color-vermilion-deep: var(--vermilion-deep);
-  --color-cream: var(--cream);
-  --color-rule: var(--rule);
-  --font-display: var(--font-display);
-  --font-editorial: var(--font-editorial);
-  --font-mono: var(--font-mono);
-  --font-body: var(--font-body);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-text: var(--text);
+  --color-text-2: var(--text-2);
+  --color-text-3: var(--text-3);
+  --color-text-mute: var(--text-mute);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-soft: var(--brand-soft);
+  --color-link: var(--link);
 }
 
 html,
 body {
-  background: var(--paper);
-  color: var(--ink);
+  background: var(--bg);
+  color: var(--text);
 }
 
 body {
-  font-family: var(--font-body);
-  font-feature-settings: "ss01", "ss02", "kern";
-  font-optical-sizing: auto;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI",
+    "Helvetica Neue", Helvetica, Arial, "Noto Sans CJK SC", "Source Han Sans CN", sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
-/* 纸面纹理 — 细微 noise + 横线网格,只在 body 上铺一层,极轻 */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  background-image:
-    radial-gradient(rgba(26, 23, 20, 0.035) 1px, transparent 1px),
-    linear-gradient(transparent 31px, rgba(26, 23, 20, 0.04) 32px);
-  background-size:
-    3px 3px,
-    100% 32px;
-  mix-blend-mode: multiply;
-  opacity: 0.5;
-}
-
-/* 全站元素都在纸面之上 */
-body > * {
-  position: relative;
-  z-index: 1;
-}
-
-/* 选中文字 — 朱砂红反白 */
-::selection {
-  background: var(--vermilion);
-  color: var(--cream);
-}
-
-/* 链接默认无下划线,hover 出现一根细朱砂线 */
 a {
-  text-decoration: none;
   color: inherit;
+  text-decoration: none;
 }
 
-/* ---------- 工具类 ---------- */
-
-.font-display {
-  font-family: var(--font-display);
-  font-feature-settings: "ss01", "ss02", "kern";
-}
-.font-editorial {
-  font-family: var(--font-editorial);
-}
-.font-mono {
-  font-family: var(--font-mono);
-  letter-spacing: 0.02em;
+::selection {
+  background: var(--brand-soft);
+  color: var(--brand);
 }
 
-/* 报头水平双线 — Times 报头风 */
-.masthead-rule {
-  border-top: 1px solid var(--rule);
-  border-bottom: 1px solid var(--rule);
-  position: relative;
+/* ---------- 通用按钮 ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 16px;
+  height: 32px;
+  font-size: 13px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+  transition: all 120ms ease;
+  cursor: pointer;
 }
-.masthead-rule::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -4px;
-  border-bottom: 1px solid var(--rule);
+.btn:hover {
+  border-color: var(--text-3);
 }
 
-/* 一根细朱砂分隔线,做章节切分 */
-.rule-vermilion {
-  height: 2px;
-  background: var(--vermilion);
+.btn-primary {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
 }
-
-/* ink 实色按钮 */
-.btn-ink {
-  background: var(--ink);
-  color: var(--cream);
-  border: 1px solid var(--ink);
-  transition: all 160ms ease;
-}
-.btn-ink:hover {
-  background: var(--vermilion);
-  border-color: var(--vermilion);
-  color: var(--cream);
+.btn-primary:hover {
+  background: var(--brand-hover);
+  border-color: var(--brand-hover);
 }
 
 .btn-ghost {
   background: transparent;
-  color: var(--ink);
-  border: 1px solid var(--rule);
-  transition: all 160ms ease;
+  border-color: transparent;
+  color: var(--text-2);
 }
 .btn-ghost:hover {
-  background: var(--ink);
-  color: var(--cream);
+  background: var(--surface-hover);
+  color: var(--text);
 }
 
-/* hover 出现下划线的链接 */
-.link-rule {
-  position: relative;
-  padding-bottom: 2px;
-}
-.link-rule::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 1px;
-  background: currentColor;
-  transform: scaleX(0);
-  transform-origin: right;
-  transition: transform 240ms cubic-bezier(0.7, 0, 0.3, 1);
-}
-.link-rule:hover::after {
-  transform: scaleX(1);
-  transform-origin: left;
+.btn-sm {
+  height: 28px;
+  padding: 0 12px;
+  font-size: 12px;
 }
 
-/* drop cap — 文章首字下沉 */
-.drop-cap::first-letter {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 4.5rem;
-  line-height: 0.9;
-  float: left;
-  padding: 0.4rem 0.6rem 0 0;
-  color: var(--vermilion);
+/* ---------- 卡片 ---------- */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
 }
 
-/* ---------- 滚动入场动画 ---------- */
-
-@keyframes rise-in {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fade-rule {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
-}
-
-@keyframes ticker {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
-
-.animate-rise {
-  animation: rise-in 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
-}
-.animate-rule {
-  transform-origin: left;
-  animation: fade-rule 1100ms cubic-bezier(0.7, 0, 0.3, 1) both;
-}
-.animate-ticker {
-  animation: ticker 60s linear infinite;
-}
-
-/* ---------- 残余的审核高亮 ---------- */
+/* ---------- 残余的审核高亮(原代码引用) ---------- */
 
 .review-violation {
   text-decoration-style: wavy;
@@ -243,16 +140,21 @@ a {
   cursor: help;
 }
 .review-violation--low {
-  text-decoration-color: var(--ink-mute);
+  text-decoration-color: var(--text-mute);
 }
 .review-violation--medium {
-  text-decoration-color: #c08400;
+  text-decoration-color: #f59e0b;
 }
 .review-violation--high {
-  text-decoration-color: var(--vermilion);
+  text-decoration-color: var(--brand);
 }
 .review-violation--section {
-  background-color: rgba(200, 52, 30, 0.06);
-  border-left: 3px solid var(--vermilion);
+  background-color: var(--brand-soft);
+  border-left: 3px solid var(--brand);
   padding-left: 6px;
+}
+
+/* 表单元素 */
+input[type="range"] {
+  accent-color: var(--brand);
 }

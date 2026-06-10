@@ -33,30 +33,39 @@ export function SafeRewriteHintBanner() {
   };
 
   return (
-    <div className="border border-[color:var(--vermilion)]/40 bg-[color:var(--vermilion)]/5 px-5 py-3 mb-8 flex items-center justify-between">
-      <span className="font-editorial italic text-[15px] text-[color:var(--ink-2)]">
-        发布前审核检测到「
-        <span className="text-[color:var(--vermilion)] not-italic font-mono text-[12px] uppercase tracking-wider">
-          {hint.category}
+    <div
+      role="alert"
+      className="mb-4 px-4 py-3 rounded-md border border-amber-300 bg-amber-50 flex items-center justify-between gap-4 flex-wrap"
+    >
+      <div className="flex items-start gap-2 text-[13px] text-amber-900 leading-relaxed">
+        <svg
+          className="w-4 h-4 mt-0.5 shrink-0 text-amber-600"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden
+        >
+          <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+          <line x1="12" y1="9" x2="12" y2="13" />
+          <line x1="12" y1="17" x2="12.01" y2="17" />
+        </svg>
+        <span>
+          发布前审核检测到「
+          <span className="font-medium">{hint.category}</span>
+          」类风险,可在草稿内段落使用「合规替代」工具改写。
         </span>
-        」类风险,可在草稿内段落使用「合规替代」工具改写。
-      </span>
-      <span className="flex items-center gap-3 shrink-0 ml-4">
-        <Link
-          href={`/drafts/${hint.draftId}`}
-          className="btn-ink px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.2em]"
-          onClick={dismiss}
-        >
-          回到草稿 →
+      </div>
+      <div className="flex items-center gap-2 shrink-0">
+        <Link href={`/drafts/${hint.draftId}`} className="btn btn-primary btn-sm" onClick={dismiss}>
+          回到草稿
         </Link>
-        <button
-          type="button"
-          onClick={dismiss}
-          className="font-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--ink-3)] link-rule"
-        >
+        <button type="button" onClick={dismiss} className="btn btn-ghost btn-sm">
           关闭
         </button>
-      </span>
+      </div>
     </div>
   );
 }

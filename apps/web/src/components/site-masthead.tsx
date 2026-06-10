@@ -5,28 +5,14 @@ import { usePathname } from "next/navigation";
 import { useSyncExternalStore } from "react";
 import { clearToken, type AuthUser } from "@/lib/auth";
 
-const NAV = [
-  { href: "/", label: "信息流", en: "Feed" },
-  { href: "/rank/hot", label: "热点榜", en: "Hot" },
-  { href: "/rank/best", label: "爆文榜", en: "Best" },
-  { href: "/drafts/mine", label: "我的草稿", en: "Drafts" },
-  { href: "/me/works", label: "创作中心", en: "Studio" },
+const TABS = [
+  { href: "/", label: "推荐" },
+  { href: "/rank/hot", label: "热点榜" },
+  { href: "/rank/best", label: "爆文榜" },
+  { href: "/drafts/mine", label: "我的草稿" },
+  { href: "/me/works", label: "创作中心" },
 ];
 
-function todayInChinese() {
-  const d = new Date();
-  const w = ["日", "一", "二", "三", "四", "五", "六"][d.getDay()];
-  return `${d.getFullYear()} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日 · 星期${w}`;
-}
-
-function issueNo() {
-  // 用今天距 2026-01-01 的天数当"刊号",显得像有连续印刷的杂志
-  const start = new Date(2026, 0, 1).getTime();
-  const days = Math.floor((Date.now() - start) / (1000 * 60 * 60 * 24)) + 1;
-  return String(days).padStart(4, "0");
-}
-
-/** 订阅 storage 事件,跨标签同步登录态;SSR 时返回 null。 */
 function subscribeAuth(cb: () => void) {
   if (typeof window === "undefined") return () => {};
   window.addEventListener("storage", cb);
@@ -41,8 +27,7 @@ interface AuthSnapshot {
 const EMPTY: AuthSnapshot = { user: null, hasToken: false };
 
 // useSyncExternalStore 要求 getSnapshot 在数据未变时返回引用相等的对象,
-// 否则会触发"getSnapshot should be cached"无限循环。这里把上次返回的快照
-// 缓存住,只在 token / handle 字面变化时才生成新对象。
+// 否则会触发"getSnapshot should be cached"无限循环。
 let cachedSnap: AuthSnapshot = EMPTY;
 
 function readAuth(): AuthSnapshot {
@@ -60,7 +45,6 @@ function readAuth(): AuthSnapshot {
       parsed = null;
     }
   }
-  // 字面无变化 → 返回缓存(引用相等),React 不重渲
   if (
     cachedSnap.hasToken === hasToken &&
     userId === (parsed?.id ?? null) &&
@@ -82,128 +66,113 @@ export function SiteMasthead() {
   const isLoggedIn = auth.hasToken && !!auth.user;
 
   return (
-    <header className="bg-[color:var(--paper)] border-b border-[color:var(--rule)]">
-      {/* 顶部超细资讯条:刊号 / 日期 / 当日精选数 */}
-      <div className="border-b border-[color:var(--rule)]/40">
-        <div className="max-w-[1400px] mx-auto px-6 py-1.5 flex items-center justify-between text-[10px] font-mono uppercase tracking-[0.18em] text-[color:var(--ink-3)]">
-          <span>NO. {issueNo()} · 创刊于 二〇二六</span>
-          <span className="hidden md:inline">{todayInChinese()}</span>
-          <span>三模块 · 双闭环 · 五阶审核</span>
+    <header className="bg-[var(--surface)] border-b border-[var(--border)] sticky top-0 z-30">
+      {/* Row 1: Logo + 搜索 + 通知/头像 */}
+      <div className="max-w-[1200px] mx-auto px-5 h-14 flex items-center gap-6">
+        <Link href="/" className="flex items-center gap-2 shrink-0">
+          <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-[var(--brand)] text-white text-[15px] font-bold leading-none">
+            炽
+          </span>
+          <span className="text-[15px] font-medium text-[var(--text)]">创作平台</span>
+        </Link>
+
+        <div className="flex-1 max-w-[480px]">
+          <label className="flex items-center gap-2 h-8 px-3 rounded-md bg-[var(--bg)] border border-transparent hover:border-[var(--border)] focus-within:border-[var(--brand)] focus-within:bg-white transition-colors">
+            <svg
+              className="w-4 h-4 text-[var(--text-3)] shrink-0"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <circle cx="11" cy="11" r="7" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
+            <input
+              type="search"
+              placeholder="搜索文章 / 作者"
+              className="flex-1 bg-transparent text-[13px] text-[var(--text)] placeholder:text-[var(--text-3)] outline-none"
+            />
+          </label>
         </div>
-      </div>
 
-      {/* 报头主区:左边小标 — 中间 LOGO — 右边操作 */}
-      <div className="masthead-rule">
-        <div className="max-w-[1400px] mx-auto px-6 py-5 grid grid-cols-12 items-end gap-4">
-          {/* 左侧:刊物副标 */}
-          <div className="col-span-3 hidden md:block">
-            <p className="font-editorial italic text-[15px] leading-tight text-[color:var(--ink-2)]">
-              An Editorial Atelier
-              <br />
-              for Human–AI Co-Writers
-            </p>
-          </div>
-
-          {/* 中间:LOGO 报头 */}
-          <Link href="/" className="col-span-12 md:col-span-6 flex flex-col items-center group">
-            <span className="font-mono text-[10px] uppercase tracking-[0.4em] text-[color:var(--ink-3)] mb-1">
-              The Creator&apos;s Atelier
-            </span>
-            <h1 className="font-display text-[64px] md:text-[88px] leading-[0.85] font-medium text-[color:var(--ink)] tracking-tight">
-              <span className="italic">炽</span>
-              <span className="mx-3 text-[color:var(--vermilion)]">·</span>
-              <span className="not-italic">CHÌ</span>
-            </h1>
-            <span className="font-editorial italic text-[14px] text-[color:var(--ink-3)] mt-1.5 group-hover:text-[color:var(--vermilion)] transition-colors">
-              ⸻ AI 创作者辅助生产与分发平台 ⸻
-            </span>
-          </Link>
-
-          {/* 右侧:登录态操作 */}
-          <div className="col-span-3 hidden md:flex flex-col items-end gap-2 text-sm">
-            {isLoggedIn ? (
-              <>
-                <span className="font-mono text-[11px] uppercase tracking-widest text-[color:var(--ink-3)]">
-                  ✶ 在册作者
-                </span>
-                <span className="font-editorial italic text-[18px]">@{auth.user!.handle}</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    clearToken();
-                    window.location.href = "/";
-                  }}
-                  className="font-mono text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-3)] link-rule"
-                >
-                  退出登录 ↗
-                </button>
-              </>
-            ) : (
-              <>
-                <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--ink-3)]">
-                  Sign in to publish
-                </span>
-                <Link
-                  href="/login"
-                  className="btn-ink px-4 py-2 font-mono text-[11px] uppercase tracking-[0.18em]"
-                >
-                  作者登录 →
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* 主导航条 */}
-      <nav className="border-b border-[color:var(--rule)] bg-[color:var(--cream)]">
-        <div className="max-w-[1400px] mx-auto px-6 flex items-center justify-between">
-          <ul className="flex items-stretch divide-x divide-[color:var(--rule)]/40">
-            {NAV.map((item) => {
-              const active =
-                pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
-              return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className={`block px-5 py-3 group relative ${
-                      active ? "text-[color:var(--vermilion)]" : "text-[color:var(--ink-2)]"
-                    }`}
-                  >
-                    {active && (
-                      <span className="absolute top-0 left-0 right-0 h-[3px] bg-[color:var(--vermilion)]" />
-                    )}
-                    <span className="block font-editorial italic text-[15px] leading-tight">
-                      {item.label}
-                    </span>
-                    <span className="block font-mono text-[9px] uppercase tracking-[0.2em] text-[color:var(--ink-mute)] mt-0.5">
-                      {item.en}
-                    </span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-
-          <div className="hidden md:flex items-center gap-3 pr-2">
-            {isLoggedIn ? (
+        <nav className="flex items-center gap-1 ml-auto">
+          {isLoggedIn ? (
+            <>
               <Link
                 href="/drafts/mine"
-                className="btn-ink px-4 py-2 font-mono text-[11px] uppercase tracking-[0.18em]"
+                className="btn btn-primary btn-sm hidden md:inline-flex"
+                aria-label="去写文章"
               >
-                ✎ 开始写作
+                + 写文章
               </Link>
-            ) : (
               <Link
-                href="/login"
-                className="btn-ghost px-4 py-2 font-mono text-[11px] uppercase tracking-[0.18em]"
+                href="/me/works"
+                className="btn btn-ghost btn-sm hidden sm:inline-flex"
+                aria-label="进入创作中心"
               >
-                ✎ 开始写作
+                创作中心
               </Link>
-            )}
-          </div>
+              <span className="hidden md:inline-flex items-center gap-2 px-2 h-8 text-[13px] text-[var(--text-2)]">
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--brand-soft)] text-[var(--brand)] text-[11px] font-medium">
+                  {auth.user!.handle.slice(0, 1).toUpperCase()}
+                </span>
+                <span className="max-w-[100px] truncate">@{auth.user!.handle}</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  clearToken();
+                  window.location.href = "/";
+                }}
+                className="btn btn-ghost btn-sm"
+              >
+                退出
+              </button>
+            </>
+          ) : (
+            <>
+              <Link href="/login" className="btn btn-ghost btn-sm">
+                登录
+              </Link>
+              <Link href="/login" className="btn btn-primary btn-sm">
+                + 写文章
+              </Link>
+            </>
+          )}
+        </nav>
+      </div>
+
+      {/* Row 2: 分类 tabs */}
+      <div className="border-t border-[var(--border)]">
+        <div className="max-w-[1200px] mx-auto px-5 h-10 flex items-center gap-1 overflow-x-auto">
+          {TABS.map((t) => {
+            const active = t.href === "/" ? pathname === "/" : pathname.startsWith(t.href);
+            return (
+              <Link
+                key={t.href}
+                href={t.href}
+                className={`relative inline-flex items-center h-10 px-3 text-[14px] shrink-0 transition-colors ${
+                  active
+                    ? "text-[var(--brand)] font-medium"
+                    : "text-[var(--text-2)] hover:text-[var(--text)]"
+                }`}
+              >
+                {t.label}
+                {active && (
+                  <span
+                    aria-hidden
+                    className="absolute left-3 right-3 bottom-0 h-[2px] bg-[var(--brand)] rounded-full"
+                  />
+                )}
+              </Link>
+            );
+          })}
         </div>
-      </nav>
+      </div>
     </header>
   );
 }

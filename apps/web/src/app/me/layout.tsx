@@ -3,20 +3,13 @@ import { NotificationBell } from "@/components/notification-bell";
 export default function MeLayout({ children }: { children: React.ReactNode }) {
   return (
     <div>
-      <div className="border-b border-[color:var(--rule)] bg-[color:var(--cream)]">
-        <div className="max-w-[1400px] mx-auto px-6 py-3 flex items-center justify-between">
-          <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[color:var(--vermilion)]">
-              § Author Studio
-            </p>
-            <h2 className="font-display italic text-[22px] leading-none mt-0.5">
-              我的 · <span className="not-italic">Workspace</span>
-            </h2>
-          </div>
+      <div className="border-b border-[var(--border)] bg-[var(--surface)]">
+        <div className="max-w-[1200px] mx-auto px-5 py-3 flex items-center justify-between">
+          <h2 className="text-[16px] font-medium text-[var(--text)]">我的工作台</h2>
           <NotificationBell />
         </div>
       </div>
-      <main className="max-w-[1400px] mx-auto px-6 py-8">{children}</main>
+      <main className="max-w-[1200px] mx-auto px-5 py-5">{children}</main>
     </div>
   );
 }

@@ -13,10 +13,8 @@ async function BestFeedWithData() {
     data = await serverFetchJson<FeedResponse>(`/rank/best?limit=20`);
   } catch {
     return (
-      <div className="border border-[color:var(--rule)] bg-[color:var(--cream)] p-8 text-center">
-        <p className="font-editorial italic text-2xl text-[color:var(--ink-2)]">
-          榜单尚未送达印刷机。请刷新重试。
-        </p>
+      <div className="card p-8 text-center">
+        <p className="text-[15px] text-[var(--text-2)]">榜单加载失败,请刷新重试</p>
       </div>
     );
   }
@@ -30,27 +28,16 @@ async function BestFeedWithData() {
 
 export default async function RankBestPage() {
   return (
-    <main className="max-w-[1400px] mx-auto px-6 py-12">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 mb-12 items-end">
-        <div className="lg:col-span-8">
-          <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-[color:var(--vermilion)] mb-3">
-            § Best Ranking · Quality First
-          </p>
-          <h1 className="font-display text-[64px] md:text-[88px] leading-[0.9] font-medium tracking-tight">
-            爆文<span className="italic text-[color:var(--vermilion)]">榜</span>
-          </h1>
-        </div>
-        <p className="lg:col-span-4 lg:pl-6 lg:border-l border-[color:var(--rule)] font-editorial italic text-[18px] leading-[1.55] text-[color:var(--ink-2)]">
-          按质量压榜 ⸻ 四维质量分加权后的长跑选手。 慢热稿在这里被看见, 速朽稿在这里被冷藏。
-          想看新鲜热乎的请去
-          <a href="/rank/hot" className="link-rule text-[color:var(--vermilion)]">
-            {" "}
-            热点榜{" "}
+    <main className="max-w-[1200px] mx-auto px-5 py-5">
+      <div className="mb-4">
+        <h1 className="text-[20px] font-medium text-[var(--text)]">爆文榜</h1>
+        <p className="text-[13px] text-[var(--text-3)] mt-0.5">
+          按四维质量分加权排序,看新鲜热乎请去{" "}
+          <a href="/rank/hot" className="text-[var(--brand)] hover:underline">
+            热点榜
           </a>
-          。
         </p>
       </div>
-      <div className="rule-vermilion mb-10 animate-rule" />
       <Suspense fallback={<FeedSkeleton />}>
         <BestFeedWithData />
       </Suspense>
