@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useSyncExternalStore } from "react";
-import { clearToken, type AuthUser } from "@/lib/auth";
+import { clearToken } from "@/lib/auth";
+import { useAuthSnapshot } from "@/lib/use-auth-snapshot";
 
 const TABS = [
   { href: "/", label: "推荐" },
@@ -13,57 +13,9 @@ const TABS = [
   { href: "/me/works", label: "创作中心" },
 ];
 
-function subscribeAuth(cb: () => void) {
-  if (typeof window === "undefined") return () => {};
-  window.addEventListener("storage", cb);
-  return () => window.removeEventListener("storage", cb);
-}
-
-interface AuthSnapshot {
-  user: AuthUser | null;
-  hasToken: boolean;
-}
-
-const EMPTY: AuthSnapshot = { user: null, hasToken: false };
-
-// useSyncExternalStore 要求 getSnapshot 在数据未变时返回引用相等的对象,
-// 否则会触发"getSnapshot should be cached"无限循环。
-let cachedSnap: AuthSnapshot = EMPTY;
-
-function readAuth(): AuthSnapshot {
-  if (typeof window === "undefined") return EMPTY;
-  const token = window.localStorage.getItem("bytedance-aigc.accessToken");
-  const userRaw = window.localStorage.getItem("bytedance-aigc.user");
-  const hasToken = !!token;
-  const userId = cachedSnap.user?.id ?? null;
-  const userHandle = cachedSnap.user?.handle ?? null;
-  let parsed: AuthUser | null = null;
-  if (userRaw) {
-    try {
-      parsed = JSON.parse(userRaw) as AuthUser;
-    } catch {
-      parsed = null;
-    }
-  }
-  if (
-    cachedSnap.hasToken === hasToken &&
-    userId === (parsed?.id ?? null) &&
-    userHandle === (parsed?.handle ?? null)
-  ) {
-    return cachedSnap;
-  }
-  cachedSnap = { user: parsed, hasToken };
-  return cachedSnap;
-}
-
-function getServerSnapshot(): AuthSnapshot {
-  return EMPTY;
-}
-
 export function SiteMasthead() {
   const pathname = usePathname();
-  const auth = useSyncExternalStore(subscribeAuth, readAuth, getServerSnapshot);
-  const isLoggedIn = auth.hasToken && !!auth.user;
+  const { user, isLoggedIn } = useAuthSnapshot();
 
   return (
     <header className="bg-[var(--surface)] border-b border-[var(--border)] sticky top-0 z-30">
@@ -118,9 +70,9 @@ export function SiteMasthead() {
               </Link>
               <span className="hidden md:inline-flex items-center gap-2 px-2 h-8 text-[13px] text-[var(--text-2)]">
                 <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--brand-soft)] text-[var(--brand)] text-[11px] font-medium">
-                  {auth.user!.handle.slice(0, 1).toUpperCase()}
+                  {user!.handle.slice(0, 1).toUpperCase()}
                 </span>
-                <span className="max-w-[100px] truncate">@{auth.user!.handle}</span>
+                <span className="max-w-[100px] truncate">@{user!.handle}</span>
               </span>
               <button
                 type="button"
