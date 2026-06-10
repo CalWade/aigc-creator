@@ -8,6 +8,7 @@ const TABS = [
   { href: "/", value: "recommend", label: "推荐" },
   { href: "/rank/hot", value: "hot", label: "热点榜" },
   { href: "/rank/best", value: "best", label: "爆文榜" },
+  { href: "/rank/external/douyin", value: "douyin", label: "抖音热榜" },
 ];
 
 export function RankTabs() {

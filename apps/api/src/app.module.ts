@@ -13,6 +13,7 @@ import { JwtAuthGuard } from "./auth/jwt-auth.guard";
 import { PrismaKnownRequestFilter } from "./common/filters/prisma-known-request.filter";
 import { envValidationSchema } from "./config/env.validation";
 import { DraftsModule } from "./drafts/drafts.module";
+import { ExternalTrendingModule } from "./external-trending/external-trending.module";
 import { FeedModule } from "./feed/feed.module";
 import { LlmModule } from "./llm/llm.module";
 import { NotificationsModule } from "./notifications/notifications.module";
@@ -45,6 +46,7 @@ const API_ENV_PATH = join(__dirname, "..", ".env");
     AnalyticsModule,
     NotificationsModule,
     AdminModule,
+    ExternalTrendingModule,
   ],
   controllers: [AppController],
   providers: [

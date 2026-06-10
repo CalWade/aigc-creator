@@ -71,3 +71,38 @@ export function hotnessMockBase(postId: string): number {
   }
   return Math.abs(h) % 100;
 }
+
+/**
+ * Phase 2.5 真实热度:基于 PostStat 多因子加权。
+ *
+ * 公式:log(impression+1)·1 + click·2 + like·5 + collect·8 + share·10 - report·20
+ *
+ * 设计理由:
+ * - impression 走 log:曝光量级跨度大(0 ~ 数十万),线性会让头部完全压死长尾。
+ * - click/like/collect/share 是显性参与,权重递增反映用户投入成本递增。
+ * - report 是负反馈,权重 -20 远高于正向单项,一次举报抵 4 次 share。这是为了让
+ *   "被多人举报但点赞也多" 的争议内容自然下沉,让 hotness 自带轻度安全自净。
+ * - 结果可能为负(report 多 + 互动少),归一化阶段会被 clamp 到候选池下限。
+ *
+ * 输入纯数据,无 IO,前后端可复用。
+ */
+export interface PostStatLike {
+  impression: number;
+  click: number;
+  like: number;
+  collect: number;
+  share: number;
+  report: number;
+}
+
+export function computeHotnessRaw(stat: PostStatLike | null | undefined): number {
+  if (!stat) return 0;
+  return (
+    Math.log(stat.impression + 1) * 1 +
+    stat.click * 2 +
+    stat.like * 5 +
+    stat.collect * 8 +
+    stat.share * 10 -
+    stat.report * 20
+  );
+}

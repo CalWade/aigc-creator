@@ -58,7 +58,17 @@ interface ToolPanel {
   candidates: Candidate[];
 }
 
-export function DraftEditor({ id, initialTool }: { id: string; initialTool?: string }) {
+export function DraftEditor({
+  id,
+  initialTool,
+  initialTopic,
+  initialOpenFast,
+}: {
+  id: string;
+  initialTool?: string;
+  initialTopic?: string;
+  initialOpenFast?: boolean;
+}) {
   const router = useRouter();
   const [state, setState] = useState<State>({ kind: "loading" });
   const [title, setTitle] = useState("");
@@ -68,7 +78,8 @@ export function DraftEditor({ id, initialTool }: { id: string; initialTool?: str
   // 这里 state 仅在外显场景(冲突 callback)写回让 hook 重读最新 baseline。
   const [baseVersion, setBaseVersion] = useState<number>(1);
 
-  const [fastDialogOpen, setFastDialogOpen] = useState(false);
+  // ?openFast=1 (来自抖音热榜「以此选题创作」)→ 落地后自动打开 FAST Dialog
+  const [fastDialogOpen, setFastDialogOpen] = useState(Boolean(initialOpenFast));
   const [fast, setFast] = useState<FastStage>({ kind: "idle" });
   // Phase 2.25: URL ?tool=HEADLINE_NEW → 自动打开 Prompt 库,选中对应工具
   const [promptDrawerOpen, setPromptDrawerOpen] = useState(() => {
@@ -523,6 +534,7 @@ export function DraftEditor({ id, initialTool }: { id: string; initialTool?: str
         open={fastDialogOpen}
         onClose={() => setFastDialogOpen(false)}
         onAccept={(sections) => setFast({ kind: "outline", sections })}
+        initialTopic={initialTopic}
       />
 
       <PromptDrawer open={promptDrawerOpen} onClose={() => setPromptDrawerOpen(false)} />

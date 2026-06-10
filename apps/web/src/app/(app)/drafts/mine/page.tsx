@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useRef, useState } from "react";
 
 import { apiFetch, clearToken, getToken, getUser } from "@/lib/auth";
 
@@ -21,10 +21,58 @@ type LoadState =
   | { kind: "error"; message: string };
 
 export default function MyDraftsPage() {
+  // useSearchParams 在 Next.js 16 静态预渲染时强制要求 Suspense 边界。
+  // 这页本来就 100% 客户端(看 token / handle),Suspense fallback 体验等价。
+  return (
+    <Suspense fallback={<main className="px-6 py-10 text-sm text-zinc-500">加载中…</main>}>
+      <MyDraftsPageInner />
+    </Suspense>
+  );
+}
+
+function MyDraftsPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [state, setState] = useState<LoadState>({ kind: "loading" });
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+
+  // 来自抖音热榜「以此选题创作」:?topic=xxx&source=douyin-hot
+  // 自动建草稿 → 跳详情页并打开 FAST Dialog,只触发一次,失败回退为列表态。
+  const autoCreatedRef = useRef(false);
+  useEffect(() => {
+    const topic = searchParams.get("topic");
+    const source = searchParams.get("source");
+    if (!topic || autoCreatedRef.current) return;
+    if (!getToken()) return; // 让下面那个 effect 处理重定向
+    autoCreatedRef.current = true;
+    void (async () => {
+      try {
+        const res = await apiFetch("/drafts", {
+          method: "POST",
+          body: JSON.stringify({
+            title: topic.slice(0, 80),
+            body: { type: "doc", content: [] },
+          }),
+        });
+        if (res.status === 401) {
+          clearToken();
+          router.replace("/login");
+          return;
+        }
+        if (!res.ok) {
+          setCreateError(`从选题创建草稿失败 (HTTP ${res.status})`);
+          return;
+        }
+        const draft = (await res.json()) as { id: string };
+        const next = new URLSearchParams({ openFast: "1", topic });
+        if (source) next.set("source", source);
+        router.replace(`/drafts/${draft.id}?${next.toString()}`);
+      } catch (err) {
+        setCreateError(err instanceof Error ? err.message : "网络错误");
+      }
+    })();
+  }, [router, searchParams]);
 
   useEffect(() => {
     if (!getToken()) {

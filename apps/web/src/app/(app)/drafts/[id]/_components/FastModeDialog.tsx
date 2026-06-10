@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { OutlineItem } from "@bytedance-aigc/shared";
 
 import { apiFetch } from "@/lib/auth";
@@ -24,10 +24,25 @@ interface FastModeDialogProps {
   open: boolean;
   onClose: () => void;
   onAccept: (sections: OutlineItem[]) => void;
+  /** 外部带入的初始选题(如来自抖音热榜「以此选题创作」)。仅在 open 由 false→true 时初始化一次。 */
+  initialTopic?: string;
 }
 
-export function FastModeDialog({ draftId, open, onClose, onAccept }: FastModeDialogProps) {
-  const [topic, setTopic] = useState("");
+export function FastModeDialog({
+  draftId,
+  open,
+  onClose,
+  onAccept,
+  initialTopic,
+}: FastModeDialogProps) {
+  const [topic, setTopic] = useState(initialTopic ?? "");
+  // 外部 initialTopic 变化或 dialog 重新打开时,把 topic 同步成 initialTopic。
+  // 用户在 dialog 内的手动修改不会被覆盖,因为 effect 只在 open/initialTopic 变化时触发。
+  useEffect(() => {
+    if (open && initialTopic) {
+      setTopic(initialTopic);
+    }
+  }, [open, initialTopic]);
   const [hint, setHint] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);

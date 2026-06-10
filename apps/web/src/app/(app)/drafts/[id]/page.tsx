@@ -5,9 +5,16 @@ export default async function DraftDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ tool?: string }>;
+  searchParams: Promise<{ tool?: string; topic?: string; openFast?: string }>;
 }) {
   const { id } = await params;
-  const { tool } = await searchParams;
-  return <DraftEditor id={id} initialTool={tool} />;
+  const { tool, topic, openFast } = await searchParams;
+  return (
+    <DraftEditor
+      id={id}
+      initialTool={tool}
+      initialTopic={topic}
+      initialOpenFast={openFast === "1"}
+    />
+  );
 }

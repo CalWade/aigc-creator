@@ -1,4 +1,5 @@
 import {
+  computeHotnessRaw,
   computeScore,
   hotnessMockBase,
   normalizeHotness,
@@ -134,5 +135,113 @@ describe("computeScore", () => {
     // q=80, h=normalize(50,[10,50,90])=50, t=100
     // s = 0.5*80 + 0.3*50 + 0.2*100 = 40 + 15 + 20 = 75
     expect(s).toBeCloseTo(75, 3);
+  });
+});
+
+describe("computeHotnessRaw", () => {
+  it("null/undefined 返 0(无 stat 行的草稿)", () => {
+    expect(computeHotnessRaw(null)).toBe(0);
+    expect(computeHotnessRaw(undefined)).toBe(0);
+  });
+
+  it("全 0 stat → 接近 0(只有 log(0+1)=0)", () => {
+    expect(
+      computeHotnessRaw({ impression: 0, click: 0, like: 0, collect: 0, share: 0, report: 0 }),
+    ).toBe(0);
+  });
+
+  it("PostStat 高的明显高于低的(站内核心断言)", () => {
+    const high = computeHotnessRaw({
+      impression: 10000,
+      click: 500,
+      like: 200,
+      collect: 100,
+      share: 50,
+      report: 0,
+    });
+    const low = computeHotnessRaw({
+      impression: 100,
+      click: 5,
+      like: 1,
+      collect: 0,
+      share: 0,
+      report: 0,
+    });
+    expect(high).toBeGreaterThan(low);
+  });
+
+  it("share 比 like 权重高(10 vs 5,鼓励传播)", () => {
+    const shareHeavy = computeHotnessRaw({
+      impression: 0,
+      click: 0,
+      like: 0,
+      collect: 0,
+      share: 1,
+      report: 0,
+    });
+    const likeHeavy = computeHotnessRaw({
+      impression: 0,
+      click: 0,
+      like: 1,
+      collect: 0,
+      share: 0,
+      report: 0,
+    });
+    expect(shareHeavy).toBeGreaterThan(likeHeavy);
+  });
+
+  it("report 多扣分:1 次举报抵 4 次 share", () => {
+    const positive = computeHotnessRaw({
+      impression: 0,
+      click: 0,
+      like: 0,
+      collect: 0,
+      share: 4,
+      report: 0,
+    });
+    const reported = computeHotnessRaw({
+      impression: 0,
+      click: 0,
+      like: 0,
+      collect: 0,
+      share: 4,
+      report: 1,
+    });
+    expect(reported).toBeLessThan(positive);
+    // 4 share - 1 report = 40 - 20 = 20;无 report = 40
+    expect(positive - reported).toBeCloseTo(20, 5);
+  });
+
+  it("举报多 + 互动少 → 可能为负(由 normalize 阶段 clamp)", () => {
+    const trolled = computeHotnessRaw({
+      impression: 1,
+      click: 0,
+      like: 0,
+      collect: 0,
+      share: 0,
+      report: 5,
+    });
+    expect(trolled).toBeLessThan(0);
+  });
+
+  it("impression 走 log:10000 vs 100 不会让头部完全压死长尾", () => {
+    const popular = computeHotnessRaw({
+      impression: 10000,
+      click: 0,
+      like: 0,
+      collect: 0,
+      share: 0,
+      report: 0,
+    });
+    const niche = computeHotnessRaw({
+      impression: 100,
+      click: 0,
+      like: 0,
+      collect: 0,
+      share: 0,
+      report: 0,
+    });
+    // 10000 vs 100 量级差 100 倍,但 log 后差距 ~2 倍而非 100 倍
+    expect(popular / niche).toBeLessThan(3);
   });
 });

@@ -1,8 +1,8 @@
 import { Injectable, BadRequestException } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 import {
+  computeHotnessRaw,
   computeScore,
-  hotnessMockBase,
   normalizeHotness,
   TAU_HOURS,
   WINDOW_HOURS,
@@ -71,12 +71,22 @@ export class FeedService {
       include: {
         author: { select: { id: true, handle: true } },
         lastReview: { select: { quality: true } },
+        stat: {
+          select: {
+            impression: true,
+            click: true,
+            like: true,
+            collect: true,
+            share: true,
+            report: true,
+          },
+        },
       },
     });
 
     const scoreables: (Scoreable & { draft: (typeof drafts)[number] })[] = drafts.map((d) => {
-      // PHASE_2_5_REPLACE_HERE: 把 hotnessMockBase 换成基于 PostStat 的真实加权
-      const hotnessRaw = hotnessMockBase(d.id);
+      // Phase 2.5:hotness 接入 PostStat 多因子加权(替换 hotnessMockBase 哈希)
+      const hotnessRaw = computeHotnessRaw(d.stat);
       const q = readQualityOverall(d.lastReview?.quality);
       return {
         id: d.id,
@@ -139,12 +149,22 @@ export class FeedService {
       include: {
         author: { select: { id: true, handle: true } },
         lastReview: { select: { quality: true } },
+        stat: {
+          select: {
+            impression: true,
+            click: true,
+            like: true,
+            collect: true,
+            share: true,
+            report: true,
+          },
+        },
       },
       orderBy: { publishedAt: "desc" },
       take: limit,
     });
-    const hotnessPool = drafts.map((d) => hotnessMockBase(d.id));
-    return drafts.map((d) => toPostDto(d, hotnessMockBase(d.id), hotnessPool));
+    const hotnessPool = drafts.map((d) => computeHotnessRaw(d.stat));
+    return drafts.map((d, i) => toPostDto(d, hotnessPool[i], hotnessPool));
   }
 
   async getMyWorks(
