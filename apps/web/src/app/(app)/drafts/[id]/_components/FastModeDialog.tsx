@@ -5,6 +5,17 @@ import type { OutlineItem } from "@bytedance-aigc/shared";
 
 import { apiFetch } from "@/lib/auth";
 import { usePromptReview } from "@/hooks/use-prompt-review";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 import { PromptReviewBanner } from "./PromptReviewBanner";
 
@@ -22,8 +33,6 @@ export function FastModeDialog({ draftId, open, onClose, onAccept }: FastModeDia
   const [error, setError] = useState<string | null>(null);
   const promptReview = usePromptReview();
   const composedText = (): string => `${topic.trim()}\n${hint.trim()}`.trim();
-
-  if (!open) return null;
 
   const submit = async (): Promise<void> => {
     if (!topic.trim()) {
@@ -54,62 +63,65 @@ export function FastModeDialog({ draftId, open, onClose, onAccept }: FastModeDia
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative w-full max-w-lg rounded-lg bg-white dark:bg-zinc-950 shadow-xl border border-zinc-200 dark:border-zinc-800 p-5 flex flex-col gap-4">
-        <h2 className="text-lg font-semibold">FAST 模式生成大纲</h2>
-        <label className="flex flex-col gap-1 text-sm">
-          <span>选题</span>
-          <input
-            type="text"
-            value={topic}
-            onChange={(e) => setTopic(e.target.value)}
-            onBlur={() => promptReview.trigger(composedText())}
-            className="rounded border border-zinc-300 dark:border-zinc-700 bg-transparent px-2 py-1.5 outline-none focus:border-zinc-500"
-            placeholder="例:5G-A 商用启动"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          <span>额外提示(可选)</span>
-          <textarea
-            value={hint}
-            onChange={(e) => setHint(e.target.value)}
-            onBlur={() => promptReview.trigger(composedText())}
-            rows={3}
-            className="rounded border border-zinc-300 dark:border-zinc-700 bg-transparent px-2 py-1.5 outline-none focus:border-zinc-500"
-            placeholder="例:请聚焦运营商成本下降的具体数据"
-          />
-        </label>
-        {promptReview.result && (
-          <PromptReviewBanner
-            result={promptReview.result}
-            onDismiss={promptReview.dismiss}
-            onChangeAngle={() => {
-              setTopic("");
-              setHint("");
-              promptReview.dismiss();
-            }}
-          />
-        )}
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <div className="flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded border border-zinc-300 dark:border-zinc-700 px-3 py-1.5 text-sm"
-          >
-            取消
-          </button>
-          <button
-            type="button"
-            onClick={() => void submit()}
-            disabled={submitting}
-            className="rounded bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 px-3 py-1.5 text-sm disabled:opacity-50"
-          >
-            {submitting ? "生成中…" : "生成大纲"}
-          </button>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onClose();
+      }}
+    >
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>FAST 模式生成大纲</DialogTitle>
+          <DialogDescription className="sr-only">
+            填写选题与可选额外提示后,由模型一次性生成大纲。
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5 text-sm">
+            <Label htmlFor="fast-topic">选题</Label>
+            <Input
+              id="fast-topic"
+              type="text"
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+              onBlur={() => promptReview.trigger(composedText())}
+              placeholder="例:5G-A 商用启动"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5 text-sm">
+            <Label htmlFor="fast-hint">额外提示(可选)</Label>
+            <textarea
+              id="fast-hint"
+              value={hint}
+              onChange={(e) => setHint(e.target.value)}
+              onBlur={() => promptReview.trigger(composedText())}
+              rows={3}
+              className="rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+              placeholder="例:请聚焦运营商成本下降的具体数据"
+            />
+          </div>
+          {promptReview.result && (
+            <PromptReviewBanner
+              result={promptReview.result}
+              onDismiss={promptReview.dismiss}
+              onChangeAngle={() => {
+                setTopic("");
+                setHint("");
+                promptReview.dismiss();
+              }}
+            />
+          )}
+          {error && <p className="text-sm text-red-600">{error}</p>}
         </div>
-      </div>
-    </div>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={onClose}>
+            取消
+          </Button>
+          <Button type="button" onClick={() => void submit()} disabled={submitting}>
+            {submitting ? "生成中…" : "生成大纲"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

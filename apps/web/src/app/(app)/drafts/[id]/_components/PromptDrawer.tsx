@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DRAFT_TOOL_TYPES, PROMPT_DRAWER_TOOLS, type DraftToolType } from "@bytedance-aigc/shared";
+import { PROMPT_DRAWER_TOOLS, type DraftToolType } from "@bytedance-aigc/shared";
 
 import { apiFetch } from "@/lib/auth";
 import { useActivePromptId } from "@/hooks/use-active-prompt-id";
-
-import { Drawer } from "./Drawer";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 interface PromptItem {
   id: string;
@@ -91,113 +90,131 @@ export function PromptDrawer({ open, onClose }: PromptDrawerProps) {
   const platformDefault = platform.find((p) => p.tool === tool && p.isStarter) ?? null;
 
   return (
-    <Drawer open={open} onClose={onClose} title="Prompt 库">
-      <div className="flex flex-col gap-4">
-        <label className="flex items-center gap-2 text-sm">
-          <span>工具:</span>
-          <select
-            value={tool}
-            onChange={(e) => setTool(e.target.value as DraftToolType)}
-            className="rounded border border-zinc-300 dark:border-zinc-700 bg-transparent px-2 py-1"
-          >
-            {PROMPT_DRAWER_TOOLS.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </select>
-        </label>
+    <Sheet
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onClose();
+      }}
+    >
+      <SheetContent
+        side="right"
+        aria-label="Prompt 库"
+        className="w-[400px] sm:w-[500px] sm:max-w-[500px] flex flex-col gap-0 p-0"
+      >
+        <SheetHeader className="border-b border-border">
+          <SheetTitle className="text-base">Prompt 库</SheetTitle>
+        </SheetHeader>
+        <div className="flex-1 overflow-y-auto p-4">
+          <div className="flex flex-col gap-4">
+            <label className="flex items-center gap-2 text-sm">
+              <span>工具:</span>
+              <select
+                value={tool}
+                onChange={(e) => setTool(e.target.value as DraftToolType)}
+                className="rounded border border-input bg-transparent px-2 py-1"
+              >
+                {PROMPT_DRAWER_TOOLS.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-        <div className="flex gap-2 text-sm border-b border-zinc-200 dark:border-zinc-800">
-          <button
-            type="button"
-            onClick={() => setTab("platform")}
-            className={`px-3 py-1.5 ${tab === "platform" ? "border-b-2 border-zinc-900 dark:border-zinc-100" : "text-zinc-500"}`}
-          >
-            平台
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab("mine")}
-            className={`px-3 py-1.5 ${tab === "mine" ? "border-b-2 border-zinc-900 dark:border-zinc-100" : "text-zinc-500"}`}
-          >
-            我的
-          </button>
-        </div>
+            <div className="flex gap-2 text-sm border-b border-border">
+              <button
+                type="button"
+                onClick={() => setTab("platform")}
+                className={`px-3 py-1.5 ${tab === "platform" ? "border-b-2 border-foreground" : "text-muted-foreground"}`}
+              >
+                平台
+              </button>
+              <button
+                type="button"
+                onClick={() => setTab("mine")}
+                className={`px-3 py-1.5 ${tab === "mine" ? "border-b-2 border-foreground" : "text-muted-foreground"}`}
+              >
+                我的
+              </button>
+            </div>
 
-        {loading && <p className="text-xs text-zinc-500">加载中…</p>}
+            {loading && <p className="text-xs text-muted-foreground">加载中…</p>}
 
-        {tab === "platform" &&
-          platform.map((p) => (
-            <article
-              key={p.id}
-              className="rounded border border-zinc-200 dark:border-zinc-800 p-3 flex flex-col gap-2"
-            >
-              <header className="flex items-center justify-between">
-                <h4 className="text-sm font-semibold">{p.name}</h4>
-                <button
-                  type="button"
-                  onClick={() => void copy(p.id)}
-                  className="text-xs rounded border border-zinc-300 dark:border-zinc-700 px-2 py-1"
+            {tab === "platform" &&
+              platform.map((p) => (
+                <article
+                  key={p.id}
+                  className="rounded border border-border p-3 flex flex-col gap-2"
                 >
-                  复制到我的
-                </button>
-              </header>
-              <p className="text-xs text-zinc-500 whitespace-pre-wrap">{p.systemPrompt}</p>
-              {p.designNote && (
-                <details className="rounded bg-zinc-50 dark:bg-zinc-900/50 px-2 py-1.5">
-                  <summary className="cursor-pointer text-xs text-zinc-600 dark:text-zinc-400 select-none">
-                    💡 设计注释(平台 PE 经验)
-                  </summary>
-                  <p className="mt-1.5 text-xs text-zinc-600 dark:text-zinc-400 whitespace-pre-wrap leading-relaxed">
-                    {p.designNote}
+                  <header className="flex items-center justify-between">
+                    <h4 className="text-sm font-semibold">{p.name}</h4>
+                    <button
+                      type="button"
+                      onClick={() => void copy(p.id)}
+                      className="text-xs rounded border border-input px-2 py-1"
+                    >
+                      复制到我的
+                    </button>
+                  </header>
+                  <p className="text-xs text-muted-foreground whitespace-pre-wrap">
+                    {p.systemPrompt}
                   </p>
-                </details>
-              )}
-              <div className="flex justify-between text-xs">
-                <span
-                  className={`rounded px-1.5 py-0.5 text-[11px] ${
-                    p.isStarter
-                      ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                      : "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300"
-                  }`}
-                >
-                  {p.isStarter ? "默认款" : "风格款"}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setPromptId(p.id)}
-                  className={`rounded px-2 py-1 ${
-                    activeId === p.id
-                      ? "bg-emerald-600 text-white"
-                      : "border border-zinc-300 dark:border-zinc-700"
-                  }`}
-                >
-                  {activeId === p.id ? "当前生效" : "设为当前生效"}
-                </button>
-              </div>
-            </article>
-          ))}
+                  {p.designNote && (
+                    <details className="rounded bg-muted/40 px-2 py-1.5">
+                      <summary className="cursor-pointer text-xs text-muted-foreground select-none">
+                        💡 设计注释(平台 PE 经验)
+                      </summary>
+                      <p className="mt-1.5 text-xs text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                        {p.designNote}
+                      </p>
+                    </details>
+                  )}
+                  <div className="flex justify-between text-xs">
+                    <span
+                      className={`rounded px-1.5 py-0.5 text-[11px] ${
+                        p.isStarter
+                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                          : "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300"
+                      }`}
+                    >
+                      {p.isStarter ? "默认款" : "风格款"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setPromptId(p.id)}
+                      className={`rounded px-2 py-1 ${
+                        activeId === p.id ? "bg-emerald-600 text-white" : "border border-input"
+                      }`}
+                    >
+                      {activeId === p.id ? "当前生效" : "设为当前生效"}
+                    </button>
+                  </div>
+                </article>
+              ))}
 
-        {tab === "mine" &&
-          minePerTool.map((p) => (
-            <MyPromptItem
-              key={p.id}
-              prompt={p}
-              isActive={activeId === p.id}
-              platformDefault={platformDefault}
-              onActivate={() => setPromptId(p.id)}
-              onRestoreDefault={(id) => setPromptId(id)}
-              onDelete={() => void remove(p.id)}
-              onSave={(patch) => void updateField(p.id, patch)}
-              onAfterMutation={() => void reload()}
-            />
-          ))}
-        {tab === "mine" && minePerTool.length === 0 && !loading && (
-          <p className="text-xs text-zinc-500">尚无自己的 prompt,可在「平台」tab 复制一个。</p>
-        )}
-      </div>
-    </Drawer>
+            {tab === "mine" &&
+              minePerTool.map((p) => (
+                <MyPromptItem
+                  key={p.id}
+                  prompt={p}
+                  isActive={activeId === p.id}
+                  platformDefault={platformDefault}
+                  onActivate={() => setPromptId(p.id)}
+                  onRestoreDefault={(id) => setPromptId(id)}
+                  onDelete={() => void remove(p.id)}
+                  onSave={(patch) => void updateField(p.id, patch)}
+                  onAfterMutation={() => void reload()}
+                />
+              ))}
+            {tab === "mine" && minePerTool.length === 0 && !loading && (
+              <p className="text-xs text-muted-foreground">
+                尚无自己的 prompt,可在「平台」tab 复制一个。
+              </p>
+            )}
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
 
@@ -263,14 +280,14 @@ function MyPromptItem({
   };
 
   return (
-    <article className="rounded border border-zinc-200 dark:border-zinc-800 p-3 flex flex-col gap-2">
+    <article className="rounded border border-border p-3 flex flex-col gap-2">
       <header className="flex items-center justify-between">
         <h4 className="text-sm font-semibold">{prompt.name}</h4>
         <div className="flex gap-2">
           <button
             type="button"
             onClick={() => setEditing((v) => !v)}
-            className="text-xs rounded border border-zinc-300 dark:border-zinc-700 px-2 py-1"
+            className="text-xs rounded border border-input px-2 py-1"
           >
             {editing ? "取消" : "编辑"}
           </button>
@@ -285,14 +302,14 @@ function MyPromptItem({
             value={systemPrompt}
             onChange={(e) => setSystemPrompt(e.target.value)}
             rows={5}
-            className="text-xs rounded border border-zinc-300 dark:border-zinc-700 bg-transparent p-2"
+            className="text-xs rounded border border-input bg-transparent p-2"
           />
           <input
             type="text"
             value={designNote}
             onChange={(e) => setDesignNote(e.target.value)}
             placeholder="设计笔记"
-            className="text-xs rounded border border-zinc-300 dark:border-zinc-700 bg-transparent p-2"
+            className="text-xs rounded border border-input bg-transparent p-2"
           />
           <button
             type="button"
@@ -300,32 +317,34 @@ function MyPromptItem({
               onSave({ systemPrompt, designNote });
               setEditing(false);
             }}
-            className="self-end text-xs rounded bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 px-2 py-1"
+            className="self-end text-xs rounded bg-foreground text-background px-2 py-1"
           >
             保存
           </button>
         </>
       ) : (
         <>
-          <p className="text-xs text-zinc-500 whitespace-pre-wrap">{prompt.systemPrompt}</p>
-          {prompt.designNote && <p className="text-xs text-zinc-400">笔记:{prompt.designNote}</p>}
+          <p className="text-xs text-muted-foreground whitespace-pre-wrap">{prompt.systemPrompt}</p>
+          {prompt.designNote && (
+            <p className="text-xs text-muted-foreground/80">笔记:{prompt.designNote}</p>
+          )}
         </>
       )}
-      <div className="flex flex-col gap-2 border-t border-zinc-100 dark:border-zinc-800 pt-2">
+      <div className="flex flex-col gap-2 border-t border-border pt-2">
         <div className="flex justify-end gap-2">
           <button
             type="button"
             onClick={() => platformDefault && onRestoreDefault(platformDefault.id)}
             disabled={!platformDefault}
             title={platformDefault ? "切回平台默认款" : "该工具暂无平台默认款"}
-            className="text-xs rounded border border-zinc-300 dark:border-zinc-700 px-2 py-1 disabled:opacity-40"
+            className="text-xs rounded border border-input px-2 py-1 disabled:opacity-40"
           >
             恢复默认
           </button>
           <button
             type="button"
             onClick={() => setHistoryOpen((v) => !v)}
-            className="text-xs rounded border border-zinc-300 dark:border-zinc-700 px-2 py-1"
+            className="text-xs rounded border border-input px-2 py-1"
           >
             {historyOpen ? "历史 ▴" : "历史 ▾"}
           </button>
@@ -333,7 +352,7 @@ function MyPromptItem({
             type="button"
             onClick={onActivate}
             className={`rounded px-2 py-1 text-xs ${
-              isActive ? "bg-emerald-600 text-white" : "border border-zinc-300 dark:border-zinc-700"
+              isActive ? "bg-emerald-600 text-white" : "border border-input"
             }`}
           >
             {isActive ? "当前生效" : "设为当前生效"}
@@ -342,14 +361,14 @@ function MyPromptItem({
         {historyOpen && (
           <ul className="flex flex-col gap-1 text-xs">
             {snapshots.length === 0 && (
-              <li className="text-zinc-500">暂无历史快照(下次保存后产生)</li>
+              <li className="text-muted-foreground">暂无历史快照(下次保存后产生)</li>
             )}
             {snapshots.map((s) => (
               <li
                 key={s.id}
-                className="flex items-center justify-between gap-2 rounded border border-zinc-200 dark:border-zinc-800 px-2 py-1"
+                className="flex items-center justify-between gap-2 rounded border border-border px-2 py-1"
               >
-                <span className="flex-1 truncate text-zinc-500">
+                <span className="flex-1 truncate text-muted-foreground">
                   {fmtRel(s.createdAt)} · {s.systemPrompt.slice(0, 30)}
                   {s.systemPrompt.length > 30 ? "…" : ""}
                 </span>

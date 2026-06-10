@@ -5,6 +5,14 @@ import type { JSONContent } from "@tiptap/react";
 
 import { apiFetch } from "@/lib/auth";
 import { VersionDiff } from "@/components/version-diff";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 interface VersionDto {
   id: string;
@@ -138,34 +146,26 @@ export function VersionHistoryModal({
     }
   }, [draftId, selected, onRestored, onClose]);
 
-  if (!open) return null;
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={onClose}
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onClose();
+      }}
     >
-      <div
-        className="flex h-[90vh] w-full max-w-6xl flex-col rounded-lg bg-white dark:bg-zinc-950 shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 px-4 py-3">
-          <h2 className="text-base font-semibold">版本历史</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="关闭"
-            className="text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
-          >
-            ✕
-          </button>
-        </header>
+      <DialogContent className="flex h-[90vh] w-[calc(100%-2rem)] max-w-6xl flex-col gap-0 p-0 sm:max-w-6xl">
+        <DialogHeader className="border-b border-border px-4 py-3 text-left">
+          <DialogTitle className="text-base">版本历史</DialogTitle>
+          <DialogDescription className="sr-only">
+            草稿历次保存版本与发布版本,可选中后恢复。
+          </DialogDescription>
+        </DialogHeader>
 
         <div className="flex flex-1 overflow-hidden">
-          <aside className="w-64 border-r border-zinc-200 dark:border-zinc-800 overflow-y-auto">
-            {loading && <p className="p-4 text-sm text-zinc-500">加载中…</p>}
+          <aside className="w-64 border-r border-border overflow-y-auto">
+            {loading && <p className="p-4 text-sm text-muted-foreground">加载中…</p>}
             {!loading && versions.length === 0 && (
-              <p className="p-4 text-sm text-zinc-500">暂无版本记录</p>
+              <p className="p-4 text-sm text-muted-foreground">暂无版本记录</p>
             )}
             <ul>
               {versions.map((v) => {
@@ -176,19 +176,17 @@ export function VersionHistoryModal({
                     <button
                       type="button"
                       onClick={() => void handleSelect(v)}
-                      className={`w-full text-left px-3 py-2 border-b border-zinc-100 dark:border-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-900 ${
-                        active ? "bg-zinc-100 dark:bg-zinc-900" : ""
+                      className={`w-full text-left px-3 py-2 border-b border-border hover:bg-accent ${
+                        active ? "bg-accent" : ""
                       }`}
                     >
                       <div className="flex items-center gap-2 text-xs">
                         <span className={`px-1.5 py-0.5 rounded ${chip.cls}`}>{chip.label}</span>
-                        <span className="text-zinc-500">{formatTime(v.createdAt)}</span>
+                        <span className="text-muted-foreground">{formatTime(v.createdAt)}</span>
                       </div>
-                      <div className="mt-1 text-xs text-zinc-500">{v.wordCount} 字</div>
+                      <div className="mt-1 text-xs text-muted-foreground">{v.wordCount} 字</div>
                       {v.note && (
-                        <div className="mt-1 text-xs text-zinc-700 dark:text-zinc-300 truncate">
-                          {v.note}
-                        </div>
+                        <div className="mt-1 text-xs text-foreground truncate">{v.note}</div>
                       )}
                     </button>
                   </li>
@@ -204,30 +202,29 @@ export function VersionHistoryModal({
               </div>
             )}
             {!selected && (
-              <div className="flex flex-1 items-center justify-center text-sm text-zinc-500">
+              <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
                 请在左侧选一个版本以查看 diff
               </div>
             )}
             {selected && (
               <>
-                <div className="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-800 px-4 py-2">
-                  <div className="text-xs text-zinc-500">
+                <div className="flex items-center justify-between border-b border-border px-4 py-2">
+                  <div className="text-xs text-muted-foreground">
                     {KIND_CHIP[selected.kind].label} · {formatTime(selected.createdAt)} ·{" "}
                     {selected.wordCount} 字
-                    {selected.note && (
-                      <span className="ml-2 text-zinc-700 dark:text-zinc-300">{selected.note}</span>
-                    )}
+                    {selected.note && <span className="ml-2 text-foreground">{selected.note}</span>}
                   </div>
                   <div className="flex flex-col items-end gap-1">
-                    <button
+                    <Button
                       type="button"
+                      variant="outline"
+                      size="sm"
                       disabled={restoring}
                       onClick={() => void handleRestore()}
-                      className="text-sm rounded border border-zinc-300 dark:border-zinc-700 px-3 py-1 hover:bg-zinc-100 dark:hover:bg-zinc-900 disabled:opacity-50"
                     >
                       {restoring ? "恢复中…" : "恢复为草稿"}
-                    </button>
-                    <p className="text-xs text-zinc-400 dark:text-zinc-500">
+                    </Button>
+                    <p className="text-xs text-muted-foreground">
                       回滚后将切回草稿状态,需重新点发布走预检
                     </p>
                   </div>
@@ -239,7 +236,7 @@ export function VersionHistoryModal({
             )}
           </section>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
