@@ -1,20 +1,18 @@
 import { IsEmail, IsIn, IsOptional, IsString, Length, Matches, MaxLength } from "class-validator";
 
 /**
- * 三种登录方式 union:
- * - method=handle  → 老路径,只查 handle(兼容 e2e + demo seed 用户)
- * - method=phone   → 手机号 + 6 位验证码
- * - method=email   → 邮箱 + 密码
- *
- * 各 method 必填字段在 service 层运行时校验,DTO 这里只做类型 + 格式 + 长度。
+ * 注册:
+ * - method=phone → 手机号 + 6 位验证码 + 期望 handle(可选,服务端可派生)
+ * - method=email → 邮箱 + 密码 + 期望 handle(可选)
  */
-export class LoginDto {
-  @IsIn(["handle", "phone", "email"])
-  method!: "handle" | "phone" | "email";
+export class RegisterDto {
+  @IsIn(["phone", "email"])
+  method!: "phone" | "email";
 
   @IsOptional()
   @IsString()
-  @Length(1, 50)
+  @Length(2, 30)
+  @Matches(/^[a-zA-Z0-9_-]+$/, { message: "handle 仅支持字母数字下划线连字符" })
   handle?: string;
 
   @IsOptional()

@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { LogOut, User as UserIcon, FileText, LayoutDashboard, LogIn } from "lucide-react";
-import { clearToken } from "@/lib/auth";
+import { apiFetch, clearToken } from "@/lib/auth";
 import { useAuthSnapshot } from "@/lib/use-auth-snapshot";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -77,6 +77,8 @@ export function UserMenu() {
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onSelect={() => {
+            // 后端 logout 仅写 audit log,失败也不阻塞前端清 token
+            void apiFetch("/auth/logout", { method: "POST" }).catch(() => undefined);
             clearToken();
             window.location.href = "/";
           }}

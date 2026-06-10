@@ -104,17 +104,44 @@ enum AssetReviewStatus {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  handle    String   @unique
-  createdAt DateTime @default(now())
+  id           String   @id @default(cuid())
+  handle       String   @unique
+  phone        String?  @unique
+  email        String?  @unique
+  passwordHash String?
+  createdAt    DateTime @default(now())
 
   drafts        Draft[]
   prompts       Prompt[] @relation("UserPrompts")
   reports       Report[] @relation("UserReports")
   assets        Asset[]
   notifications Notification[]
+  authEvents    AuthEvent[]
 
   @@map("users")
+}
+
+enum AuthEventType {
+  LOGIN
+  REGISTER
+  LOGOUT
+  SEND_CODE
+}
+
+model AuthEvent {
+  id        String        @id @default(cuid())
+  userId    String?
+  user      User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  type      AuthEventType
+  method    String?
+  identity  String?
+  ip        String?
+  userAgent String?       @db.Text
+  createdAt DateTime      @default(now())
+
+  @@index([userId, createdAt])
+  @@index([type, createdAt])
+  @@map("auth_events")
 }
 
 model Asset {
