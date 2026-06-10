@@ -1,21 +1,32 @@
-import { Controller, Get, NotFoundException, Param, Query } from "@nestjs/common";
+import { Controller, Get, NotFoundException, Param, Query, Req } from "@nestjs/common";
+import type { Request } from "express";
 import type { PostDetailDto, PostDto } from "@bytedance-aigc/shared";
 import { hotnessMockBase, normalizeHotness } from "@bytedance-aigc/shared";
+import { JwtService } from "@nestjs/jwt";
 import { Public } from "../auth/public.decorator";
+import type { JwtPayload } from "../auth/jwt-payload.interface";
 import { FeedService } from "./feed.service";
+import { ReactionsService } from "./reactions.service";
 import { AuthorPostsQueryDto } from "./feed.dto";
 
 @Controller()
 export class PostsController {
-  constructor(private readonly feed: FeedService) {}
+  constructor(
+    private readonly feed: FeedService,
+    private readonly reactions: ReactionsService,
+    private readonly jwtService: JwtService,
+  ) {}
 
   @Public()
   @Get("post/:id")
-  async getPost(@Param("id") id: string): Promise<PostDetailDto> {
+  async getPost(@Param("id") id: string, @Req() req: Request): Promise<PostDetailDto> {
     const draft = await this.feed.getPostDetail(id);
     if (!draft) {
       throw new NotFoundException({ code: "POST_NOT_FOUND", message: "稿件不存在或已下架" });
     }
+
+    const viewerId = await softVerifyUserId(req, this.jwtService);
+    const reactions = await this.reactions.getForPost(id, viewerId);
 
     const hotnessRaw = hotnessMockBase(draft.id);
     const quality = readQ(draft.lastReview?.quality);
@@ -34,6 +45,7 @@ export class PostsController {
       excerpt: "",
       body: liveBody,
       qualityRecommendation: draft.lastReview?.recommendation ?? "ALLOW",
+      reactions,
     };
   }
 
@@ -45,6 +57,21 @@ export class PostsController {
   ): Promise<{ items: PostDto[] }> {
     const items = await this.feed.getAuthorPosts(id, q.limit);
     return { items };
+  }
+}
+
+/**
+ * 软鉴权:有合法 token 拿 sub,无 token 或 token 失效返回 null。
+ * 用于公开路由仍想"看到"登录态(如 reactions.liked)。
+ */
+async function softVerifyUserId(req: Request, jwtService: JwtService): Promise<string | null> {
+  const auth = req.headers.authorization;
+  if (!auth?.startsWith("Bearer ")) return null;
+  try {
+    const decoded = await jwtService.verifyAsync<JwtPayload>(auth.slice(7));
+    return decoded.sub;
+  } catch {
+    return null;
   }
 }
 

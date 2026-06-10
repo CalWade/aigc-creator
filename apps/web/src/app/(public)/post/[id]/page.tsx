@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { PostDetailDto } from "@bytedance-aigc/shared";
 import { serverFetchJson } from "@/lib/server-fetch";
-import { ReportButton } from "@/components/post/ReportButton";
+import { ReactionBar } from "@/components/post/ReactionBar";
 import { PostBody } from "@/components/post/PostBody";
 import { QualityBadge } from "@/app/(app)/_components/QualityBadge";
 
@@ -50,9 +50,12 @@ export default async function PostPage({ params }: PageProps) {
           />
         </div>
         <PostBody body={post.body} />
-        <div className="mt-10 pt-6 border-t border-border flex items-center justify-end gap-2">
-          <ReportButton postId={post.id} authorId={post.authorId} />
-        </div>
+        <ReactionBar
+          postId={post.id}
+          authorId={post.authorId}
+          initial={post.reactions}
+          postTitle={post.title}
+        />
       </article>
     </main>
   );

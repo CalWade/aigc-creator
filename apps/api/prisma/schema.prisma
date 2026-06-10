@@ -117,6 +117,7 @@ model User {
   assets        Asset[]
   notifications Notification[]
   authEvents    AuthEvent[]
+  reactions     Reaction[]
 
   @@map("users")
 }
@@ -189,6 +190,7 @@ model Draft {
   reviews    Review[]       @relation("DraftReviews")
   stat       PostStat?
   reports    Report[]
+  reactions  Reaction[]
   sampleAudits SampleAudit[]
   notifications Notification[]
 
@@ -316,6 +318,26 @@ model Report {
   @@index([postId, status])
   @@index([status, createdAt])
   @@map("reports")
+}
+
+enum ReactionKind {
+  LIKE
+  COLLECT
+}
+
+model Reaction {
+  id        String       @id @default(cuid())
+  userId    String
+  postId    String
+  kind      ReactionKind
+  createdAt DateTime     @default(now())
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Draft @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId, kind])
+  @@index([postId, kind])
+  @@map("reactions")
 }
 
 model SampleAudit {

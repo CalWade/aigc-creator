@@ -18,6 +18,16 @@ export interface PostDto {
 export interface PostDetailDto extends PostDto {
   body: unknown; // TipTap JSONContent
   qualityRecommendation: "ALLOW" | "WARN" | "BLOCK";
+  reactions: PostReactionsDto;
+}
+
+export type ReactionKind = "LIKE" | "COLLECT";
+
+export interface PostReactionsDto {
+  likeCount: number;
+  collectCount: number;
+  liked: boolean; // 当前登录用户是否点赞;未登录恒 false
+  collected: boolean;
 }
 
 export interface FeedResponse {
