@@ -23,7 +23,12 @@ export function decodeCursor(raw: string): FeedCursor {
     throw new Error("CURSOR_INVALID");
   }
   if (!isFeedCursor(parsed)) throw new Error("CURSOR_INVALID");
-  return parsed;
+  // 兼容旧 cursor:delta 缺失时补 0
+  const weights = parsed.weights as unknown as Record<string, unknown>;
+  if (weights.delta === undefined) {
+    parsed = { ...parsed, weights: { ...parsed.weights, delta: 0 } } as FeedCursor;
+  }
+  return parsed as FeedCursor;
 }
 
 function isFeedCursor(x: unknown): x is FeedCursor {
@@ -35,6 +40,7 @@ function isFeedCursor(x: unknown): x is FeedCursor {
   const wo = w as Record<string, unknown>;
   return (
     typeof wo.alpha === "number" && typeof wo.beta === "number" && typeof wo.gamma === "number"
+    // delta 兼容旧 cursor:缺失时默认 0,不阻止解析
   );
 }
 
@@ -44,6 +50,7 @@ export function weightsEqual(a: FeedWeights, b: FeedWeights): boolean {
   return (
     Math.abs(a.alpha - b.alpha) < eps &&
     Math.abs(a.beta - b.beta) < eps &&
-    Math.abs(a.gamma - b.gamma) < eps
+    Math.abs(a.gamma - b.gamma) < eps &&
+    Math.abs((a.delta ?? 0) - (b.delta ?? 0)) < eps
   );
 }

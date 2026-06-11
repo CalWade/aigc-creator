@@ -1,6 +1,7 @@
 import {
   computeHotnessRaw,
   computeScore,
+  computeExternalTrendScore,
   hotnessMockBase,
   normalizeHotness,
   timeDecayScore,
@@ -90,40 +91,43 @@ describe("hotnessMockBase", () => {
   });
 });
 
+const NOW = new Date("2026-06-04T12:00:00Z");
+
+function mk(id: string, qual: number, hot: number, agoHours: number, trend = 0): Scoreable {
+  return {
+    id,
+    qualityOverall: qual,
+    hotnessRaw: hot,
+    publishedAt: new Date(NOW.getTime() - agoHours * 3600_000),
+    externalTrendScore: trend,
+  };
+}
+
 describe("computeScore", () => {
-  const now = new Date("2026-06-04T12:00:00Z");
+  const now = NOW;
   const baseCtx: ScoreContext = {
-    weights: { alpha: 0.5, beta: 0.3, gamma: 0.2 },
+    weights: { alpha: 0.5, beta: 0.3, gamma: 0.2, delta: 0 },
     tauHours: 24,
     now,
     hotnessPool: [10, 50, 90],
   };
 
-  function mk(id: string, qual: number, hot: number, agoHours: number): Scoreable {
-    return {
-      id,
-      qualityOverall: qual,
-      hotnessRaw: hot,
-      publishedAt: new Date(now.getTime() - agoHours * 3600_000),
-    };
-  }
-
   it("α=1, β=γ=0 时按 quality 降序", () => {
-    const ctx: ScoreContext = { ...baseCtx, weights: { alpha: 1, beta: 0, gamma: 0 } };
+    const ctx: ScoreContext = { ...baseCtx, weights: { alpha: 1, beta: 0, gamma: 0, delta: 0 } };
     const a = computeScore(mk("a", 90, 10, 0), ctx);
     const b = computeScore(mk("b", 60, 90, 0), ctx);
     expect(a).toBeGreaterThan(b);
   });
 
   it("α=γ=0, β=1 时按 hotness(归一化后)降序", () => {
-    const ctx: ScoreContext = { ...baseCtx, weights: { alpha: 0, beta: 1, gamma: 0 } };
+    const ctx: ScoreContext = { ...baseCtx, weights: { alpha: 0, beta: 1, gamma: 0, delta: 0 } };
     const a = computeScore(mk("a", 60, 90, 0), ctx);
     const b = computeScore(mk("b", 90, 10, 0), ctx);
     expect(a).toBeGreaterThan(b);
   });
 
   it("α=β=0, γ=1 时按 publishedAt 降序", () => {
-    const ctx: ScoreContext = { ...baseCtx, weights: { alpha: 0, beta: 0, gamma: 1 } };
+    const ctx: ScoreContext = { ...baseCtx, weights: { alpha: 0, beta: 0, gamma: 1, delta: 0 } };
     const fresh = computeScore(mk("a", 60, 50, 1), ctx);
     const old = computeScore(mk("b", 90, 50, 24), ctx);
     expect(fresh).toBeGreaterThan(old);
@@ -243,5 +247,85 @@ describe("computeHotnessRaw", () => {
     });
     // 10000 vs 100 量级差 100 倍,但 log 后差距 ~2 倍而非 100 倍
     expect(popular / niche).toBeLessThan(3);
+  });
+});
+
+describe("computeScore with delta", () => {
+  const now = NOW;
+  const ctx: ScoreContext = {
+    weights: { alpha: 0, beta: 0, gamma: 0, delta: 1 },
+    tauHours: 24,
+    now,
+    hotnessPool: [50],
+  };
+
+  it("δ=1, α=β=γ=0 时按 externalTrendScore 降序", () => {
+    const a = computeScore(mk("a", 50, 50, 0, 80), ctx);
+    const b = computeScore(mk("b", 50, 50, 0, 20), ctx);
+    expect(a).toBeGreaterThan(b);
+  });
+
+  it("δ=0 时 externalTrendScore 不影响排序", () => {
+    const ctxNoDelta: ScoreContext = { ...ctx, weights: { alpha: 1, beta: 0, gamma: 0, delta: 0 } };
+    const a = computeScore(mk("a", 90, 50, 0, 0), ctxNoDelta);
+    const b = computeScore(mk("b", 60, 50, 0, 100), ctxNoDelta);
+    expect(a).toBeGreaterThan(b); // 只看 quality,不看 trend
+  });
+
+  it("四因子混合:δ·E 正确加和", () => {
+    const ctxMix: ScoreContext = {
+      weights: { alpha: 0.5, beta: 0, gamma: 0, delta: 0.5 },
+      tauHours: 24,
+      now,
+      hotnessPool: [50],
+    };
+    const s = computeScore(mk("a", 80, 50, 0, 60), ctxMix);
+    // s = 0.5*80 + 0.5*60 = 40 + 30 = 70
+    expect(s).toBeCloseTo(70, 3);
+  });
+});
+
+describe("computeExternalTrendScore", () => {
+  const topics = ["人工智能", "ChatGPT", "新能源车", "世界杯"];
+  const popularities = [1000, 800, 600, 400];
+
+  it("标题精确包含话题 → 返回 > 0", () => {
+    const score = computeExternalTrendScore("人工智能改变世界", topics, popularities);
+    expect(score).toBeGreaterThan(0);
+  });
+
+  it("话题包含标题 → 返回 > 0", () => {
+    const score = computeExternalTrendScore("ChatGPT", topics, popularities);
+    expect(score).toBeGreaterThan(0);
+  });
+
+  it("子串片段匹配(3字以上) → 返回 > 0", () => {
+    const score = computeExternalTrendScore("新能源车市火爆", topics, popularities);
+    expect(score).toBeGreaterThan(0);
+  });
+
+  it("完全不相关 → 返 0", () => {
+    const score = computeExternalTrendScore("今天天气真不错", topics, popularities);
+    expect(score).toBe(0);
+  });
+
+  it("空标题 → 返 0", () => {
+    expect(computeExternalTrendScore("", topics, popularities)).toBe(0);
+  });
+
+  it("空热榜 → 返 0", () => {
+    expect(computeExternalTrendScore("人工智能", [], [])).toBe(0);
+  });
+
+  it("多话题匹配时取最高分", () => {
+    const score = computeExternalTrendScore("人工智能与ChatGPT", topics, popularities);
+    // "人工智能" popularity=1000 最高
+    expect(score).toBe(100);
+  });
+
+  it("popularity 归一化:最低话题匹配时分数最低", () => {
+    const scoreHigh = computeExternalTrendScore("人工智能", topics, popularities);
+    const scoreLow = computeExternalTrendScore("世界杯", topics, popularities);
+    expect(scoreHigh).toBeGreaterThan(scoreLow);
   });
 });

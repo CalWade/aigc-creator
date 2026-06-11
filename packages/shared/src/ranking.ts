@@ -21,6 +21,7 @@ export interface Scoreable {
   publishedAt: Date;
   qualityOverall: number; // 0-100
   hotnessRaw: number; // Phase 2.4 = mock; Phase 2.5 = 真实加权
+  externalTrendScore: number; // 0-100; 抖音热榜相关性,0=无匹配
 }
 
 export interface ScoreContext {
@@ -52,12 +53,15 @@ export function normalizeHotness(raw: number, pool: number[]): number {
   return 100 * ((clamped - min) / (max - min));
 }
 
-/** α·Q + β·H + γ·T;输入纯数据,无 IO */
+/** α·Q + β·H + γ·T + δ·E;输入纯数据,无 IO */
 export function computeScore(p: Scoreable, ctx: ScoreContext): number {
   const q = p.qualityOverall;
   const h = normalizeHotness(p.hotnessRaw, ctx.hotnessPool);
   const t = timeDecayScore(p.publishedAt, ctx.now, ctx.tauHours);
-  return ctx.weights.alpha * q + ctx.weights.beta * h + ctx.weights.gamma * t;
+  const e = p.externalTrendScore;
+  return (
+    ctx.weights.alpha * q + ctx.weights.beta * h + ctx.weights.gamma * t + ctx.weights.delta * e
+  );
 }
 
 /**
@@ -105,4 +109,64 @@ export function computeHotnessRaw(stat: PostStatLike | null | undefined): number
     stat.share * 10 -
     stat.report * 20
   );
+}
+
+/**
+ * 外部热度匹配分:标题与热榜话题的文本相关性 + 热榜 popularity 归一化。
+ *
+ * 匹配策略(Phase 1 轻量方案):
+ * - 对标题做 2-4 字滑动窗口分词
+ * - 与热榜话题做双向子串匹配(标题包含话题 / 话题包含标题分词片段)
+ * - 匹配到的话题取其归一化 popularity(min-max → 0-100)
+ * - 多个话题匹配时取最高分;无匹配返 0
+ *
+ * 输入纯数据,无 IO,前后端可复用。
+ */
+export function computeExternalTrendScore(
+  title: string,
+  trendingTopics: string[],
+  trendingPopularities: number[],
+): number {
+  if (!title || trendingTopics.length === 0) return 0;
+
+  const titleLower = title.toLowerCase();
+  // 生成 2-4 字分词片段
+  const segments: string[] = [];
+  for (let len = 2; len <= 4; len++) {
+    for (let i = 0; i <= titleLower.length - len; i++) {
+      segments.push(titleLower.slice(i, i + len));
+    }
+  }
+
+  let bestScore = 0;
+  const minPop = Math.min(...trendingPopularities);
+  const maxPop = Math.max(...trendingPopularities);
+
+  for (let i = 0; i < trendingTopics.length; i++) {
+    const topic = trendingTopics[i].toLowerCase();
+    let matched = false;
+
+    // 精确子串:标题包含话题
+    if (titleLower.includes(topic) || topic.includes(titleLower)) {
+      matched = true;
+    }
+
+    // 分词片段匹配:话题包含标题的某个分词片段(至少 3 字)
+    if (!matched) {
+      for (const seg of segments) {
+        if (seg.length >= 3 && topic.includes(seg)) {
+          matched = true;
+          break;
+        }
+      }
+    }
+
+    if (matched) {
+      const pop = trendingPopularities[i];
+      const normalized = maxPop > minPop ? (100 * (pop - minPop)) / (maxPop - minPop) : 50;
+      if (normalized > bestScore) bestScore = normalized;
+    }
+  }
+
+  return bestScore;
 }

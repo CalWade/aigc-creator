@@ -13,6 +13,7 @@ export interface PostDto {
   hotnessMock: number; // 0-100; Phase 2.5 接埋点后由真实计算替换
   coverIndex: number; // 1-5
   excerpt: string; // 取 body 前 80 字
+  trendingMatch: boolean; // 是否匹配到外部热榜话题
 }
 
 export interface PostDetailDto extends PostDto {
@@ -39,12 +40,21 @@ export interface FeedWeights {
   alpha: number; // QualityScore 权重
   beta: number; // HotnessScore 权重
   gamma: number; // TimeDecayScore 权重
+  delta: number; // ExternalTrendScore 权重(抖音热榜相关性)
 }
 
 export const DEFAULT_FEED_WEIGHTS: FeedWeights = {
   alpha: 0.5,
   beta: 0.3,
   gamma: 0.2,
+  delta: 0,
+};
+
+/** 各 mode 推荐的 delta 默认值;不传 delta 时按 mode 自动取 */
+export const DELTA_DEFAULTS: Record<FeedMode, number> = {
+  all: 0.1,
+  hot: 0.25,
+  best: 0.05,
 };
 
 export type FeedMode = "all" | "hot" | "best";

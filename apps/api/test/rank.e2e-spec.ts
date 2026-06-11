@@ -52,13 +52,17 @@ describe("/rank (e2e)", () => {
 
   it("权重切换导致同 mode 排序变化", async () => {
     const rQ = await request(app.getHttpServer())
-      .get("/rank/best?alpha=1&beta=0&gamma=0&limit=5")
+      .get("/rank/best?alpha=1&beta=0&gamma=0&delta=0&limit=5")
       .expect(200);
     const rT = await request(app.getHttpServer())
-      .get("/rank/best?alpha=0&beta=0&gamma=1&limit=5")
+      .get("/rank/best?alpha=0&beta=0&gamma=1&delta=0&limit=5")
       .expect(200);
     const idsQ = (rQ.body as FeedResp).items.map((x) => x.id);
     const idsT = (rT.body as FeedResp).items.map((x) => x.id);
     expect(idsQ).not.toEqual(idsT);
+  });
+
+  it("delta 参数被接受且不影响 200 响应", async () => {
+    await request(app.getHttpServer()).get("/rank/hot?delta=0.25&limit=5").expect(200);
   });
 });

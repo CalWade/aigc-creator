@@ -13,6 +13,7 @@ const META: Record<keyof FeedWeights, { label: string; en: string; hint: string 
   alpha: { label: "质量", en: "Quality", hint: "α · 四维质量分占比" },
   beta: { label: "热度", en: "Hotness", hint: "β · 实时阅读热度占比" },
   gamma: { label: "新鲜度", en: "Recency", hint: "γ · 时间衰减占比" },
+  delta: { label: "外部热点", en: "Trend", hint: "δ · 抖音热榜相关性占比" },
 };
 
 function readInitialWeights(): FeedWeights {
@@ -38,6 +39,7 @@ export function WeightDrawer() {
     sp.set("alpha", String(next.alpha));
     sp.set("beta", String(next.beta));
     sp.set("gamma", String(next.gamma));
+    sp.set("delta", String(next.delta));
     router.replace(`?${sp.toString()}`);
   }
 
@@ -80,7 +82,7 @@ export function WeightDrawer() {
         <SheetHeader className="border-b border-border px-5 py-4">
           <SheetTitle className="text-[15px]">排序权重</SheetTitle>
           <SheetDescription className="text-[12px]">
-            score = α·quality + β·hotness + γ·recency
+            score = α·quality + β·hotness + γ·recency + δ·trend
           </SheetDescription>
         </SheetHeader>
 

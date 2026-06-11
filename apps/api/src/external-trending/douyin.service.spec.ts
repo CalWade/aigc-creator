@@ -148,3 +148,46 @@ describe("DouyinTrendingService", () => {
     expect(calls).toBe(1);
   });
 });
+
+describe("DouyinTrendingService.getMatchScore", () => {
+  let service: DouyinTrendingService;
+
+  beforeEach(() => {
+    service = new DouyinTrendingService();
+  });
+
+  function seedCache(items: Array<{ word: string; hot_value: number }>) {
+    (service as unknown as { fetchRaw: () => Promise<unknown> }).fetchRaw = () =>
+      Promise.resolve({ data: { word_list: items } });
+  }
+
+  it("标题匹配热榜话题 → 返回 > 0", async () => {
+    seedCache([{ word: "人工智能", hot_value: 1000 }]);
+    const score = await service.getMatchScore("人工智能改变世界");
+    expect(score).toBeGreaterThan(0);
+  });
+
+  it("标题不匹配任何话题 → 返回 0", async () => {
+    seedCache([{ word: "人工智能", hot_value: 1000 }]);
+    const score = await service.getMatchScore("今天天气不错");
+    expect(score).toBe(0);
+  });
+
+  it("getBatchMatchScores: 一次拉取,批量计算", async () => {
+    seedCache([
+      { word: "人工智能", hot_value: 1000 },
+      { word: "新能源", hot_value: 500 },
+    ]);
+    const scores = await service.getBatchMatchScores(["人工智能最新进展", "今天吃什么"]);
+    expect(scores).toHaveLength(2);
+    expect(scores[0]).toBeGreaterThan(0);
+    expect(scores[1]).toBe(0);
+  });
+
+  it("上游不可用时安全降级返回 0", async () => {
+    (service as unknown as { fetchRaw: () => Promise<unknown> }).fetchRaw = () =>
+      Promise.reject(new Error("upstream down"));
+    const score = await service.getMatchScore("任何标题");
+    expect(score).toBe(0);
+  });
+});

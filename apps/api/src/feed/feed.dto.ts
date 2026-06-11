@@ -33,6 +33,13 @@ export class FeedQueryDto {
   @Min(0)
   @Max(1)
   gamma?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  @Max(1)
+  delta?: number;
 }
 
 export class AuthorPostsQueryDto {

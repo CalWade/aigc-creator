@@ -43,6 +43,7 @@ export class PostsController {
       hotnessMock: normalizeHotness(hotnessRaw, [hotnessRaw]),
       coverIndex: (Math.abs(hashId(draft.id)) % 5) + 1,
       excerpt: "",
+      trendingMatch: false,
       body: liveBody,
       qualityRecommendation: draft.lastReview?.recommendation ?? "ALLOW",
       reactions,

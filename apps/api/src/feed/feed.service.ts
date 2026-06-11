@@ -7,12 +7,14 @@ import {
   TAU_HOURS,
   WINDOW_HOURS,
   DEFAULT_FEED_WEIGHTS,
+  DELTA_DEFAULTS,
   type FeedMode,
   type FeedWeights,
   type MeWorksItem,
   type PostDto,
   type Scoreable,
 } from "@bytedance-aigc/shared";
+import { DouyinTrendingService } from "../external-trending/douyin.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { decodeCursor, encodeCursor, weightsEqual } from "./cursor";
 
@@ -27,7 +29,10 @@ interface GetFeedOpts {
 
 @Injectable()
 export class FeedService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly douyin: DouyinTrendingService,
+  ) {}
 
   async getFeed(opts: GetFeedOpts): Promise<{ items: PostDto[]; nextCursor: string | null }> {
     const limit = opts.limit ?? DEFAULT_LIMIT;
@@ -35,6 +40,7 @@ export class FeedService {
       alpha: opts.weights?.alpha ?? DEFAULT_FEED_WEIGHTS.alpha,
       beta: opts.weights?.beta ?? DEFAULT_FEED_WEIGHTS.beta,
       gamma: opts.weights?.gamma ?? DEFAULT_FEED_WEIGHTS.gamma,
+      delta: opts.weights?.delta ?? DELTA_DEFAULTS[opts.mode],
     };
 
     let startRank = 0;
@@ -93,9 +99,19 @@ export class FeedService {
         publishedAt: d.publishedAt ?? d.updatedAt,
         qualityOverall: q,
         hotnessRaw,
+        externalTrendScore: 0, // 占位,下面批量计算
         draft: d,
       };
     });
+
+    // 外部热度匹配:一次拉取抖音热榜,批量计算所有标题的匹配分
+    if (weights.delta > 0) {
+      const titles = scoreables.map((s) => s.draft.publishedTitle ?? s.draft.title);
+      const matchScores = await this.douyin.getBatchMatchScores(titles);
+      for (let i = 0; i < scoreables.length; i++) {
+        scoreables[i].externalTrendScore = matchScores[i];
+      }
+    }
 
     const hotnessPool = scoreables.map((s) => s.hotnessRaw);
     const tauHours = TAU_HOURS[opts.mode];
@@ -111,7 +127,9 @@ export class FeedService {
       });
 
     const slice = ranked.slice(startRank, startRank + limit);
-    const items: PostDto[] = slice.map(({ s }) => toPostDto(s.draft, s.hotnessRaw, hotnessPool));
+    const items: PostDto[] = slice.map(({ s }) =>
+      toPostDto(s.draft, s.hotnessRaw, hotnessPool, s.externalTrendScore),
+    );
 
     const endRank = startRank + slice.length;
     const nextCursor = endRank < ranked.length ? encodeCursor({ rank: endRank, weights }) : null;
@@ -164,7 +182,7 @@ export class FeedService {
       take: limit,
     });
     const hotnessPool = drafts.map((d) => computeHotnessRaw(d.stat));
-    return drafts.map((d, i) => toPostDto(d, hotnessPool[i], hotnessPool));
+    return drafts.map((d, i) => toPostDto(d, hotnessPool[i], hotnessPool, 0));
   }
 
   async getMyWorks(
@@ -245,6 +263,7 @@ function toPostDto(
   },
   hotnessRaw: number,
   hotnessPool: number[],
+  externalTrendScore: number,
 ): PostDto {
   const hotnessMock = normalizeHotness(hotnessRaw, hotnessPool);
   return {
@@ -257,6 +276,7 @@ function toPostDto(
     hotnessMock,
     coverIndex: pickCoverIndex(draft.id),
     excerpt: extractExcerpt(draft.publishedBody ?? draft.body),
+    trendingMatch: externalTrendScore > 0,
   };
 }
 

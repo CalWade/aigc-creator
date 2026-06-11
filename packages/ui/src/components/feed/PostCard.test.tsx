@@ -13,6 +13,7 @@ const mock: PostDto = {
   qualityOverall: 87,
   hotnessMock: 42,
   publishedAt: new Date("2026-06-01T00:00:00Z").toISOString(),
+  trendingMatch: false,
 };
 
 describe("PostCard", () => {

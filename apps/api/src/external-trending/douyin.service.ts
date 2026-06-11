@@ -1,5 +1,6 @@
 import { Injectable, Logger, ServiceUnavailableException } from "@nestjs/common";
 import { request as httpsRequest } from "node:https";
+import { computeExternalTrendScore } from "@bytedance-aigc/shared";
 
 /**
  * 抖音热榜对接服务。
@@ -206,6 +207,39 @@ export class DouyinTrendingService {
   clearCache() {
     this.cache = null;
     this.inflight = null;
+  }
+
+  /**
+   * 计算标题与当前抖音热榜的匹配分(0-100)。
+   * 复用 getHotList 的缓存,无额外上游请求。
+   * 上游不可用且无缓存时返回 0(安全降级,不阻塞排序)。
+   */
+  async getMatchScore(title: string): Promise<number> {
+    try {
+      const result = await this.getHotList(50);
+      const topics = result.items.map((item) => item.title);
+      const popularities = result.items.map((item) => item.popularity);
+      return computeExternalTrendScore(title, topics, popularities);
+    } catch {
+      this.logger.warn("getMatchScore: douyin hot list unavailable, returning 0");
+      return 0;
+    }
+  }
+
+  /**
+   * 批量计算多篇内容的外部热度匹配分(一次 getHotList,避免重复拉取)。
+   * 返回与 titles 等长的分数数组。
+   */
+  async getBatchMatchScores(titles: string[]): Promise<number[]> {
+    try {
+      const result = await this.getHotList(50);
+      const topics = result.items.map((item) => item.title);
+      const popularities = result.items.map((item) => item.popularity);
+      return titles.map((t) => computeExternalTrendScore(t, topics, popularities));
+    } catch {
+      this.logger.warn("getBatchMatchScores: douyin hot list unavailable, returning all zeros");
+      return titles.map(() => 0);
+    }
   }
 }
 

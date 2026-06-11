@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { AuthModule } from "../auth/auth.module";
+import { ExternalTrendingModule } from "../external-trending/external-trending.module";
 import { FeedController } from "./feed.controller";
 import { PostsController } from "./posts.controller";
 import { MeWorksController } from "./me.controller";
@@ -8,7 +9,7 @@ import { FeedService } from "./feed.service";
 import { ReactionsService } from "./reactions.service";
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, ExternalTrendingModule],
   controllers: [FeedController, PostsController, MeWorksController, ReactionsController],
   providers: [FeedService, ReactionsService],
   exports: [ReactionsService],

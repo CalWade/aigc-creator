@@ -36,6 +36,12 @@ export function PostCard({ post, priority = false }: PostCardProps) {
             <span>Q · {post.qualityOverall.toFixed(0)}</span>
             <span className="text-muted-foreground/60">·</span>
             <span>H · {post.hotnessMock.toFixed(0)}</span>
+            {post.trendingMatch && (
+              <>
+                <span className="text-muted-foreground/60">·</span>
+                <span className="text-brand">热榜相关</span>
+              </>
+            )}
           </div>
         </CardContent>
       </Link>

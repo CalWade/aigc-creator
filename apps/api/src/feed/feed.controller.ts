@@ -44,7 +44,13 @@ export class FeedController {
 
 function pickWeights(
   q: FeedQueryDto,
-): { alpha?: number; beta?: number; gamma?: number } | undefined {
-  if (q.alpha === undefined && q.beta === undefined && q.gamma === undefined) return undefined;
-  return { alpha: q.alpha, beta: q.beta, gamma: q.gamma };
+): { alpha?: number; beta?: number; gamma?: number; delta?: number } | undefined {
+  if (
+    q.alpha === undefined &&
+    q.beta === undefined &&
+    q.gamma === undefined &&
+    q.delta === undefined
+  )
+    return undefined;
+  return { alpha: q.alpha, beta: q.beta, gamma: q.gamma, delta: q.delta };
 }
