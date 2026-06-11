@@ -21,7 +21,7 @@ let cache: Map<SensitiveCategory, RuleEntry[]> | null = null;
 /** WHY: 从 monorepo 根 packages/shared/rules/*.yaml 加载;启动时一次,内存缓存。 */
 export function loadRules(): Map<SensitiveCategory, RuleEntry[]> {
   if (cache) return cache;
-  const rulesDir = join(__dirname, "..", "..", "..", "..", "packages", "shared", "rules");
+  const rulesDir = join(__dirname, "..", "..", "..", "..", "..", "packages", "shared", "rules");
   const files = readdirSync(rulesDir).filter((f) => f.endsWith(".yaml"));
   const map = new Map<SensitiveCategory, RuleEntry[]>();
   for (const cat of RULE_CATEGORIES) map.set(cat, []);

@@ -75,7 +75,7 @@ export class ReviewService {
       qualityRaw = q.value;
       qualityMs = q.ms;
     } catch (err) {
-      this.logger.warn(`preflight error: ${(err as Error).message}`);
+      this.logger.error(`preflight error: ${(err as Error).message}`, (err as Error).stack);
       throw new InternalServerErrorException("审核失败,请稍后重试");
     }
 
