@@ -17,6 +17,8 @@ import {
   Compass,
   Flame,
   TrendingUp,
+  Tv,
+  LogIn,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@bytedance-aigc/ui/lib/utils";
@@ -46,6 +48,7 @@ const READER_GROUP: NavGroup = {
     { href: "/", label: "推荐", icon: Compass, exact: true },
     { href: "/rank/hot", label: "热点榜", icon: Flame },
     { href: "/rank/best", label: "爆文榜", icon: TrendingUp },
+    { href: "/rank/external/douyin", label: "抖音热榜", icon: Tv },
   ],
 };
 
@@ -86,6 +89,28 @@ function getGroups(role: "AUTHOR" | "ADMIN" | undefined): NavGroup[] {
   return [READER_GROUP];
 }
 
+// 未登录时侧边栏底部的引导 CTA — 让用户知道创作入口存在，点击即跳登录。
+function CreatorLoginGate() {
+  return (
+    <div className="mx-2 mt-3 px-3 py-3 rounded-lg border border-dashed border-border bg-muted/30 flex flex-col gap-2.5">
+      <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
+        <PenLine className="h-4 w-4 shrink-0" aria-hidden />
+        <span>创作与工作台</span>
+      </div>
+      <Link
+        href="/login"
+        className={cn(
+          "flex items-center justify-center gap-1.5 h-8 rounded-md text-[13px] font-medium transition-all",
+          "bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98]",
+        )}
+      >
+        <LogIn className="h-3.5 w-3.5" aria-hidden />
+        登录后创作
+      </Link>
+    </div>
+  );
+}
+
 function isActive(pathname: string, href: string, exact?: boolean) {
   if (exact) return pathname === href;
   return pathname === href || pathname.startsWith(`${href}/`);
@@ -93,7 +118,7 @@ function isActive(pathname: string, href: string, exact?: boolean) {
 
 export function SidebarNav() {
   const pathname = usePathname();
-  const { user } = useAuthSnapshot();
+  const { user, isLoggedIn } = useAuthSnapshot();
   const groups = getGroups(user?.role);
 
   return (
@@ -131,6 +156,7 @@ export function SidebarNav() {
           })}
         </SidebarSection>
       ))}
+      {!isLoggedIn && <CreatorLoginGate />}
     </nav>
   );
 }

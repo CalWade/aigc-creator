@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Badge } from "@bytedance-aigc/ui/components/ui/badge";
 import { Button } from "@bytedance-aigc/ui/components/ui/button";
 import { Card } from "@bytedance-aigc/ui/components/ui/card";
 import { apiFetch } from "@bytedance-aigc/ui/lib/auth";
+import { useAuthSnapshot } from "@bytedance-aigc/ui/lib/use-auth-snapshot";
 import type { DouyinTrendingResult } from "@bytedance-aigc/ui/components/feed/external-trending-types";
 
 const LABEL_VARIANT: Record<string, "destructive" | "outline" | "secondary"> = {
@@ -17,6 +19,7 @@ const LABEL_VARIANT: Record<string, "destructive" | "outline" | "secondary"> = {
 
 export function DouyinHotList({ data }: { data: DouyinTrendingResult }) {
   const router = useRouter();
+  const { isLoggedIn } = useAuthSnapshot();
   const [creatingTitle, setCreatingTitle] = useState<string | null>(null);
 
   if (data.items.length === 0) {
@@ -79,15 +82,26 @@ export function DouyinHotList({ data }: { data: DouyinTrendingResult }) {
                 </div>
                 <div className="mt-1.5 flex items-center gap-3 text-[12px] text-muted-foreground">
                   <span>🔥 {item.popularityText}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 px-2 text-[12px] text-brand hover:text-brand hover:bg-brand/10"
-                    onClick={() => void startCreate(item.title)}
-                    disabled={creatingTitle === item.title}
-                  >
-                    {creatingTitle === item.title ? "创建中…" : "以此选题创作"}
-                  </Button>
+                  {isLoggedIn ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-[12px] text-brand hover:text-brand hover:bg-brand/10"
+                      onClick={() => void startCreate(item.title)}
+                      disabled={creatingTitle === item.title}
+                    >
+                      {creatingTitle === item.title ? "创建中…" : "以此选题创作"}
+                    </Button>
+                  ) : (
+                    <Button
+                      asChild
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-[12px] text-brand hover:text-brand hover:bg-brand/10"
+                    >
+                      <Link href="/login">以此选题创作</Link>
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>

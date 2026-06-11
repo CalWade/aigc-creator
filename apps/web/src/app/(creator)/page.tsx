@@ -1,13 +1,13 @@
 import { Suspense } from "react";
-import Link from "next/link";
 import type { FeedResponse } from "@bytedance-aigc/shared";
 import { DEFAULT_FEED_WEIGHTS } from "@bytedance-aigc/shared";
 import { serverFetchJson } from "@bytedance-aigc/ui/lib/server-fetch";
-import { Card, CardContent } from "@bytedance-aigc/ui/components/ui/card";
+import { Card } from "@bytedance-aigc/ui/components/ui/card";
 import { FeedList } from "@bytedance-aigc/ui/components/feed/FeedList";
 import { FeedSkeleton } from "@bytedance-aigc/ui/components/feed/FeedSkeleton";
 import { LoadMore } from "@bytedance-aigc/ui/components/feed/LoadMore";
 import { SafeRewriteHintBanner } from "./_components/SafeRewriteHintBanner";
+import { CreatorLoginBanner } from "./_components/CreatorLoginBanner";
 import { WeightDrawer } from "@bytedance-aigc/ui/components/feed/WeightDrawer";
 
 /** ISR 30s — CDN 边缘缓存 */
@@ -62,29 +62,14 @@ async function FeedSection({ searchParams }: PageProps) {
 export default async function HomePage({ searchParams }: PageProps) {
   return (
     <main className="max-w-[1200px] mx-auto px-5 py-5">
-      {/* 子工具条:子分类 + 权重 */}
-      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <div className="flex items-center gap-1 text-[13px]">
-          <span className="px-2.5 py-1 rounded-md bg-brand/10 text-brand font-medium">
-            综合推荐
-          </span>
-          <Link
-            href="/rank/hot"
-            className="px-2.5 py-1 rounded-md text-muted-foreground hover:bg-accent transition-colors"
-          >
-            最热
-          </Link>
-          <Link
-            href="/rank/best"
-            className="px-2.5 py-1 rounded-md text-muted-foreground hover:bg-accent transition-colors"
-          >
-            高质
-          </Link>
-        </div>
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-[20px] font-medium text-foreground">推荐</h1>
         <WeightDrawer />
       </div>
 
       <SafeRewriteHintBanner />
+
+      <CreatorLoginBanner />
 
       <Suspense fallback={<FeedSkeleton />}>
         <FeedSection searchParams={searchParams} />
