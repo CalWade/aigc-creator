@@ -6,6 +6,25 @@ import { PrismaService } from "../prisma/prisma.service";
 
 const DEFAULT_REASON = "平台审核下线";
 
+export interface AdminStats {
+  totalUsers: number;
+  totalAuthors: number;
+  totalAdmins: number;
+  totalDrafts: number;
+  totalPublished: number;
+  totalOffline: number;
+  totalReviewing: number;
+  pendingReports: number;
+  resolvedReports: number;
+  totalReviews: number;
+  blockRate: number;
+  warnRate: number;
+  avgQualityOverall: number;
+  pendingSampleAudits: number;
+  totalReactions: number;
+  totalAssets: number;
+}
+
 export interface AdminPostView {
   id: string;
   title: string;
@@ -30,10 +49,6 @@ export class AdminContentService {
     private readonly notifications: NotificationsService,
   ) {}
 
-  /**
-   * 直接下线作品(不经过举报)。已 OFFLINE 拒绝;PUBLISHED 才允许。
-   * DRAFT 没意义(还没上架),也拒。
-   */
   async offlineDraft(draftId: string, reason: string | undefined): Promise<{ ok: true }> {
     const draft = await this.prisma.draft.findUnique({
       where: { id: draftId },
@@ -63,7 +78,6 @@ export class AdminContentService {
       },
     });
 
-    // WHY: 下线后通知作者,形成审核反馈环
     try {
       await this.notifications.create({
         userId: draft.authorId,
@@ -79,9 +93,6 @@ export class AdminContentService {
     return { ok: true };
   }
 
-  /**
-   * Admin 预览任意状态作品(含 OFFLINE / DRAFT),不受公开 /post/:id 的 PUBLISHED 限制。
-   */
   async getPost(draftId: string): Promise<AdminPostView> {
     const draft = await this.prisma.draft.findUnique({
       where: { id: draftId },
@@ -94,6 +105,82 @@ export class AdminContentService {
       throw new NotFoundException({ code: "DRAFT_NOT_FOUND", message: "作品不存在" });
     }
     return toAdminView(draft);
+  }
+
+  async getStats(): Promise<AdminStats> {
+    const [
+      userCounts,
+      draftCounts,
+      reportCounts,
+      totalReviews,
+      blockCount,
+      warnCount,
+      recentReviews,
+      sampleAuditPending,
+      reactionCount,
+      assetCount,
+    ] = await Promise.all([
+      this.prisma.user.groupBy({ by: ["role"], _count: true }),
+      this.prisma.draft.groupBy({ by: ["status"], _count: true }),
+      this.prisma.report.groupBy({ by: ["status"], _count: true }),
+      this.prisma.review.count(),
+      this.prisma.review.count({ where: { recommendation: "BLOCK" } }),
+      this.prisma.review.count({ where: { recommendation: "WARN" } }),
+      this.prisma.review.findMany({
+        where: { stage: "PREFLIGHT" },
+        select: { quality: true },
+        take: 500,
+        orderBy: { createdAt: "desc" },
+      }),
+      this.prisma.sampleAudit.count({ where: { status: "PENDING" } }),
+      this.prisma.reaction.count(),
+      this.prisma.asset.count(),
+    ]);
+
+    const totalUsers = userCounts.reduce((s, u) => s + u._count, 0);
+    const totalAuthors = userCounts.find((u) => u.role === "AUTHOR")?._count ?? 0;
+    const totalAdmins = userCounts.find((u) => u.role === "ADMIN")?._count ?? 0;
+
+    const totalDrafts = draftCounts.reduce((s, d) => s + d._count, 0);
+    const totalPublished = draftCounts.find((d) => d.status === "PUBLISHED")?._count ?? 0;
+    const totalOffline = draftCounts.find((d) => d.status === "OFFLINE")?._count ?? 0;
+    const totalReviewing = draftCounts.find((d) => d.status === "REVIEWING")?._count ?? 0;
+
+    const pendingReports = reportCounts.find((r) => r.status === "PENDING")?._count ?? 0;
+    const resolvedReports = reportCounts.find((r) => r.status === "RESOLVED")?._count ?? 0;
+
+    const blockRate = totalReviews > 0 ? blockCount / totalReviews : 0;
+    const warnRate = totalReviews > 0 ? warnCount / totalReviews : 0;
+
+    let qualitySum = 0;
+    let qualityCount = 0;
+    for (const r of recentReviews) {
+      const v = readQualityOverall(r.quality);
+      if (v > 0) {
+        qualitySum += v;
+        qualityCount++;
+      }
+    }
+    const avgQualityOverall = qualityCount > 0 ? qualitySum / qualityCount : 0;
+
+    return {
+      totalUsers,
+      totalAuthors,
+      totalAdmins,
+      totalDrafts,
+      totalPublished,
+      totalOffline,
+      totalReviewing,
+      pendingReports,
+      resolvedReports,
+      totalReviews,
+      blockRate,
+      warnRate,
+      avgQualityOverall,
+      pendingSampleAudits: sampleAuditPending,
+      totalReactions: reactionCount,
+      totalAssets: assetCount,
+    };
   }
 }
 

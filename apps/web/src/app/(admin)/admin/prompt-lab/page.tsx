@@ -9,18 +9,19 @@ export default function PromptLabPage() {
         <div>
           <h1 className="text-lg font-semibold">Prompt 管理</h1>
           <p className="text-sm text-muted-foreground">
-            平台 Prompt 列表,按 tool 过滤、复制 ID 用于评估、按 tool 一键回滚。
+            平台 Prompt 列表,按 tool 过滤、复制 ID 用于评估、按 tool 一键回滚
           </p>
         </div>
         <nav className="flex items-center gap-3 text-sm">
           <a
-            className="text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground transition-colors"
             href="/admin/prompt-lab/test-cases"
           >
             测试集
           </a>
+          <span className="text-muted-foreground/40">|</span>
           <a
-            className="text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground transition-colors"
             href="/admin/prompt-lab/eval-runs"
           >
             评估

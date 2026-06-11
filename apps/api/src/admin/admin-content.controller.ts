@@ -11,7 +11,7 @@ import {
 
 import { UserGuard } from "../auth/user.guard";
 import { AdminGuard } from "../reports/admin.guard";
-import { AdminContentService, type AdminPostView } from "./admin-content.service";
+import { AdminContentService, type AdminPostView, type AdminStats } from "./admin-content.service";
 import { OfflineDraftDto } from "./dto/offline-draft.dto";
 
 /**
@@ -33,5 +33,10 @@ export class AdminContentController {
   @Get("posts/:id")
   preview(@Param("id") id: string): Promise<AdminPostView> {
     return this.content.getPost(id);
+  }
+
+  @Get("stats")
+  stats(): Promise<AdminStats> {
+    return this.content.getStats();
   }
 }

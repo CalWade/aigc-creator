@@ -70,20 +70,26 @@ export default function AdminOfflinePage() {
 
   return (
     <main className="max-w-2xl mx-auto px-6 py-8">
-      <h1 className="text-lg font-semibold mb-1">直接下线作品</h1>
-      <p className="text-sm text-muted-foreground mb-6">
-        填入 draft ID 强制下线,不经过举报流程。仅作用于 PUBLISHED 状态作品。
-      </p>
+      <div className="mb-6">
+        <h1 className="text-lg font-semibold">直接下线作品</h1>
+        <p className="text-sm text-muted-foreground">
+          填入 Draft ID 强制下线,不经过举报流程。仅作用于 PUBLISHED 状态作品。
+        </p>
+      </div>
       <Card>
         <form onSubmit={submit}>
-          <CardContent className="flex flex-col gap-4 pt-6">
+          <CardHeader>
+            <CardTitle className="text-sm">下线操作</CardTitle>
+            <CardDescription>此操作不可逆,下线后作者将收到通知</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
             <label className="flex flex-col gap-1.5">
               <span className="text-sm font-medium">Draft ID</span>
               <Input
                 type="text"
                 value={draftId}
                 onChange={(e) => setDraftId(e.target.value)}
-                placeholder="例:pub000draft0000000000000000"
+                placeholder="例: cm0000000000000001"
                 className="font-mono"
                 required
               />
@@ -98,6 +104,7 @@ export default function AdminOfflinePage() {
                 placeholder="留空则使用默认「平台审核下线」"
                 className="rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
               />
+              <span className="text-xs text-muted-foreground self-end">{reason.length}/200</span>
             </label>
           </CardContent>
           <CardFooter className="flex flex-col items-start gap-3">
