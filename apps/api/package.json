@@ -21,6 +21,9 @@
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
   },
   "dependencies": {
+    "@alicloud/green20220302": "3.3.0",
+    "@alicloud/openapi-client": "0.4.15",
+    "@alicloud/tea-util": "1.4.11",
     "@aws-sdk/client-s3": "3.1063.0",
     "@bytedance-aigc/shared": "workspace:*",
     "@nestjs/common": "^11.0.1",
@@ -36,6 +39,7 @@
     "js-yaml": "^4.1.1",
     "multer": "2.1.1",
     "openai": "6.41.0",
+    "p-limit": "3.1.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"
   },

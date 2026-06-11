@@ -62,6 +62,13 @@ export const envValidationSchema = Joi.object({
     .uri({ scheme: ["redis", "rediss"] })
     .optional(),
 
+  // 阿里云 AI 安全护栏(审核引擎专用)
+  // 本地开发可不配置,审核调用会走 mock 兜底;NODE_ENV=test 同样可选。
+  ALIBABA_CLOUD_ACCESS_KEY_ID: Joi.string().optional().default(""),
+  ALIBABA_CLOUD_ACCESS_KEY_SECRET: Joi.string().optional().default(""),
+  GUARD_ENDPOINT: Joi.string().default("green-cip.cn-shanghai.aliyuncs.com"),
+  GUARD_REGION_ID: Joi.string().default("cn-shanghai"),
+
   // 二发热度继承开关:"true"(默认)沿用旧 PostStat;"false"清零。
   REPUBLISH_HOTNESS_INHERIT: Joi.string().valid("true", "false").default("true"),
 }).unknown(true);

@@ -7,6 +7,7 @@ const wordList: SensitiveWordList = {
   categories: {
     pornography: { severity: "high", words: ["敏感词"] },
     gambling: { severity: "high", words: [] },
+    drugs: { severity: "high", words: [] },
     abuse: { severity: "medium", words: ["俗话"] },
     fraud: { severity: "medium", words: ["秒到账"] },
     illicit_ads: { severity: "medium", words: [] },

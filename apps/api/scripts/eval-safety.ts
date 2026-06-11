@@ -144,6 +144,7 @@ function renderReport(i: RenderInput): string {
   lines.push(`- 数据来源:ChineseHarm-Bench (arxiv 2506.10960, CC BY-NC 4.0)`);
   lines.push(`- 主测样本数:${samples.length}(buffer.jsonl 30 条未跑)`);
   lines.push(`- LLM:${llmModel} @ ${llmBaseUrl}`);
+  lines.push(`- 安全引擎:alibaba-cloud-guard+llm-hybrid (MultiModalGuard + LLM 兜底)`);
   lines.push(`- 运行时长:${minutes} min`);
   lines.push(`- 失败样本数:${agg.errors.length}(详见末尾)`);
   lines.push("");

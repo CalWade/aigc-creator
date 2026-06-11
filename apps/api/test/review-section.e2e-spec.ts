@@ -5,41 +5,58 @@ import { App } from "supertest/types";
 
 import { AppModule } from "./../src/app.module";
 import { LlmClient } from "./../src/llm/llm.client";
+import { GuardClient } from "./../src/llm/guard.client";
+import type { GuardResult } from "./../src/llm/guard.client";
 import { PrismaService } from "./../src/prisma/prisma.service";
 import { applyAllFixtures, cleanupAllFixtures } from "./../prisma/fixtures";
 import { loginAsDemo } from "./helpers/auth";
+
+const SAFETY_ALL_LOW = JSON.stringify({
+  dimensions: [
+    { key: "pornography", score: 0, severity: "low", hits: [], reason: "无命中" },
+    { key: "gambling", score: 0, severity: "low", hits: [], reason: "无命中" },
+    { key: "drugs", score: 0, severity: "low", hits: [], reason: "无命中" },
+    { key: "abuse", score: 0, severity: "low", hits: [], reason: "无命中" },
+    { key: "fraud", score: 0, severity: "low", hits: [], reason: "无命中" },
+    { key: "illicit_ads", score: 0, severity: "low", hits: [], reason: "无命中" },
+  ],
+});
 
 const DEMO_DRAFT_ID = "demodraft0000000000000001";
 const OTHER_AUTHOR_ID = "otherauthor00000000000003";
 const OTHER_DRAFT_ID = "otherdraftxxxxxxxxxxxxxx3";
 
-const cats = ["pornography", "gambling", "abuse", "fraud", "illicit_ads"];
-const allLow = JSON.stringify({
-  dimensions: cats.map((k) => ({ key: k, score: 0, severity: "low", hits: [], reason: "无" })),
-});
-const pornHigh = JSON.stringify({
-  dimensions: cats.map((k) => ({
-    key: k,
-    score: k === "pornography" ? 90 : 0,
-    severity: k === "pornography" ? "high" : "low",
-    hits: k === "pornography" ? ["x"] : [],
-    reason: "",
-  })),
-});
-const abuseMedium = JSON.stringify({
-  dimensions: cats.map((k) => ({
-    key: k,
-    score: k === "abuse" ? 50 : 0,
-    severity: k === "abuse" ? "medium" : "low",
-    hits: [],
-    reason: "",
-  })),
-});
+const allPassGuard: GuardResult = { suggestion: "pass", details: [] };
+const pornHighGuard: GuardResult = {
+  suggestion: "block",
+  details: [
+    {
+      type: "contentModeration",
+      level: "high",
+      suggestion: "block",
+      labels: ["pornographic_adult"],
+      confidence: 99.5,
+    },
+  ],
+};
+const abuseMediumGuard: GuardResult = {
+  suggestion: "watch",
+  details: [
+    {
+      type: "contentModeration",
+      level: "medium",
+      suggestion: "watch",
+      labels: ["inappropriate_profanity"],
+      confidence: 75.0,
+    },
+  ],
+};
 
 describe("Phase 2.5 review section (e2e)", () => {
   let app: INestApplication<App>;
   let prisma: PrismaService;
   let token: string;
+  const guardModerateMock = jest.fn();
   const llmChatMock = jest.fn();
 
   beforeAll(async () => {
@@ -48,6 +65,8 @@ describe("Phase 2.5 review section (e2e)", () => {
     })
       .overrideProvider(LlmClient)
       .useValue({ chat: llmChatMock, chatStream: jest.fn() })
+      .overrideProvider(GuardClient)
+      .useValue({ moderate: guardModerateMock })
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -79,7 +98,10 @@ describe("Phase 2.5 review section (e2e)", () => {
     await app.close();
   });
 
-  beforeEach(() => llmChatMock.mockReset());
+  beforeEach(() => {
+    guardModerateMock.mockReset();
+    llmChatMock.mockReset().mockResolvedValue(SAFETY_ALL_LOW);
+  });
 
   const post = (body: Record<string, unknown>, t = token) =>
     request(app.getHttpServer())
@@ -88,7 +110,7 @@ describe("Phase 2.5 review section (e2e)", () => {
       .send(body);
 
   it("ALLOW: 不落 Review", async () => {
-    llmChatMock.mockResolvedValueOnce(allLow);
+    guardModerateMock.mockResolvedValueOnce(allPassGuard);
     const before = await prisma.review.count({ where: { stage: "SECTION_INLINE" } });
     const res = await post({
       draftId: DEMO_DRAFT_ID,
@@ -102,7 +124,7 @@ describe("Phase 2.5 review section (e2e)", () => {
   });
 
   it("medium: 落 Review + abortStream=false", async () => {
-    llmChatMock.mockResolvedValueOnce(abuseMedium);
+    guardModerateMock.mockResolvedValueOnce(abuseMediumGuard);
     const res = await post({
       draftId: DEMO_DRAFT_ID,
       sessionId: "sess-medium",
@@ -117,10 +139,10 @@ describe("Phase 2.5 review section (e2e)", () => {
   });
 
   it("连续 3 段 high → 第 3 次 abortStream=true", async () => {
-    llmChatMock
-      .mockResolvedValueOnce(pornHigh)
-      .mockResolvedValueOnce(pornHigh)
-      .mockResolvedValueOnce(pornHigh);
+    guardModerateMock
+      .mockResolvedValueOnce(pornHighGuard)
+      .mockResolvedValueOnce(pornHighGuard)
+      .mockResolvedValueOnce(pornHighGuard);
     const sid = "sess-burst";
     const r1 = await post({
       draftId: DEMO_DRAFT_ID,
@@ -150,7 +172,7 @@ describe("Phase 2.5 review section (e2e)", () => {
       .post("/reviews/section")
       .send({ draftId: DEMO_DRAFT_ID, sessionId: "x", range: { from: 0, to: 1 }, text: "x" })
       .expect(401);
-    expect(llmChatMock).not.toHaveBeenCalled();
+    expect(guardModerateMock).not.toHaveBeenCalled();
   });
 
   it("403: 别人草稿", async () => {
@@ -160,6 +182,6 @@ describe("Phase 2.5 review section (e2e)", () => {
       range: { from: 0, to: 1 },
       text: "x",
     }).expect(403);
-    expect(llmChatMock).not.toHaveBeenCalled();
+    expect(guardModerateMock).not.toHaveBeenCalled();
   });
 });

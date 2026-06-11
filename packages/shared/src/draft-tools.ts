@@ -34,6 +34,21 @@ export const PROMPT_DRAWER_TOOLS: readonly DraftToolType[] = [
 
 export type DraftToolType = (typeof DRAFT_TOOL_TYPES)[number];
 
+/** 工具枚举 → 中文标签，用于前端选择器和气泡菜单。 */
+export const DRAFT_TOOL_LABELS: Record<DraftToolType, string> = {
+  REWRITE_FLUENT: "通顺改写",
+  EXPAND: "扩写",
+  TRANSFORM_STYLE: "改风格",
+  REWRITE_OPENING: "重写开头",
+  HEADLINE_SUB: "副标题",
+  HEADLINE_NEW: "主标题",
+  ADD_FACTS: "补事实",
+  ADD_TOPIC: "扩话题",
+  IMAGE_SUGGEST: "配图建议",
+  SAFE_REWRITE: "合规改写",
+  DATA_DIAGNOSIS: "数据诊断",
+};
+
 /** FAST 模式大纲单项,LLM 生成 → 前端持有 → 流式生成时按节回传。 */
 export interface OutlineItem {
   heading: string;

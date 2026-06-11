@@ -1,5 +1,5 @@
 import { Injectable, InternalServerErrorException, Logger } from "@nestjs/common";
-import { Prisma, Review } from "@prisma/client";
+import { Prisma, Review, DraftToolType } from "@prisma/client";
 import type {
   PreflightResponse,
   Recommendation,
@@ -10,10 +10,18 @@ import type {
   PromptReviewResponse,
   SectionReviewResponse,
   SensitiveCategory,
+  SafetyKey,
+  Severity,
 } from "@bytedance-aigc/shared";
-import { SAFETY_KEYS, QUALITY_KEYS, SENSITIVE_CATEGORIES } from "@bytedance-aigc/shared";
+import { SAFETY_KEYS, QUALITY_KEYS } from "@bytedance-aigc/shared";
 
 import { LlmClient } from "../llm/llm.client";
+import {
+  GuardClient,
+  mapGuardLabelsToSensitive,
+  mapGuardLevelToSeverity,
+} from "../llm/guard.client";
+import type { GuardResult } from "../llm/guard.client";
 import { PrismaService } from "../prisma/prisma.service";
 import { PromptsService } from "../prompts/prompts.service";
 import { NotificationsService } from "../notifications/notifications.service";
@@ -31,6 +39,7 @@ export class ReviewService {
     private readonly drafts: DraftsService,
     private readonly prisma: PrismaService,
     private readonly llm: LlmClient,
+    private readonly guard: GuardClient,
     private readonly prompts: PromptsService,
     private readonly streamSessions: StreamSessionStore,
     private readonly notifications: NotificationsService,
@@ -42,40 +51,37 @@ export class ReviewService {
     const truncated = fullText.length > TRUNCATE_LIMIT;
     const text = truncated ? fullText.slice(0, TRUNCATE_LIMIT) : fullText;
 
-    const [safetyPrompt, qualityPrompt] = await Promise.all([
-      this.prompts.findDefaultByTool("SAFETY_REVIEW"),
-      this.prompts.findDefaultByTool("QUALITY_REVIEW"),
-    ]);
-
-    const safetyMessages = [
-      { role: "system" as const, content: safetyPrompt.systemPrompt },
-      { role: "user" as const, content: text },
-    ];
+    const qualityPrompt = await this.prompts.findDefaultByTool("QUALITY_REVIEW");
     const qualityMessages = [
       { role: "system" as const, content: qualityPrompt.systemPrompt },
       { role: "user" as const, content: text },
     ];
 
     const t0 = Date.now();
-    let safetyRaw = "";
+    let guardResult: GuardResult | undefined;
+    let llmRaw = "";
     let qualityRaw = "";
     let safetyMs = 0;
     let qualityMs = 0;
     try {
-      const [s, q] = await Promise.all([
-        this.timed(() => this.llm.chat(safetyMessages, { temperature: 0.0 })),
+      const [g, l, q] = await Promise.all([
+        this.timed(() => this.guard.moderate(text, "query_security_check_pro")),
+        this.timed(() => this.llmChatSafety(text, "SAFETY_REVIEW")),
         this.timed(() => this.llm.chat(qualityMessages, { temperature: 0.4 })),
       ]);
-      safetyRaw = s.value;
-      safetyMs = s.ms;
+      guardResult = g.value;
+      safetyMs = g.ms + l.ms;
+      llmRaw = l.value;
       qualityRaw = q.value;
       qualityMs = q.ms;
     } catch (err) {
-      this.logger.warn(`preflight LLM error: ${(err as Error).message}`);
-      throw new InternalServerErrorException("LLM 审核失败,请稍后重试");
+      this.logger.warn(`preflight error: ${(err as Error).message}`);
+      throw new InternalServerErrorException("审核失败,请稍后重试");
     }
 
-    const safety = this.parseSafetyOf6Cats(safetyRaw);
+    const guardSafety = this.guardResultToSafety(guardResult!);
+    const llmSafety = this.parseSafetyByCategories(llmRaw);
+    const safety = this.mergeSafety(guardSafety, llmSafety);
     const quality = this.parseQuality(qualityRaw);
     const recommendation = this.recommend(safety, quality);
 
@@ -92,6 +98,7 @@ export class ReviewService {
             latencyMsQuality: qualityMs,
             totalMs: Date.now() - t0,
             truncated,
+            guardEngine: "alibaba-cloud-guard+llm-hybrid",
           },
         },
       });
@@ -99,7 +106,6 @@ export class ReviewService {
       return created;
     });
 
-    // WHY: 预检 BLOCK 时通知作者,及时修改
     if (recommendation === "BLOCK") {
       try {
         await this.notifications.create({
@@ -119,7 +125,6 @@ export class ReviewService {
 
   /**
    * Phase 2.5 ① — 选题 + 提示词阶段审核
-   * 同步:写 Review 行(stage=PROMPT_INPUT,quality 全 0)
    */
   async reviewPrompt(text: string): Promise<PromptReviewResponse> {
     const trimmed = text.trim();
@@ -127,21 +132,19 @@ export class ReviewService {
       throw new InternalServerErrorException("text 必须非空且 ≤ 1000 字");
     }
 
-    const promptCfg = await this.prompts.findDefaultByTool("PROMPT_REVIEW");
-    const messages = [
-      { role: "system" as const, content: `${promptCfg.systemPrompt}\n\n${buildPromptHints()}` },
-      { role: "user" as const, content: trimmed },
-    ];
-
-    let raw = "";
+    let guardResult: GuardResult | undefined;
+    let llmRaw = "";
     let ms = 0;
     try {
-      const r = await this.timed(() => this.llm.chat(messages, { temperature: 0.0 }));
-      raw = r.value;
-      ms = r.ms;
+      const [g, l] = await Promise.all([
+        this.timed(() => this.guard.moderate(trimmed, "query_security_check_pro")),
+        this.timed(() => this.llmChatSafety(trimmed, "PROMPT_REVIEW")),
+      ]);
+      guardResult = g.value;
+      llmRaw = l.value;
+      ms = g.ms + l.ms;
     } catch (err) {
-      this.logger.warn(`reviewPrompt LLM error: ${(err as Error).message}`);
-      // ① 阶段 LLM 失败不阻断作者
+      this.logger.warn(`reviewPrompt error: ${(err as Error).message}`);
       return {
         recommendation: "ALLOW",
         hitCategories: [],
@@ -150,7 +153,9 @@ export class ReviewService {
       };
     }
 
-    const safety = this.parseSafetyByCategories(raw);
+    const guardSafety = this.guardResultToSafety(guardResult!);
+    const llmSafety = this.parseSafetyByCategories(llmRaw);
+    const safety = this.mergeSafety(guardSafety, llmSafety);
     const hitCategories: SensitiveCategory[] = safety.dimensions
       .filter((d) => d.severity === "high" || d.severity === "medium")
       .map((d) => d.key as SensitiveCategory);
@@ -165,8 +170,6 @@ export class ReviewService {
         ? "选题未发现明显风险"
         : `选题可能涉及 ${hitCategories.join("/")},建议调整方向`;
 
-    // WHY: ① 阶段 review 频次高(每次失焦触发),且无关联 draftId(选题尚未落地)。
-    //      不落 prisma.review 表,reviewId 仅用作日志追溯。
     const reviewId = `prompt-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
     this.logger.log(
       `reviewPrompt id=${reviewId} rec=${recommendation} hits=${hitCategories.join(",")} ms=${ms}`,
@@ -194,20 +197,19 @@ export class ReviewService {
       throw new InternalServerErrorException("section text 必须非空且 ≤ 2000 字");
     }
 
-    const promptCfg = await this.prompts.findDefaultByTool("SECTION_REVIEW");
-    const messages = [
-      { role: "system" as const, content: `${promptCfg.systemPrompt}\n\n${buildPromptHints()}` },
-      { role: "user" as const, content: trimmed },
-    ];
-
-    let raw = "";
+    let guardResult: GuardResult | undefined;
+    let llmRaw = "";
     let ms = 0;
     try {
-      const r = await this.timed(() => this.llm.chat(messages, { temperature: 0.0 }));
-      raw = r.value;
-      ms = r.ms;
+      const [g, l] = await Promise.all([
+        this.timed(() => this.guard.moderate(trimmed, "query_security_check_pro", { sessionId })),
+        this.timed(() => this.llmChatSafety(trimmed, "SECTION_REVIEW")),
+      ]);
+      guardResult = g.value;
+      llmRaw = l.value;
+      ms = g.ms + l.ms;
     } catch (err) {
-      this.logger.warn(`reviewSection LLM error: ${(err as Error).message}`);
+      this.logger.warn(`reviewSection error: ${(err as Error).message}`);
       return {
         recommendation: "ALLOW",
         hitCategories: [],
@@ -218,7 +220,9 @@ export class ReviewService {
       };
     }
 
-    const safety = this.parseSafetyByCategories(raw);
+    const guardSafety = this.guardResultToSafety(guardResult!);
+    const llmSafety = this.parseSafetyByCategories(llmRaw);
+    const safety = this.mergeSafety(guardSafety, llmSafety);
     const isHigh = safety.dimensions.some((d) => d.severity === "high");
     const isMedium = !isHigh && safety.dimensions.some((d) => d.severity === "medium");
     const recommendation: "ALLOW" | "WARN" | "BLOCK" = isHigh
@@ -239,7 +243,7 @@ export class ReviewService {
         data: {
           draftId,
           stage: "SECTION_INLINE",
-          safety: safety,
+          safety: safety as unknown as Prisma.InputJsonValue,
           quality: { overall: 0, dimensions: [], note: "本阶段不评质量" },
           recommendation,
           modelMeta: {
@@ -247,6 +251,7 @@ export class ReviewService {
             latencyMsQuality: 0,
             totalMs: ms,
             truncated: false,
+            guardEngine: "alibaba-cloud-guard+llm-hybrid",
           },
         },
       });
@@ -262,7 +267,6 @@ export class ReviewService {
   /**
    * Phase 2.6 — 发布后举报触发的 LLM 复审。
    * 由 ReportsService.create fire-and-forget 调用,失败 fallback 到"默认放行,等待 admin 人工裁决"。
-   * 不写 Review 表(决策见 spec §4):落 Report.llmRecommendation/llmReason 即可。
    */
   async reviewPostPublish(text: string): Promise<{
     recommendation: "ALLOW" | "WARN" | "BLOCK";
@@ -273,7 +277,7 @@ export class ReviewService {
       this.logger.warn(`reviewPostPublish fallback: ${note}`);
       return {
         recommendation: "ALLOW" as const,
-        reason: "LLM 复审失败,默认放行,等待 admin 人工裁决",
+        reason: "审核复审失败,默认放行,等待 admin 人工裁决",
         hitCategories: [] as SensitiveCategory[],
       };
     };
@@ -282,27 +286,22 @@ export class ReviewService {
     if (trimmed.length === 0) return fallback("text 为空");
     const truncated = trimmed.length > TRUNCATE_LIMIT ? trimmed.slice(0, TRUNCATE_LIMIT) : trimmed;
 
-    let prompt: { systemPrompt: string };
+    let guardResult: GuardResult | undefined;
+    let llmRaw = "";
     try {
-      prompt = await this.prompts.findDefaultByTool("POST_PUBLISH_REVIEW");
+      const [g, l] = await Promise.all([
+        this.guard.moderate(truncated, "response_security_check_pro"),
+        this.llmChatSafety(truncated, "POST_PUBLISH_REVIEW"),
+      ]);
+      guardResult = g;
+      llmRaw = l;
     } catch (err) {
-      return fallback(`POST_PUBLISH_REVIEW prompt 缺失:${(err as Error).message}`);
+      return fallback(`双路审核失败: ${(err as Error).message}`);
     }
 
-    let raw = "";
-    try {
-      raw = await this.llm.chat(
-        [
-          { role: "system", content: `${prompt.systemPrompt}\n\n${buildPromptHints()}` },
-          { role: "user", content: truncated },
-        ],
-        { temperature: 0.0 },
-      );
-    } catch (err) {
-      return fallback(`LLM error: ${(err as Error).message}`);
-    }
-
-    const safety = this.parseSafetyByCategories(raw);
+    const guardSafety = this.guardResultToSafety(guardResult!);
+    const llmSafety = this.parseSafetyByCategories(llmRaw);
+    const safety = this.mergeSafety(guardSafety, llmSafety);
     const hitCategories: SensitiveCategory[] = safety.dimensions
       .filter((d) => d.severity === "high" || d.severity === "medium")
       .map((d) => d.key as SensitiveCategory);
@@ -352,16 +351,98 @@ export class ReviewService {
     return { value, ms: Date.now() - t };
   }
 
-  /** 严格 JSON parse;失败 / 缺维度 / 维度不全 → fallback BLOCK 风险态。(6 维 preflight 专用) */
-  private parseSafetyOf6Cats(raw: string): ReviewSafety {
+  /**
+   * LLM 兜底路径：加载 prompt + 规则库 hints + chat，返回 raw 字符串。
+   */
+  private async llmChatSafety(text: string, tool: DraftToolType): Promise<string> {
+    const prompt = await this.prompts.findDefaultByTool(tool);
+    const hints = buildPromptHints();
+    const userContent = hints ? `${hints}\n\n待审文本:\n${text}` : text;
+    const messages = [
+      { role: "system" as const, content: prompt.systemPrompt },
+      { role: "user" as const, content: userContent },
+    ];
+    return this.llm.chat(messages, { temperature: 0.0 });
+  }
+
+  /**
+   * 合并 Guard 路与 LLM 路的审核结果：每个维度取更高 severity。
+   */
+  private mergeSafety(guard: ReviewSafety, llm: ReviewSafety): ReviewSafety {
+    const severityOrder: Record<Severity, number> = { high: 3, medium: 2, low: 1 };
+    const dimensions = SAFETY_KEYS.map((key) => {
+      const g = guard.dimensions.find((d) => d.key === key) ?? {
+        key,
+        score: 0,
+        severity: "low" as const,
+        hits: [],
+        reason: undefined,
+      };
+      const l = llm.dimensions.find((d) => d.key === key) ?? {
+        key,
+        score: 0,
+        severity: "low" as const,
+        hits: [],
+        reason: undefined,
+      };
+      const guardWins = (severityOrder[g.severity] ?? 0) >= (severityOrder[l.severity] ?? 0);
+      const winner = guardWins ? g : l;
+      const loser = guardWins ? l : g;
+      const mergedHits = [
+        ...new Set([...winner.hits, ...loser.hits.filter((h) => !winner.hits.includes(h))]),
+      ];
+      return {
+        key: key as SafetyKey,
+        score: Math.max(g.score, l.score),
+        severity: winner.severity,
+        hits: mergedHits,
+        reason: winner.reason ?? loser.reason,
+      };
+    });
+    const maxScore = Math.max(0, ...dimensions.map((d) => d.score));
+    return { overall: 100 - maxScore, dimensions };
+  }
+
+  /**
+   * 将 GuardClient 结构化响应转换为 ReviewSafety。
+   */
+  private guardResultToSafety(result: GuardResult): ReviewSafety {
+    const contentDetail = result.details.find((d) => d.type === "contentModeration");
+    const labels = contentDetail?.labels ?? [];
+    const hitCategories = mapGuardLabelsToSensitive(labels);
+    const level = contentDetail?.level ?? "none";
+    const overallSeverity = mapGuardLevelToSeverity(level);
+
+    const dimensions = SAFETY_KEYS.map((key) => {
+      const isHit = hitCategories.includes(key as SensitiveCategory);
+      const severity: Severity = isHit ? overallSeverity : "low";
+      const score = isHit ? (severity === "high" ? 100 : severity === "medium" ? 60 : 20) : 0;
+      return {
+        key: key as SafetyKey,
+        score,
+        severity,
+        hits: isHit ? [key] : [],
+        reason: isHit ? "Guard 检出" : undefined,
+      };
+    });
+
+    const maxScore = Math.max(0, ...dimensions.map((d) => d.score));
+    return { overall: 100 - maxScore, dimensions };
+  }
+
+  /**
+   * 解析 LLM 返回的 JSON 字符串为 ReviewSafety（兜底路径）。
+   * 适配新 6 类目：pornography, gambling, drugs, abuse, fraud, illicit_ads。
+   */
+  private parseSafetyByCategories(raw: string): ReviewSafety {
     const fallback = (note: string): ReviewSafety => ({
-      overall: 0,
+      overall: 100,
       dimensions: SAFETY_KEYS.map((key) => ({
         key,
-        score: 100,
-        severity: "high" as const,
+        score: 0,
+        severity: "low" as const,
         hits: [],
-        reason: "AI 输出格式异常,默认按高风险处理",
+        reason: undefined,
       })),
       note,
     });
@@ -369,13 +450,16 @@ export class ReviewService {
     try {
       parsed = JSON.parse(raw) as { dimensions?: unknown };
     } catch {
-      return fallback("AI 安全审核输出非合法 JSON");
+      return fallback("LLM 安全审核输出非合法 JSON");
     }
-    if (!Array.isArray(parsed.dimensions)) return fallback("AI 安全审核输出缺 dimensions");
+    if (!Array.isArray(parsed.dimensions)) return fallback("LLM 安全审核输出缺 dimensions");
     const dims: SafetyDim[] = [];
     for (const key of SAFETY_KEYS) {
       const found = (parsed.dimensions as { key?: string }[]).find((d) => d?.key === key);
-      if (!found) return fallback(`AI 输出缺维度 ${key}`);
+      if (!found) {
+        dims.push({ key, score: 0, severity: "low", hits: [], reason: undefined });
+        continue;
+      }
       const f = found as Record<string, unknown>;
       const score = Number(f.score);
       const severity = f.severity === "high" || f.severity === "medium" ? f.severity : "low";
@@ -439,62 +523,5 @@ export class ReviewService {
       modelMeta: r.modelMeta as never,
       createdAt: r.createdAt.toISOString(),
     };
-  }
-
-  /** SENSITIVE_CATEGORIES safety 解析(prompt/section/post-publish 共用)。失败 → fallback 全 high。 */
-  private parseSafetyByCategories(raw: string): {
-    overall: number;
-    dimensions: {
-      key: string;
-      score: number;
-      severity: "low" | "medium" | "high";
-      hits: string[];
-      reason?: string;
-    }[];
-    note?: string;
-  } {
-    const fallback = (note: string) => ({
-      overall: 0,
-      dimensions: SENSITIVE_CATEGORIES.map((key) => ({
-        key,
-        score: 100,
-        severity: "high" as const,
-        hits: [],
-        reason: "AI 输出格式异常,默认按高风险处理",
-      })),
-      note,
-    });
-    let parsed: { dimensions?: unknown };
-    try {
-      parsed = JSON.parse(raw) as { dimensions?: unknown };
-    } catch {
-      return fallback("AI 7 类目审核输出非合法 JSON");
-    }
-    if (!Array.isArray(parsed.dimensions)) return fallback("缺 dimensions");
-    const dims: {
-      key: string;
-      score: number;
-      severity: "low" | "medium" | "high";
-      hits: string[];
-      reason?: string;
-    }[] = [];
-    for (const key of SENSITIVE_CATEGORIES) {
-      const found = (parsed.dimensions as { key?: string }[]).find((d) => d?.key === key);
-      if (!found) return fallback(`缺维度 ${key}`);
-      const f = found as Record<string, unknown>;
-      const score = Number(f.score);
-      const severity = f.severity === "high" || f.severity === "medium" ? f.severity : "low";
-      dims.push({
-        key,
-        score: Number.isFinite(score) ? Math.max(0, Math.min(100, Math.round(score))) : 0,
-        severity,
-        hits: Array.isArray(f.hits)
-          ? (f.hits as unknown[]).filter((h) => typeof h === "string").map(String)
-          : [],
-        reason: typeof f.reason === "string" ? f.reason : undefined,
-      });
-    }
-    const maxScore = Math.max(0, ...dims.map((d) => d.score));
-    return { overall: 100 - maxScore, dimensions: dims };
   }
 }

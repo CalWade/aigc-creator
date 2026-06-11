@@ -7,9 +7,9 @@ export const SAFETY_KEYS = [
   "pornography",
   "gambling",
   "drugs",
-  "politics",
-  "vulgarity",
-  "false_advertising",
+  "abuse",
+  "fraud",
+  "illicit_ads",
 ] as const;
 export type SafetyKey = (typeof SAFETY_KEYS)[number];
 
@@ -73,14 +73,14 @@ export interface PreflightResponse {
 }
 
 /**
- * Phase 2.16 — 5 类目敏感词分类(规则库 yaml + sensitive-words.json 共用)
- * Phase 2.5 原 7 类目重组:politics/drugs/medical 删除(降级为词库兜底),
- * vulgarity → abuse(辱骂语义更窄),新增 illicit_ads(黑产广告)。
- * 详见 docs/superpowers/specs/2026-06-09-phase-2-16-safety-eval-300-design.md §2。
+ * Phase 2.16 → Guard 迁移:6 类目敏感词分类(与 SAFETY_KEYS 统一)
+ * drugs 恢复为独立类目(阿里云 MultiModalGuard 有独立 contraband_drug 标签);
+ * politics/vulgarity/false_advertising 合并进 abuse/fraud/illicit_ads。
  */
 export const SENSITIVE_CATEGORIES = [
   "pornography",
   "gambling",
+  "drugs",
   "abuse",
   "fraud",
   "illicit_ads",

@@ -1,10 +1,15 @@
 import { buildPromptHints, loadRules, RULE_CATEGORIES } from "./rule-loader";
 
 describe("rule-loader", () => {
-  it("加载 5 类目 yaml,每类至少 1 条规则", () => {
+  it("加载 6 类目 yaml,每类至少 0 条规则(drugs 暂无规则)", () => {
     const rules = loadRules();
     for (const cat of RULE_CATEGORIES) {
-      expect(rules.get(cat)?.length ?? 0).toBeGreaterThanOrEqual(1);
+      // drugs 类目恢复但暂无规则条目,其余类目至少 1 条
+      if (cat === "drugs") {
+        expect(rules.get(cat)?.length ?? 0).toBeGreaterThanOrEqual(0);
+      } else {
+        expect(rules.get(cat)?.length ?? 0).toBeGreaterThanOrEqual(1);
+      }
     }
   });
 
@@ -27,6 +32,7 @@ describe("rule-loader", () => {
     expect(hints).toContain("gambling");
     expect(hints).toContain("abuse");
     expect(hints).toContain("illicit_ads");
+    // drugs 类目暂无规则,不出现在 hints 中
     expect(hints.length).toBeGreaterThan(100);
   });
 });

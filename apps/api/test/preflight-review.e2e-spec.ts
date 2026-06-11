@@ -5,6 +5,8 @@ import { App } from "supertest/types";
 
 import { AppModule } from "./../src/app.module";
 import { LlmClient } from "./../src/llm/llm.client";
+import { GuardClient } from "./../src/llm/guard.client";
+import type { GuardResult } from "./../src/llm/guard.client";
 import { PrismaService } from "./../src/prisma/prisma.service";
 import { applyAllFixtures, cleanupAllFixtures } from "./../prisma/fixtures";
 import { loginAsDemo } from "./helpers/auth";
@@ -13,14 +15,15 @@ const DEMO_FAST_DRAFT_ID = "demodraft0000000000000001";
 const OTHER_AUTHOR_ID = "otheruser0000000000000002";
 const OTHER_DRAFT_ID = "otherdraft000000000000002";
 
-const ALL_LOW_SAFETY = JSON.stringify({
+const ALL_PASS_GUARD: GuardResult = { suggestion: "pass", details: [] };
+const SAFETY_ALL_LOW = JSON.stringify({
   dimensions: [
-    { key: "pornography", score: 0, severity: "low", hits: [], reason: "无" },
-    { key: "gambling", score: 0, severity: "low", hits: [], reason: "无" },
-    { key: "drugs", score: 0, severity: "low", hits: [], reason: "无" },
-    { key: "politics", score: 0, severity: "low", hits: [], reason: "无" },
-    { key: "vulgarity", score: 0, severity: "low", hits: [], reason: "无" },
-    { key: "false_advertising", score: 0, severity: "low", hits: [], reason: "无" },
+    { key: "pornography", score: 0, severity: "low", hits: [], reason: "无命中" },
+    { key: "gambling", score: 0, severity: "low", hits: [], reason: "无命中" },
+    { key: "drugs", score: 0, severity: "low", hits: [], reason: "无命中" },
+    { key: "abuse", score: 0, severity: "low", hits: [], reason: "无命中" },
+    { key: "fraud", score: 0, severity: "low", hits: [], reason: "无命中" },
+    { key: "illicit_ads", score: 0, severity: "low", hits: [], reason: "无命中" },
   ],
 });
 const HIGH_QUALITY = JSON.stringify({
@@ -37,6 +40,7 @@ describe("Phase 2.3 preflight & reviews (e2e)", () => {
   let prisma: PrismaService;
   let token: string;
   const llmChatMock = jest.fn();
+  const guardModerateMock = jest.fn();
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -44,6 +48,8 @@ describe("Phase 2.3 preflight & reviews (e2e)", () => {
     })
       .overrideProvider(LlmClient)
       .useValue({ chat: llmChatMock, chatStream: jest.fn() })
+      .overrideProvider(GuardClient)
+      .useValue({ moderate: guardModerateMock })
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -81,10 +87,18 @@ describe("Phase 2.3 preflight & reviews (e2e)", () => {
 
   beforeEach(() => {
     llmChatMock.mockReset();
+    guardModerateMock.mockReset();
   });
 
   it("POST /drafts/:id/preflight 200 → 含 review + recommendation ALLOW", async () => {
-    llmChatMock.mockResolvedValueOnce(ALL_LOW_SAFETY).mockResolvedValueOnce(HIGH_QUALITY);
+    guardModerateMock.mockResolvedValueOnce(ALL_PASS_GUARD);
+    llmChatMock.mockImplementation((messages: { role: string; content: string }[]) => {
+      const sysMsg = messages.find((m) => m.role === "system")?.content ?? "";
+      if (sysMsg.includes("质量") || sysMsg.includes("4 个维度") || sysMsg.includes("资深编辑")) {
+        return Promise.resolve(HIGH_QUALITY);
+      }
+      return Promise.resolve(SAFETY_ALL_LOW);
+    });
 
     const res = await request(app.getHttpServer())
       .post(`/drafts/${DEMO_FAST_DRAFT_ID}/preflight`)
@@ -107,7 +121,7 @@ describe("Phase 2.3 preflight & reviews (e2e)", () => {
 
   it("POST /drafts/:id/preflight 401(无 token)", async () => {
     await request(app.getHttpServer()).post(`/drafts/${DEMO_FAST_DRAFT_ID}/preflight`).expect(401);
-    expect(llmChatMock).not.toHaveBeenCalled();
+    expect(guardModerateMock).not.toHaveBeenCalled();
   });
 
   it("POST /drafts/:otherId/preflight 403(别人草稿)", async () => {
@@ -115,11 +129,18 @@ describe("Phase 2.3 preflight & reviews (e2e)", () => {
       .post(`/drafts/${OTHER_DRAFT_ID}/preflight`)
       .set("Authorization", `Bearer ${token}`)
       .expect(403);
-    expect(llmChatMock).not.toHaveBeenCalled();
+    expect(guardModerateMock).not.toHaveBeenCalled();
   });
 
   it("GET /drafts/:id/reviews?limit=5 返最近 N 条", async () => {
-    llmChatMock.mockResolvedValueOnce(ALL_LOW_SAFETY).mockResolvedValueOnce(HIGH_QUALITY);
+    guardModerateMock.mockResolvedValueOnce(ALL_PASS_GUARD);
+    llmChatMock.mockImplementation((messages: { role: string; content: string }[]) => {
+      const sysMsg = messages.find((m) => m.role === "system")?.content ?? "";
+      if (sysMsg.includes("质量") || sysMsg.includes("4 个维度") || sysMsg.includes("资深编辑")) {
+        return Promise.resolve(HIGH_QUALITY);
+      }
+      return Promise.resolve(SAFETY_ALL_LOW);
+    });
     await request(app.getHttpServer())
       .post(`/drafts/${DEMO_FAST_DRAFT_ID}/preflight`)
       .set("Authorization", `Bearer ${token}`)

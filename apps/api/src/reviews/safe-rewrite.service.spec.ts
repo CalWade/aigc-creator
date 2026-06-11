@@ -40,8 +40,8 @@ function makeService(streams: Observable<ChatStreamFrame>[]) {
 const INPUT = {
   draftId: "d1",
   text: "原文内容",
-  hitCategories: ["politics" as const],
-  message: "命中政治敏感",
+  hitCategories: ["abuse" as const],
+  message: "命中敏感内容",
 };
 
 describe("SafeRewriteService.stream", () => {

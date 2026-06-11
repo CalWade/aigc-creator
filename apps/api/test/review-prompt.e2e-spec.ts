@@ -5,44 +5,56 @@ import { App } from "supertest/types";
 
 import { AppModule } from "./../src/app.module";
 import { LlmClient } from "./../src/llm/llm.client";
+import { GuardClient } from "./../src/llm/guard.client";
+import type { GuardResult } from "./../src/llm/guard.client";
 import { PrismaService } from "./../src/prisma/prisma.service";
 import { applyAllFixtures, cleanupAllFixtures } from "./../prisma/fixtures";
 import { loginAsDemo } from "./helpers/auth";
 
-const ALL_LOW = JSON.stringify({
+const ALL_PASS_GUARD: GuardResult = { suggestion: "pass", details: [] };
+
+const SAFETY_ALL_LOW = JSON.stringify({
   dimensions: [
-    { key: "pornography", score: 0, severity: "low", hits: [], reason: "无" },
-    { key: "gambling", score: 0, severity: "low", hits: [], reason: "无" },
-    { key: "abuse", score: 0, severity: "low", hits: [], reason: "无" },
-    { key: "fraud", score: 0, severity: "low", hits: [], reason: "无" },
-    { key: "illicit_ads", score: 0, severity: "low", hits: [], reason: "无" },
+    { key: "pornography", score: 0, severity: "low", hits: [], reason: "无命中" },
+    { key: "gambling", score: 0, severity: "low", hits: [], reason: "无命中" },
+    { key: "drugs", score: 0, severity: "low", hits: [], reason: "无命中" },
+    { key: "abuse", score: 0, severity: "low", hits: [], reason: "无命中" },
+    { key: "fraud", score: 0, severity: "low", hits: [], reason: "无命中" },
+    { key: "illicit_ads", score: 0, severity: "low", hits: [], reason: "无命中" },
   ],
 });
 
-const PORN_HIGH = JSON.stringify({
-  dimensions: [
-    { key: "pornography", score: 90, severity: "high", hits: ["x"], reason: "命中" },
-    { key: "gambling", score: 0, severity: "low", hits: [], reason: "无" },
-    { key: "abuse", score: 0, severity: "low", hits: [], reason: "无" },
-    { key: "fraud", score: 0, severity: "low", hits: [], reason: "无" },
-    { key: "illicit_ads", score: 0, severity: "low", hits: [], reason: "无" },
+const PORN_HIGH_GUARD: GuardResult = {
+  suggestion: "block",
+  details: [
+    {
+      type: "contentModeration",
+      level: "high",
+      suggestion: "block",
+      labels: ["pornographic_adult"],
+      confidence: 99.5,
+    },
   ],
-});
+};
 
-const ABUSE_MEDIUM = JSON.stringify({
-  dimensions: [
-    { key: "pornography", score: 0, severity: "low", hits: [], reason: "无" },
-    { key: "gambling", score: 0, severity: "low", hits: [], reason: "无" },
-    { key: "abuse", score: 50, severity: "medium", hits: [], reason: "" },
-    { key: "fraud", score: 0, severity: "low", hits: [], reason: "无" },
-    { key: "illicit_ads", score: 0, severity: "low", hits: [], reason: "无" },
+const ABUSE_MEDIUM_GUARD: GuardResult = {
+  suggestion: "watch",
+  details: [
+    {
+      type: "contentModeration",
+      level: "medium",
+      suggestion: "watch",
+      labels: ["inappropriate_profanity"],
+      confidence: 75.0,
+    },
   ],
-});
+};
 
 describe("Phase 2.5 review prompt (e2e)", () => {
   let app: INestApplication<App>;
   let prisma: PrismaService;
   let token: string;
+  const guardModerateMock = jest.fn();
   const llmChatMock = jest.fn();
 
   beforeAll(async () => {
@@ -51,6 +63,8 @@ describe("Phase 2.5 review prompt (e2e)", () => {
     })
       .overrideProvider(LlmClient)
       .useValue({ chat: llmChatMock, chatStream: jest.fn() })
+      .overrideProvider(GuardClient)
+      .useValue({ moderate: guardModerateMock })
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -69,10 +83,13 @@ describe("Phase 2.5 review prompt (e2e)", () => {
     await app.close();
   });
 
-  beforeEach(() => llmChatMock.mockReset());
+  beforeEach(() => {
+    guardModerateMock.mockReset();
+    llmChatMock.mockReset().mockResolvedValue(SAFETY_ALL_LOW);
+  });
 
-  it("ALLOW: 全 low → 200 + recommendation ALLOW", async () => {
-    llmChatMock.mockResolvedValueOnce(ALL_LOW);
+  it("ALLOW: 全 pass → 200 + recommendation ALLOW", async () => {
+    guardModerateMock.mockResolvedValueOnce(ALL_PASS_GUARD);
     const res = await request(app.getHttpServer())
       .post("/reviews/prompt")
       .set("Authorization", `Bearer ${token}`)
@@ -84,7 +101,7 @@ describe("Phase 2.5 review prompt (e2e)", () => {
   });
 
   it("BLOCK: pornography high → recommendation BLOCK + 命中类目", async () => {
-    llmChatMock.mockResolvedValueOnce(PORN_HIGH);
+    guardModerateMock.mockResolvedValueOnce(PORN_HIGH_GUARD);
     const res = await request(app.getHttpServer())
       .post("/reviews/prompt")
       .set("Authorization", `Bearer ${token}`)
@@ -96,7 +113,7 @@ describe("Phase 2.5 review prompt (e2e)", () => {
   });
 
   it("WARN: abuse medium → recommendation WARN", async () => {
-    llmChatMock.mockResolvedValueOnce(ABUSE_MEDIUM);
+    guardModerateMock.mockResolvedValueOnce(ABUSE_MEDIUM_GUARD);
     const res = await request(app.getHttpServer())
       .post("/reviews/prompt")
       .set("Authorization", `Bearer ${token}`)
@@ -110,6 +127,6 @@ describe("Phase 2.5 review prompt (e2e)", () => {
       .post("/reviews/prompt")
       .send({ text: "无 token" })
       .expect(401);
-    expect(llmChatMock).not.toHaveBeenCalled();
+    expect(guardModerateMock).not.toHaveBeenCalled();
   });
 });

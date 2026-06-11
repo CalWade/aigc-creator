@@ -11,6 +11,7 @@ import { ForbiddenException, INestApplication, NotFoundException } from "@nestjs
 import { AppModule } from "../app.module";
 import { PrismaService } from "../prisma/prisma.service";
 import { PromptsService } from "./prompts.service";
+import { GuardClient } from "../llm/guard.client";
 
 describe("PromptsService Phase 2.17 snapshot", () => {
   let app: INestApplication;
@@ -18,7 +19,10 @@ describe("PromptsService Phase 2.17 snapshot", () => {
   let service: PromptsService;
 
   beforeAll(async () => {
-    const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
+    const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
+      .overrideProvider(GuardClient)
+      .useValue({ moderate: jest.fn() })
+      .compile();
     app = moduleRef.createNestApplication();
     await app.init();
     prisma = app.get(PrismaService);

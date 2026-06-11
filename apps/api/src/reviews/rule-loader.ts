@@ -37,7 +37,7 @@ export function loadRules(): Map<SensitiveCategory, RuleEntry[]> {
         throw new Error(`rule yaml ${file} 缺必填字段: ${JSON.stringify(raw)}`);
       }
       if (!RULE_CATEGORIES.includes(r.category)) {
-        throw new Error(`rule yaml ${file} category=${r.category} 不在 7 类目内`);
+        throw new Error(`rule yaml ${file} category=${r.category} 不在类目列表内`);
       }
       map.get(r.category)!.push(r as RuleEntry);
     }
