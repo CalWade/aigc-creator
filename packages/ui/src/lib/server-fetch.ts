@@ -12,7 +12,9 @@ export async function serverFetchJson<T>(
   const { revalidate = 30, ...rest } = init ?? {};
   const next = revalidate === false ? undefined : { revalidate };
   const cache = revalidate === false ? "no-store" : undefined;
-  const res = await fetch(`${BASE}${path}`, { ...rest, cache, next });
+  // Next.js 扩展了 RequestInit，加入 `next: { revalidate }` 字段。
+  // packages/ui 不引入 next-env.d.ts，所以这里用 `as RequestInit` 显式抹平。
+  const res = await fetch(`${BASE}${path}`, { ...rest, cache, next } as RequestInit);
   if (!res.ok) {
     throw new Error(`server-fetch ${path} ${res.status}`);
   }
