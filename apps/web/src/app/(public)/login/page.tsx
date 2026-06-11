@@ -16,12 +16,14 @@ interface LoginResponse {
 }
 
 type Method = "phone" | "email" | "handle";
+type EmailMode = "password" | "code";
 
 const QUICK_FILLS = ["demo-author", "admin", "tech-author", "life-author"] as const;
 
 export default function LoginPage() {
   const router = useRouter();
   const [method, setMethod] = React.useState<Method>("phone");
+  const [emailMode, setEmailMode] = React.useState<EmailMode>("password");
 
   // phone tab
   const [phone, setPhone] = React.useState("13800000001");
@@ -31,6 +33,8 @@ export default function LoginPage() {
   // email tab
   const [email, setEmail] = React.useState("demo-author@example.com");
   const [password, setPassword] = React.useState("");
+  const [emailCode, setEmailCode] = React.useState("");
+  const [emailCodeCooldown, setEmailCodeCooldown] = React.useState(0);
 
   // handle tab
   const [handle, setHandle] = React.useState<string>("demo-author");
@@ -38,13 +42,21 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
+  // phone code cooldown
   React.useEffect(() => {
     if (codeCooldown <= 0) return;
     const t = window.setTimeout(() => setCodeCooldown((s) => s - 1), 1000);
     return () => window.clearTimeout(t);
   }, [codeCooldown]);
 
-  async function sendCode() {
+  // email code cooldown
+  React.useEffect(() => {
+    if (emailCodeCooldown <= 0) return;
+    const t = window.setTimeout(() => setEmailCodeCooldown((s) => s - 1), 1000);
+    return () => window.clearTimeout(t);
+  }, [emailCodeCooldown]);
+
+  async function sendPhoneCode() {
     setError(null);
     try {
       const res = await apiFetch("/auth/send-code", {
@@ -58,10 +70,27 @@ export default function LoginPage() {
       }
       const data = (await res.json()) as { demoCode?: string };
       setCodeCooldown(60);
-      if (data.demoCode) {
-        // demo 环境直接显式回填,生产应去掉这一行
-        setCode(data.demoCode);
+      if (data.demoCode) setCode(data.demoCode);
+    } catch {
+      setError("网络错误");
+    }
+  }
+
+  async function sendEmailCodeFn() {
+    setError(null);
+    try {
+      const res = await apiFetch("/auth/send-email-code", {
+        method: "POST",
+        body: JSON.stringify({ email, scene: "login" }),
+        auth: false,
+      });
+      if (!res.ok) {
+        setError("验证码发送失败");
+        return;
       }
+      const data = (await res.json()) as { demoCode?: string };
+      setEmailCodeCooldown(60);
+      if (data.demoCode) setEmailCode(data.demoCode);
     } catch {
       setError("网络错误");
     }
@@ -75,7 +104,9 @@ export default function LoginPage() {
         method === "phone"
           ? { method: "phone", phone, code }
           : method === "email"
-            ? { method: "email", email, password }
+            ? emailMode === "code"
+              ? { method: "email_code", email, code: emailCode }
+              : { method: "email", email, password }
             : { method: "handle", handle };
       const res = await apiFetch("/auth/login", {
         method: "POST",
@@ -84,7 +115,15 @@ export default function LoginPage() {
       });
       if (!res.ok) {
         if (res.status === 401) {
-          setError("用户不存在");
+          const d = (await res.json().catch(() => null)) as { message?: string } | null;
+          const msg = d?.message ?? "";
+          if (msg === "user not found") {
+            setError("该账号未注册，请先注册");
+          } else if (msg.includes("验证码")) {
+            setError(msg);
+          } else {
+            setError("用户名或密码错误");
+          }
         } else if (res.status === 400) {
           const d = (await res.json().catch(() => null)) as { message?: string } | null;
           setError(d?.message ?? "请求格式不正确");
@@ -96,8 +135,6 @@ export default function LoginPage() {
       const data = (await res.json()) as LoginResponse;
       setToken(data.accessToken);
       setUser(data.user);
-      // 按 role 分流落地页:admin 进管理后台,author 进草稿列表(身份单一,纯 admin 视图)。
-      // 同 app 内部跳转,router.push 即可;客户端 auth snapshot 已通过 setUser 同步。
       const landing = data.user.role === "ADMIN" ? "/admin" : "/drafts/mine";
       router.push(landing);
     } catch (err) {
@@ -165,16 +202,13 @@ export default function LoginPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={sendCode}
+                  onClick={sendPhoneCode}
                   disabled={codeCooldown > 0 || !/^1[3-9]\d{9}$/.test(phone)}
                   className="shrink-0"
                 >
                   {codeCooldown > 0 ? `${codeCooldown}s` : "发送验证码"}
                 </Button>
               </div>
-              <p className="text-[11px] text-muted-foreground">
-                训练营 demo:验证码固定 <code>123456</code>,点发送会自动回填。
-              </p>
             </div>
           </TabsContent>
 
@@ -189,20 +223,63 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="login-password">密码</Label>
-              <Input
-                id="login-password"
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="至少 8 位"
-              />
-              <p className="text-[11px] text-muted-foreground">
-                Demo 用户密码统一为 <code>demo1234</code>。
-              </p>
+
+            {/* 密码 / 验证码 切换 */}
+            <div className="flex gap-1 text-xs">
+              <button
+                type="button"
+                className={`px-2 py-0.5 rounded ${emailMode === "password" ? "bg-accent font-medium" : "text-muted-foreground"}`}
+                onClick={() => setEmailMode("password")}
+              >
+                密码登录
+              </button>
+              <button
+                type="button"
+                className={`px-2 py-0.5 rounded ${emailMode === "code" ? "bg-accent font-medium" : "text-muted-foreground"}`}
+                onClick={() => setEmailMode("code")}
+              >
+                验证码登录
+              </button>
             </div>
+
+            {emailMode === "password" ? (
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="login-password">密码</Label>
+                <Input
+                  id="login-password"
+                  type="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="至少 8 位"
+                />
+              </div>
+            ) : (
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="login-email-code">验证码</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="login-email-code"
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={emailCode}
+                    onChange={(e) => setEmailCode(e.target.value)}
+                    placeholder="6 位验证码"
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={sendEmailCodeFn}
+                    disabled={emailCodeCooldown > 0 || !email.includes("@")}
+                    className="shrink-0"
+                  >
+                    {emailCodeCooldown > 0 ? `${emailCodeCooldown}s` : "发送验证码"}
+                  </Button>
+                </div>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="handle" className="mt-4 flex flex-col gap-3">
@@ -228,7 +305,7 @@ export default function LoginPage() {
                 onChange={(e) => setHandle(e.target.value)}
               />
               <p className="text-[11px] text-muted-foreground">
-                训练营 demo 兼容入口,直接以 handle 登录已 seed 的用户。
+                训练营 demo 兼容入口，直接以 handle 登录已 seed 的用户。
               </p>
             </div>
           </TabsContent>

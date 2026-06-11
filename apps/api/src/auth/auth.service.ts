@@ -12,6 +12,9 @@ import type { JwtPayload } from "./jwt-payload.interface";
 import type { LoginDto } from "./dto/login.dto";
 import type { RegisterDto } from "./dto/register.dto";
 import type { SendCodeDto } from "./dto/send-code.dto";
+import { CodeStoreService } from "./code-store.service";
+import { SmsService } from "./sms.service";
+import { MailService } from "./mail.service";
 
 export interface LoginResult {
   accessToken: string;
@@ -23,27 +26,23 @@ interface AuditContext {
   userAgent?: string;
 }
 
-/**
- * 训练营 demo:验证码用进程内 Map 临时存,过期 5 分钟。
- * 生产应换 Redis;接口形态保持一致便于切换。
- */
-const CODE_TTL_MS = 5 * 60 * 1000;
-const FIXED_DEMO_CODE = "123456";
+const CODE_TTL_SECONDS = 300; // 5 min
 
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
-  private readonly codeStore = new Map<string, { code: string; expiresAt: number }>();
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly codeStore: CodeStoreService,
+    private readonly sms: SmsService,
+    private readonly mail: MailService,
   ) {}
 
   // ---------- 登录 ----------
 
   async login(dto: LoginDto, ctx: AuditContext): Promise<LoginResult> {
-    // 缺省 method 视为 handle,兼容 e2e helpers(loginAsDemo 等)发的 `{handle}` body
     const method = dto.method ?? "handle";
     if (method === "handle") {
       if (!dto.handle) throw new BadRequestException("handle 必填");
@@ -57,6 +56,10 @@ export class AuthService {
       if (!dto.email || !dto.password) throw new BadRequestException("邮箱与密码必填");
       return this.loginByEmail(dto.email, dto.password, ctx);
     }
+    if (method === "email_code") {
+      if (!dto.email || !dto.code) throw new BadRequestException("邮箱与验证码必填");
+      return this.loginByEmailCode(dto.email, dto.code, ctx);
+    }
     throw new BadRequestException("未知 method");
   }
 
@@ -67,7 +70,7 @@ export class AuthService {
   }
 
   private async loginByPhone(phone: string, code: string, ctx: AuditContext): Promise<LoginResult> {
-    this.consumeCode(phone, code);
+    await this.consumeCode(`phone:${phone}`, code);
     const user = await this.prisma.user.findUnique({ where: { phone } });
     if (!user) throw new UnauthorizedException("user not found");
     return this.issue(user, "phone", phone, ctx);
@@ -85,6 +88,18 @@ export class AuthService {
     return this.issue(user, "email", email, ctx);
   }
 
+  private async loginByEmailCode(
+    email: string,
+    code: string,
+    ctx: AuditContext,
+  ): Promise<LoginResult> {
+    const normalized = email.toLowerCase();
+    await this.consumeCode(`email:login:${normalized}`, code);
+    const user = await this.prisma.user.findUnique({ where: { email: normalized } });
+    if (!user) throw new UnauthorizedException("user not found");
+    return this.issue(user, "email_code", normalized, ctx);
+  }
+
   // ---------- 注册 ----------
 
   async register(dto: RegisterDto, ctx: AuditContext): Promise<LoginResult> {
@@ -96,6 +111,10 @@ export class AuthService {
       if (!dto.email || !dto.password) throw new BadRequestException("邮箱与密码必填");
       return this.registerByEmail(dto.email, dto.password, dto.handle, ctx);
     }
+    if (dto.method === "email_code") {
+      if (!dto.email || !dto.code) throw new BadRequestException("邮箱与验证码必填");
+      return this.registerByEmailCode(dto.email, dto.code, dto.handle, ctx);
+    }
     throw new BadRequestException("未知 method");
   }
 
@@ -105,7 +124,7 @@ export class AuthService {
     desiredHandle: string | undefined,
     ctx: AuditContext,
   ): Promise<LoginResult> {
-    this.consumeCode(phone, code);
+    await this.consumeCode(`phone:${phone}`, code);
     const exist = await this.prisma.user.findUnique({ where: { phone } });
     if (exist) throw new ConflictException("该手机号已注册");
     const handle = await this.allocateHandle(desiredHandle ?? `u_${phone.slice(-6)}`);
@@ -132,10 +151,23 @@ export class AuthService {
     return this.issue(user, "email", normalized, ctx, "REGISTER");
   }
 
-  /**
-   * handle 冲突时追加数字后缀,最多重试 8 次。
-   * 仅做基本字符兜底,DTO 已限格式。
-   */
+  private async registerByEmailCode(
+    email: string,
+    code: string,
+    desiredHandle: string | undefined,
+    ctx: AuditContext,
+  ): Promise<LoginResult> {
+    const normalized = email.toLowerCase();
+    await this.consumeCode(`email:register:${normalized}`, code);
+    const exist = await this.prisma.user.findUnique({ where: { email: normalized } });
+    if (exist) throw new ConflictException("该邮箱已注册");
+    const handle = await this.allocateHandle(desiredHandle ?? normalized.split("@")[0]);
+    const user = await this.prisma.user.create({
+      data: { handle, email: normalized },
+    });
+    return this.issue(user, "email_code", normalized, ctx, "REGISTER");
+  }
+
   private async allocateHandle(seed: string): Promise<string> {
     const base = seed.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 24) || `user${Date.now() % 1e6}`;
     for (let i = 0; i < 8; i += 1) {
@@ -143,17 +175,19 @@ export class AuthService {
       const taken = await this.prisma.user.findUnique({ where: { handle: candidate } });
       if (!taken) return candidate;
     }
-    throw new ConflictException("handle 冲突过多,稍后重试");
+    throw new ConflictException("handle 冲突过多，稍后重试");
   }
 
   // ---------- 验证码 ----------
 
-  async sendCode(dto: SendCodeDto): Promise<{ ok: true; ttlSeconds: number; demoCode: string }> {
-    const expiresAt = Date.now() + CODE_TTL_MS;
-    this.codeStore.set(dto.phone, { code: FIXED_DEMO_CODE, expiresAt });
-    this.logger.log(
-      `[demo] send-code phone=${dto.phone} scene=${dto.scene} code=${FIXED_DEMO_CODE}`,
-    );
+  async sendCode(dto: SendCodeDto): Promise<{ ok: true; ttlSeconds: number; demoCode?: string }> {
+    const code = this.generateCode();
+    const key = `phone:${dto.phone}`;
+
+    await this.codeStore.set(key, code);
+
+    const result = await this.sms.sendCode(dto.phone, code);
+
     void this.writeAudit({
       type: "SEND_CODE",
       method: dto.scene,
@@ -161,18 +195,42 @@ export class AuthService {
       ip: undefined,
       userAgent: undefined,
     });
-    return { ok: true, ttlSeconds: Math.floor(CODE_TTL_MS / 1000), demoCode: FIXED_DEMO_CODE };
+
+    return { ok: true, ttlSeconds: CODE_TTL_SECONDS, demoCode: result.demoCode };
   }
 
-  private consumeCode(phone: string, code: string): void {
-    const entry = this.codeStore.get(phone);
-    if (!entry || entry.expiresAt < Date.now()) {
-      throw new UnauthorizedException("验证码已过期,请重新获取");
+  async sendEmailCode(
+    email: string,
+    scene: "login" | "register",
+  ): Promise<{ ok: true; ttlSeconds: number; demoCode?: string }> {
+    const normalized = email.toLowerCase();
+    const code = this.generateCode();
+    const key = `email:${scene}:${normalized}`;
+
+    await this.codeStore.set(key, code);
+
+    const result = await this.mail.sendCode(normalized, code);
+    void this.writeAudit({
+      type: "SEND_CODE",
+      method: "email",
+      identity: normalized,
+      ip: undefined,
+      userAgent: undefined,
+    });
+
+    return { ok: true, ttlSeconds: CODE_TTL_SECONDS, demoCode: result.demoCode };
+  }
+
+  private generateCode(): string {
+    return String(Math.floor(100000 + Math.random() * 900000));
+  }
+
+  private async consumeCode(key: string, code: string): Promise<void> {
+    try {
+      await this.codeStore.consume(key, code);
+    } catch (err) {
+      throw new UnauthorizedException((err as Error).message);
     }
-    if (entry.code !== code) {
-      throw new UnauthorizedException("验证码不正确");
-    }
-    this.codeStore.delete(phone);
   }
 
   // ---------- 登出 / Audit ----------
@@ -234,7 +292,6 @@ export class AuthService {
         },
       });
     } catch (err) {
-      // audit 写失败不应影响登录主流程;仅 warn
       this.logger.warn(`audit write failed: ${(err as Error).message}`);
     }
   }

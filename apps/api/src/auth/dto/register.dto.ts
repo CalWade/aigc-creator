@@ -2,13 +2,14 @@ import { IsEmail, IsIn, IsOptional, IsString, Length, Matches, MaxLength } from 
 
 /**
  * 注册:
- * - method=phone → 手机号 + 6 位验证码 + 期望 handle(可选,服务端可派生)
- * - method=email → 邮箱 + 密码 + 期望 handle(可选)
+ * - method=phone       → 手机号 + 6 位验证码 + 期望 handle(可选,服务端可派生)
+ * - method=email       → 邮箱 + 密码 + 期望 handle(可选)
+ * - method=email_code  → 邮箱 + 6 位验证码 + 期望 handle(可选)
  */
 export class RegisterDto {
   @IsString()
-  @IsIn(["phone", "email"])
-  method!: "phone" | "email";
+  @IsIn(["phone", "email", "email_code"])
+  method!: "phone" | "email" | "email_code";
 
   @IsOptional()
   @IsString()

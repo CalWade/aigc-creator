@@ -62,6 +62,20 @@ export const envValidationSchema = Joi.object({
     .uri({ scheme: ["redis", "rediss"] })
     .optional(),
 
+  // ---------- 短信服务 ----------
+  SMS_PROVIDER: Joi.string().valid("mock", "volcengine").default("mock"),
+  SMS_ACCESS_KEY: Joi.string().optional().default(""),
+  SMS_SECRET_KEY: Joi.string().optional().default(""),
+  SMS_ACCOUNT: Joi.string().optional().default(""),
+  SMS_SIGN_NAME: Joi.string().optional().default(""),
+  SMS_TEMPLATE_CODE: Joi.string().optional().default(""),
+  SMS_REGION: Joi.string().default("cn-north-1"),
+
+  // ---------- 邮件服务 ----------
+  MAIL_PROVIDER: Joi.string().valid("mock", "resend").default("mock"),
+  MAIL_API_KEY: Joi.string().optional().default(""),
+  MAIL_FROM: Joi.string().optional().default("noreply@example.com"),
+
   // 阿里云 AI 安全护栏(审核引擎专用)
   // 本地开发可不配置,审核调用会走 mock 兜底;NODE_ENV=test 同样可选。
   ALIBABA_CLOUD_ACCESS_KEY_ID: Joi.string().optional().default(""),

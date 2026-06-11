@@ -1,21 +1,19 @@
 import { IsEmail, IsIn, IsOptional, IsString, Length, Matches, MaxLength } from "class-validator";
 
 /**
- * 三种登录方式 union:
- * - method=handle  → 老路径,只查 handle(兼容 e2e + demo seed 用户)
- * - method=phone   → 手机号 + 6 位验证码
- * - method=email   → 邮箱 + 密码
+ * 四种登录方式 union:
+ * - method=handle      → 老路径,只查 handle(兼容 e2e + demo seed 用户)
+ * - method=phone       → 手机号 + 6 位验证码
+ * - method=email       → 邮箱 + 密码
+ * - method=email_code  → 邮箱 + 6 位验证码
  *
  * 各 method 必填字段在 service 层运行时校验,DTO 这里只做类型 + 格式 + 长度。
  */
 export class LoginDto {
-  /**
-   * 缺省时按 handle 走,兼容旧 e2e helpers(loginAsDemo / loginAsAdmin)发送的 `{handle}` body。
-   */
   @IsOptional()
   @IsString()
-  @IsIn(["handle", "phone", "email"])
-  method?: "handle" | "phone" | "email";
+  @IsIn(["handle", "phone", "email", "email_code"])
+  method?: "handle" | "phone" | "email" | "email_code";
 
   @IsOptional()
   @IsString()

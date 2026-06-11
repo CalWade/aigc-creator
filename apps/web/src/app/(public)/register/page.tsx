@@ -16,10 +16,12 @@ interface RegisterResponse {
 }
 
 type Method = "phone" | "email";
+type EmailMode = "password" | "code";
 
 export default function RegisterPage() {
   const router = useRouter();
   const [method, setMethod] = React.useState<Method>("phone");
+  const [emailMode, setEmailMode] = React.useState<EmailMode>("password");
 
   const [phone, setPhone] = React.useState("");
   const [code, setCode] = React.useState("");
@@ -27,6 +29,8 @@ export default function RegisterPage() {
 
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
+  const [emailCode, setEmailCode] = React.useState("");
+  const [emailCodeCooldown, setEmailCodeCooldown] = React.useState(0);
 
   const [handle, setHandle] = React.useState("");
 
@@ -39,7 +43,13 @@ export default function RegisterPage() {
     return () => window.clearTimeout(t);
   }, [codeCooldown]);
 
-  async function sendCode() {
+  React.useEffect(() => {
+    if (emailCodeCooldown <= 0) return;
+    const t = window.setTimeout(() => setEmailCodeCooldown((s) => s - 1), 1000);
+    return () => window.clearTimeout(t);
+  }, [emailCodeCooldown]);
+
+  async function sendPhoneCode() {
     setError(null);
     try {
       const res = await apiFetch("/auth/send-code", {
@@ -59,6 +69,26 @@ export default function RegisterPage() {
     }
   }
 
+  async function sendEmailCodeFn() {
+    setError(null);
+    try {
+      const res = await apiFetch("/auth/send-email-code", {
+        method: "POST",
+        body: JSON.stringify({ email, scene: "register" }),
+        auth: false,
+      });
+      if (!res.ok) {
+        setError("验证码发送失败");
+        return;
+      }
+      const data = (await res.json()) as { demoCode?: string };
+      setEmailCodeCooldown(60);
+      if (data.demoCode) setEmailCode(data.demoCode);
+    } catch {
+      setError("网络错误");
+    }
+  }
+
   async function doRegister() {
     setSubmitting(true);
     setError(null);
@@ -66,7 +96,9 @@ export default function RegisterPage() {
       const body =
         method === "phone"
           ? { method: "phone", phone, code, handle: handle || undefined }
-          : { method: "email", email, password, handle: handle || undefined };
+          : emailMode === "code"
+            ? { method: "email_code", email, code: emailCode, handle: handle || undefined }
+            : { method: "email", email, password, handle: handle || undefined };
       const res = await apiFetch("/auth/register", {
         method: "POST",
         body: JSON.stringify(body),
@@ -150,16 +182,13 @@ export default function RegisterPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={sendCode}
+                  onClick={sendPhoneCode}
                   disabled={codeCooldown > 0 || !/^1[3-9]\d{9}$/.test(phone)}
                   className="shrink-0"
                 >
                   {codeCooldown > 0 ? `${codeCooldown}s` : "发送验证码"}
                 </Button>
               </div>
-              <p className="text-[11px] text-muted-foreground">
-                训练营 demo:验证码固定 <code>123456</code>,点发送会自动回填。
-              </p>
             </div>
           </TabsContent>
 
@@ -175,18 +204,64 @@ export default function RegisterPage() {
                 placeholder="you@example.com"
               />
             </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="reg-password">密码</Label>
-              <Input
-                id="reg-password"
-                type="password"
-                autoComplete="new-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="至少 8 位"
-                minLength={8}
-              />
+
+            {/* 密码 / 验证码 切换 */}
+            <div className="flex gap-1 text-xs">
+              <button
+                type="button"
+                className={`px-2 py-0.5 rounded ${emailMode === "password" ? "bg-accent font-medium" : "text-muted-foreground"}`}
+                onClick={() => setEmailMode("password")}
+              >
+                密码注册
+              </button>
+              <button
+                type="button"
+                className={`px-2 py-0.5 rounded ${emailMode === "code" ? "bg-accent font-medium" : "text-muted-foreground"}`}
+                onClick={() => setEmailMode("code")}
+              >
+                验证码注册
+              </button>
             </div>
+
+            {emailMode === "password" ? (
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="reg-password">密码</Label>
+                <Input
+                  id="reg-password"
+                  type="password"
+                  autoComplete="new-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="至少 8 位"
+                  minLength={8}
+                />
+              </div>
+            ) : (
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="reg-email-code">验证码</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="reg-email-code"
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={emailCode}
+                    onChange={(e) => setEmailCode(e.target.value)}
+                    placeholder="6 位验证码"
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={sendEmailCodeFn}
+                    disabled={emailCodeCooldown > 0 || !email.includes("@")}
+                    className="shrink-0"
+                  >
+                    {emailCodeCooldown > 0 ? `${emailCodeCooldown}s` : "发送验证码"}
+                  </Button>
+                </div>
+              </div>
+            )}
           </TabsContent>
         </Tabs>
 
@@ -202,7 +277,7 @@ export default function RegisterPage() {
             maxLength={30}
           />
           <p className="text-[11px] text-muted-foreground">
-            英文字母、数字、下划线、连字符,2–30 位。
+            英文字母、数字、下划线、连字符，2–30 位。
           </p>
         </div>
 

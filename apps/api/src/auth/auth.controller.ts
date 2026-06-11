@@ -5,6 +5,7 @@ import { AuthService, type LoginResult } from "./auth.service";
 import { LoginDto } from "./dto/login.dto";
 import { RegisterDto } from "./dto/register.dto";
 import { SendCodeDto } from "./dto/send-code.dto";
+import { SendEmailCodeDto } from "./dto/send-email-code.dto";
 import type { JwtPayload } from "./jwt-payload.interface";
 import { Public } from "./public.decorator";
 
@@ -32,15 +33,19 @@ export class AuthController {
   @Public()
   @Post("send-code")
   @HttpCode(HttpStatus.OK)
-  sendCode(@Body() dto: SendCodeDto): Promise<{ ok: true; ttlSeconds: number; demoCode: string }> {
+  sendCode(@Body() dto: SendCodeDto): Promise<{ ok: true; ttlSeconds: number; demoCode?: string }> {
     return this.authService.sendCode(dto);
   }
 
-  /**
-   * 登出:JWT 无状态,后端不做黑名单(成本/收益不划算)。
-   * 仅做 audit log 记录;前端清 token 才是真正"登出"。
-   * 不带 token / token 无效也允许调用,确保前端登出按钮永远成功。
-   */
+  @Public()
+  @Post("send-email-code")
+  @HttpCode(HttpStatus.OK)
+  sendEmailCode(
+    @Body() dto: SendEmailCodeDto,
+  ): Promise<{ ok: true; ttlSeconds: number; demoCode?: string }> {
+    return this.authService.sendEmailCode(dto.email, dto.scene);
+  }
+
   @Public()
   @Post("logout")
   @HttpCode(HttpStatus.OK)
@@ -53,7 +58,7 @@ export class AuthController {
         const decoded = await this.jwtService.verifyAsync<JwtPayload>(token);
         userId = decoded.sub;
       } catch {
-        // 过期/无效 token 也允许登出,直接 audit 一条匿名 LOGOUT
+        // 过期/无效 token 也允许登出
       }
     }
     return this.authService.logout(userId, ctxOf(req));
