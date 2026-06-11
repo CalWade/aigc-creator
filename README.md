@@ -46,23 +46,19 @@ pnpm install
 # 启动数据基建（PostgreSQL + Redis，后台运行）
 pnpm db:up
 
-# 启动应用(apps/web-consumer + apps/web-studio + apps/api 三进程并行 dev)
+# 启动应用(apps/web + apps/api 两进程并行 dev)
 pnpm dev:all
 ```
 
 > **本地访问约定**:统一从 `http://localhost:3000` 进。
 >
-> 项目采用 Next.js Multi-Zones 拓扑——`apps/web-consumer`(3000) 是 default zone,`apps/web-studio`(3001) 挂在 `/studio/*` 子路径下,由 consumer 的 rewrites 代理。
->
-> | 入口       | URL                                         |
-> | ---------- | ------------------------------------------- |
-> | 阅读端首页 | `http://localhost:3000/`                    |
-> | 登录       | `http://localhost:3000/login`               |
-> | 工作台     | `http://localhost:3000/studio/me/dashboard` |
-> | 草稿列表   | `http://localhost:3000/studio/drafts/mine`  |
-> | 管理后台   | `http://localhost:3000/studio/admin/*`      |
->
-> ⚠️ **不要直访 `localhost:3001`**:它是 consumer rewrites 的转发目标,不是给人用的入口。直访会因为 basePath/登录态/localStorage 不共享而 404 或跳转混乱。打到 3001 根 `/` 会自动 redirect 回 3000。
+> | 入口       | URL                                  |
+> | ---------- | ------------------------------------ |
+> | 阅读端首页 | `http://localhost:3000/`             |
+> | 登录       | `http://localhost:3000/login`        |
+> | 工作台     | `http://localhost:3000/me/dashboard` |
+> | 草稿列表   | `http://localhost:3000/drafts/mine`  |
+> | 管理后台   | `http://localhost:3000/admin/*`      |
 
 | 命令            | 作用                                   |
 | --------------- | -------------------------------------- |
@@ -90,7 +86,7 @@ pnpm dev:all
 pnpm db:up                 # 起 PG
 pnpm prisma:migrate        # 应用最新迁移到本地库
 pnpm prisma:seed           # 灌默认 Prompt(只读浏览端点依赖)
-pnpm dev:all               # 启动 consumer + studio + api 三进程
+pnpm dev:all               # 启动 web + api 两进程
 ```
 
 `apps/api` e2e 测试(`/drafts` + `/prompts` 端点)依赖真实 PG,运行:

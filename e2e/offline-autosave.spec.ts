@@ -102,7 +102,7 @@ test.describe("离线兜底自动保存", () => {
     const state: MockState = { version: 1, patchCount: 0 };
     await mockDraftRoutes(page, state);
 
-    await page.goto(`/studio/drafts/${DRAFT_ID}`);
+    await page.goto(`/drafts/${DRAFT_ID}`);
 
     // 编辑器加载完成 — 初始状态无 banner
     await expect(page.getByPlaceholder("未命名草稿")).toBeVisible({ timeout: 10_000 });
@@ -145,10 +145,10 @@ test.describe("多 tab 只读", () => {
     await mockDraftRoutes(tabA, stateA);
     await mockDraftRoutes(tabB, stateB);
 
-    await tabA.goto(`/studio/drafts/${DRAFT_ID}`);
+    await tabA.goto(`/drafts/${DRAFT_ID}`);
     await tabA.getByPlaceholder("未命名草稿").waitFor();
 
-    await tabB.goto(`/studio/drafts/${DRAFT_ID}`);
+    await tabB.goto(`/drafts/${DRAFT_ID}`);
     await tabB.getByPlaceholder("未命名草稿").waitFor();
 
     // useDraftPresence 用 BroadcastChannel,Playwright 同 context 多 page 共享 — 双方都进入只读

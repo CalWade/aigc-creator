@@ -8,7 +8,7 @@
 #   redis     → Redis 7,宿主机 127.0.0.1:6379
 #   minio     → S3 兼容存储,宿主机 127.0.0.1:9002/9003 (避让 cmcmhealth 的 9000/9001)
 #
-# 前端 (consumer / studio) 由 nginx 直接 serve 静态产物,
+# 前端 (web 单 app) 由 nginx 直接 serve 静态产物,
 # 不走 Docker——Next.js standalone 产物的 Docker 镜像太重 (8GB 磁盘不够)。
 # ============================================================
 
