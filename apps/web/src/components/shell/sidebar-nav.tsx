@@ -14,7 +14,9 @@ import {
   ListChecks,
   RotateCcw,
   Sparkles,
-  ArrowLeftCircle,
+  Compass,
+  Flame,
+  TrendingUp,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@bytedance-aigc/ui/lib/utils";
@@ -34,9 +36,19 @@ interface NavGroup {
 }
 
 // 创作者工作台侧边栏。仅在 (creator) 路由组下渲染。
-// "发现"在 (reader) 顶部水平导航,这里不出现。"返回阅读端"是连回 (reader) 的反向入口。
+// AUTHOR 能同时看到"阅读"和"创作/工作台"两组,无需跳转到 (reader) 也能直达阅读端。
 // admin 用户走 (admin) 路由组,这个 sidebar 不应该被他们看到 — 但保险起见保留 role gate:
 // role==="ADMIN" 时只显示"管理"组(实际上 admin 已被路由分流到 /admin/*,几乎不会出现在这个 shell 下)。
+
+const READER_GROUP: NavGroup = {
+  title: "阅读",
+  items: [
+    { href: "/", label: "推荐", icon: Compass, exact: true },
+    { href: "/rank/hot", label: "热点榜", icon: Flame },
+    { href: "/rank/best", label: "爆文榜", icon: TrendingUp },
+  ],
+};
+
 const CREATOR_GROUPS: NavGroup[] = [
   {
     title: "创作",
@@ -67,17 +79,12 @@ const ADMIN_GROUP: NavGroup = {
 
 // admin 是平台运营角色,不是创作者:纯 admin 视图,隐藏作者侧入口。
 // 若 admin 也需要发文,后台另建 author 账号(身份单一原则)。
+// 未登录用户只看"阅读"组,登录后看"阅读+创作+工作台"。
 function getGroups(role: "AUTHOR" | "ADMIN" | undefined): NavGroup[] {
-  return role === "ADMIN" ? [ADMIN_GROUP] : CREATOR_GROUPS;
+  if (role === "ADMIN") return [ADMIN_GROUP];
+  if (role === "AUTHOR") return [READER_GROUP, ...CREATOR_GROUPS];
+  return [READER_GROUP];
 }
-
-// 顶部独立分组 — 引导回阅读端,做反向闭环。
-const BACK_TO_CONSUMER: NavItem = {
-  href: "/",
-  label: "返回阅读端",
-  icon: ArrowLeftCircle,
-  exact: true,
-};
 
 function isActive(pathname: string, href: string, exact?: boolean) {
   if (exact) return pathname === href;
@@ -91,34 +98,6 @@ export function SidebarNav() {
 
   return (
     <nav className="flex flex-col gap-1 py-2">
-      <SidebarSection title="导航">
-        {(() => {
-          const Icon = BACK_TO_CONSUMER.icon;
-          const active = isActive(pathname, BACK_TO_CONSUMER.href, BACK_TO_CONSUMER.exact);
-          return (
-            <Link
-              href={BACK_TO_CONSUMER.href}
-              aria-current={active ? "page" : undefined}
-              className={cn(
-                "group flex items-center gap-2.5 h-8 px-2.5 rounded-lg text-[13px] transition-all",
-                "active:scale-[0.98]",
-                active
-                  ? "bg-accent text-accent-foreground font-medium"
-                  : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
-              )}
-            >
-              <Icon
-                className={cn(
-                  "h-4 w-4 shrink-0 transition-colors",
-                  active ? "text-foreground" : "text-muted-foreground group-hover:text-foreground",
-                )}
-                aria-hidden
-              />
-              <span className="truncate">{BACK_TO_CONSUMER.label}</span>
-            </Link>
-          );
-        })()}
-      </SidebarSection>
       {groups.map((group) => (
         <SidebarSection key={group.title} title={group.title}>
           {group.items.map((item) => {
