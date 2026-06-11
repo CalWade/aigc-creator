@@ -46,7 +46,7 @@ export function PreflightDialog({
   }
 
   const data: PreflightResponse | null = preflight.data;
-  const canPublish = data && data.recommendation !== "BLOCK";
+  const canPublish = data != null;
 
   const onPublishClick = async () => {
     setPublishing(true);

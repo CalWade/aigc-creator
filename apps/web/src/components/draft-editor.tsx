@@ -24,6 +24,7 @@ import { AiBubbleMenu } from "@/app/(creator)/drafts/[id]/_components/AiBubbleMe
 import { ToolCandidateCard } from "@/app/(creator)/drafts/[id]/_components/ToolCandidateCard";
 import { PromptDrawer } from "@/app/(creator)/drafts/[id]/_components/PromptDrawer";
 import { PreflightDialog } from "@/app/(creator)/drafts/[id]/_components/PreflightDialog";
+import { ReviewDrawer } from "@/app/(creator)/drafts/[id]/_components/ReviewDrawer";
 
 interface DraftDetail {
   id: string;
@@ -82,6 +83,7 @@ export function DraftEditor({
     return validTools.includes(initialTool);
   });
   const [preflightOpen, setPreflightOpen] = useState(false);
+  const [reviewDrawerOpen, setReviewDrawerOpen] = useState(false);
   const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
   const [namingNote, setNamingNote] = useState(false);
 
@@ -419,6 +421,7 @@ export function DraftEditor({
         saveState={status}
         lastSavedAt={lastSavedAt}
         onOpenFast={() => setFastDialogOpen(true)}
+        onOpenReview={() => setReviewDrawerOpen(true)}
         onOpenPreflight={() => setPreflightOpen(true)}
         onOpenVersionHistory={() => setVersionHistoryOpen(true)}
         onMarkVersion={() => void markVersion()}
@@ -504,6 +507,12 @@ export function DraftEditor({
       <PromptDrawer open={promptDrawerOpen} onClose={() => setPromptDrawerOpen(false)} />
 
       <PreflightDialog draftId={id} open={preflightOpen} onClose={() => setPreflightOpen(false)} />
+
+      <ReviewDrawer
+        draftId={id}
+        open={reviewDrawerOpen}
+        onClose={() => setReviewDrawerOpen(false)}
+      />
 
       <VersionHistoryModal
         draftId={id}

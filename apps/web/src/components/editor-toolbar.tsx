@@ -36,6 +36,7 @@ interface EditorToolbarProps {
   saveState: AutosaveStatus;
   lastSavedAt: number | null;
   onOpenFast: () => void;
+  onOpenReview: () => void;
   onOpenPreflight: () => void;
   onOpenVersionHistory: () => void;
   onMarkVersion: () => void;
@@ -58,6 +59,7 @@ export function EditorToolbar({
   saveState,
   lastSavedAt,
   onOpenFast,
+  onOpenReview,
   onOpenPreflight,
   onOpenVersionHistory,
   onMarkVersion,
@@ -186,6 +188,17 @@ export function EditorToolbar({
         >
           <Settings2 className="h-3.5 w-3.5" />
           Prompt
+        </Button>
+
+        <Separator orientation="vertical" className="h-5 mx-1" />
+
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onOpenReview}
+          className="h-8 gap-1.5 text-[13px]"
+        >
+          审核
         </Button>
 
         <DropdownMenu>
