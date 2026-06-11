@@ -109,6 +109,7 @@ model User {
   phone        String?  @unique
   email        String?  @unique
   passwordHash String?
+  role         UserRole @default(AUTHOR)
   createdAt    DateTime @default(now())
 
   drafts        Draft[]
@@ -120,6 +121,11 @@ model User {
   reactions     Reaction[]
 
   @@map("users")
+}
+
+enum UserRole {
+  AUTHOR
+  ADMIN
 }
 
 enum AuthEventType {

@@ -4,6 +4,8 @@
  * Phase 2.6 加 admin 用户(handle=admin),与 3 作者身份隔离;e2e 走 loginAsAdmin
  * 2026-06-10 #21 新增 phone/email/passwordHash —— demo 密码统一 demo1234
  *   bcryptjs hash(cost=10) 离线生成,运行时不再 hash 这些 fixture。
+ * 2026-06-11 RBAC mini —— 4 个 demo 用户对齐 role 字段:admin=ADMIN,其余=AUTHOR。
+ *   AdminGuard 改读 JwtPayload.role,fixture 必须先就位才能跑通 e2e。
  */
 import { Prisma } from "@prisma/client";
 
@@ -22,6 +24,7 @@ export const DEMO_USERS: Prisma.UserCreateManyInput[] = [
     phone: "13800000001",
     email: "demo-author@example.com",
     passwordHash: DEMO_PASSWORD_HASH,
+    role: "AUTHOR",
   },
   {
     id: TECH_AUTHOR_ID,
@@ -29,6 +32,7 @@ export const DEMO_USERS: Prisma.UserCreateManyInput[] = [
     phone: "13800000002",
     email: "tech-author@example.com",
     passwordHash: DEMO_PASSWORD_HASH,
+    role: "AUTHOR",
   },
   {
     id: LIFE_AUTHOR_ID,
@@ -36,6 +40,7 @@ export const DEMO_USERS: Prisma.UserCreateManyInput[] = [
     phone: "13800000003",
     email: "life-author@example.com",
     passwordHash: DEMO_PASSWORD_HASH,
+    role: "AUTHOR",
   },
   {
     id: ADMIN_USER_ID,
@@ -43,5 +48,6 @@ export const DEMO_USERS: Prisma.UserCreateManyInput[] = [
     phone: "13800000000",
     email: "admin@example.com",
     passwordHash: DEMO_PASSWORD_HASH,
+    role: "ADMIN",
   },
 ];
