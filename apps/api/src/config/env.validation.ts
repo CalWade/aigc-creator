@@ -62,10 +62,6 @@ export const envValidationSchema = Joi.object({
     .uri({ scheme: ["redis", "rediss"] })
     .optional(),
 
-  // Admin 白名单(逗号分隔的 handle);空白名单 = 拒绝所有人(fail-closed)。
-  // 必填以强制开发者显式声明,避免误以为"没配 = 全开"。
-  ADMIN_HANDLES: Joi.string().allow("").required(),
-
   // 二发热度继承开关:"true"(默认)沿用旧 PostStat;"false"清零。
   REPUBLISH_HOTNESS_INHERIT: Joi.string().valid("true", "false").default("true"),
 }).unknown(true);

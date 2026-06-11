@@ -49,7 +49,7 @@ describe("AuthController (e2e)", () => {
 
     expect(typeof body.accessToken).toBe("string");
     expect(body.accessToken.split(".").length).toBe(3); // header.payload.signature
-    expect(body.user).toEqual({ id: DEMO_AUTHOR_ID, handle: "demo-author" });
+    expect(body.user).toEqual({ id: DEMO_AUTHOR_ID, handle: "demo-author", role: "AUTHOR" });
   });
 
   it("POST /auth/login -> 401 when handle not found", async () => {

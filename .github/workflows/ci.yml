@@ -75,7 +75,7 @@ jobs:
     runs-on: ubuntu-latest
     # WHY: postgres 容器名/版本对齐本地 docker-compose(postgres:16-alpine);
     # 库名 bytedance_aigc_test 与本地开发库 bytedance_aigc 区分,纯 CI 一次性。
-    # LLM_* / ADMIN_HANDLES 由 apps/api/test/setup-env.ts 兜底,不在此重复。
+    # LLM_* 由 apps/api/test/setup-env.ts 兜底,不在此重复。
     services:
       postgres:
         image: postgres:16-alpine

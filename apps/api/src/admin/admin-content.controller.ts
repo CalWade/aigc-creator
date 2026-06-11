@@ -16,7 +16,8 @@ import { OfflineDraftDto } from "./dto/offline-draft.dto";
 
 /**
  * Phase 2.11 — admin 直接下线 + 预览任意状态作品。
- * Guard 顺序固定 (UserGuard, AdminGuard);AdminGuard 走 env ADMIN_HANDLES 白名单。
+ * Guard 顺序固定 (UserGuard, AdminGuard);AdminGuard 走 JWT payload.role === "ADMIN"
+ * (RBAC mini,2026-06-11 起替换原 ADMIN_HANDLES env 白名单)。
  */
 @Controller("admin")
 @UseGuards(UserGuard, AdminGuard)

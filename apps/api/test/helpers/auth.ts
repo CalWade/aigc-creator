@@ -4,7 +4,7 @@ import { App } from "supertest/types";
 
 interface LoginResponse {
   accessToken: string;
-  user: { id: string; handle: string };
+  user: { id: string; handle: string; role: "AUTHOR" | "ADMIN" };
 }
 
 async function loginByHandle(app: INestApplication<App>, handle: string): Promise<string> {
@@ -16,7 +16,7 @@ export function loginAsDemo(app: INestApplication<App>): Promise<string> {
   return loginByHandle(app, "demo-author");
 }
 
-/** Phase 2.6 — 走 admin 用户登录,handle=admin(env ADMIN_HANDLES 命中)。 */
+/** RBAC mini — 走 admin 用户登录(fixture role=ADMIN);AdminGuard 据此放行 /admin/*。 */
 export function loginAsAdmin(app: INestApplication<App>): Promise<string> {
   return loginByHandle(app, "admin");
 }

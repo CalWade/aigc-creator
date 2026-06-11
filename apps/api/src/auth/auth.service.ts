@@ -15,7 +15,7 @@ import type { SendCodeDto } from "./dto/send-code.dto";
 
 export interface LoginResult {
   accessToken: string;
-  user: { id: string; handle: string };
+  user: { id: string; handle: string; role: "AUTHOR" | "ADMIN" };
 }
 
 interface AuditContext {
@@ -191,13 +191,17 @@ export class AuthService {
   // ---------- 内部:签发 token + 写 audit ----------
 
   private async issue(
-    user: { id: string; handle: string },
+    user: { id: string; handle: string; role: "AUTHOR" | "ADMIN" },
     method: string,
     identity: string,
     ctx: AuditContext,
     type: "LOGIN" | "REGISTER" = "LOGIN",
   ): Promise<LoginResult> {
-    const payload: Pick<JwtPayload, "sub" | "handle"> = { sub: user.id, handle: user.handle };
+    const payload: Pick<JwtPayload, "sub" | "handle" | "role"> = {
+      sub: user.id,
+      handle: user.handle,
+      role: user.role,
+    };
     const accessToken = await this.jwtService.signAsync(payload);
     void this.writeAudit({
       type,
@@ -207,7 +211,7 @@ export class AuthService {
       ip: ctx.ip,
       userAgent: ctx.userAgent,
     });
-    return { accessToken, user: { id: user.id, handle: user.handle } };
+    return { accessToken, user: { id: user.id, handle: user.handle, role: user.role } };
   }
 
   private async writeAudit(input: {
