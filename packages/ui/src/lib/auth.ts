@@ -4,6 +4,12 @@ const USER_KEY = "bytedance-aigc.user";
 export interface AuthUser {
   id: string;
   handle: string;
+  /**
+   * RBAC mini (2026-06-11)。
+   * optional 是为兼容升级前签发的老 token / localStorage 缓存:缺失时视为 AUTHOR(不显示 admin 入口)。
+   * 后端 AdminGuard 也对 undefined 做 fail-closed,前后端一致。
+   */
+  role?: "AUTHOR" | "ADMIN";
 }
 
 export function getToken(): string | null {

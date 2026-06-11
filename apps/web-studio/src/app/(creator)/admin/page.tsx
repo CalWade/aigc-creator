@@ -14,7 +14,7 @@ export default function AdminHomePage() {
     <main className="max-w-3xl mx-auto px-6 py-8">
       <h1 className="text-lg font-semibold mb-1">平台管理后台</h1>
       <p className="text-sm text-muted-foreground mb-6">
-        访问需要 admin 权限(白名单 handle 由后端 ADMIN_HANDLES 控制)。
+        访问需要 admin 权限(由 User.role=ADMIN 控制,前端三层门控 + 后端 AdminGuard 兜底)。
       </p>
       <div className="grid sm:grid-cols-2 gap-3">
         <NavCard

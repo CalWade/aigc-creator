@@ -18,6 +18,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@bytedance-aigc/ui/lib/utils";
+import { useAuthSnapshot } from "@bytedance-aigc/ui/lib/use-auth-snapshot";
 import { SidebarSection } from "./sidebar-section";
 
 interface NavItem {
@@ -34,7 +35,8 @@ interface NavGroup {
 
 // B 段(创作者 / 工作台 / 管理)侧边栏。
 // "发现"已搬到 C 段顶部水平导航,这里不再出现。"返回阅读端"是连回 C 段的反向入口。
-const GROUPS: NavGroup[] = [
+// "管理"分组按 role 条件渲染(RBAC mini, 2026-06-11):role !== "ADMIN" 时整组不出现。
+const CREATOR_GROUPS: NavGroup[] = [
   {
     title: "创作",
     items: [{ href: "/drafts/mine", label: "我的草稿", icon: PenLine }],
@@ -48,18 +50,23 @@ const GROUPS: NavGroup[] = [
       { href: "/me/reports", label: "举报", icon: Flag },
     ],
   },
-  {
-    title: "管理",
-    items: [
-      { href: "/admin", label: "总览", icon: Shield, exact: true },
-      { href: "/admin/reports", label: "举报", icon: ShieldAlert },
-      { href: "/admin/offline", label: "下线", icon: ShieldOff },
-      { href: "/admin/sample-audits", label: "抽审", icon: ListChecks },
-      { href: "/admin/rule-rechecks", label: "重检", icon: RotateCcw },
-      { href: "/admin/prompt-lab", label: "Prompt", icon: Sparkles },
-    ],
-  },
 ];
+
+const ADMIN_GROUP: NavGroup = {
+  title: "管理",
+  items: [
+    { href: "/admin", label: "总览", icon: Shield, exact: true },
+    { href: "/admin/reports", label: "举报", icon: ShieldAlert },
+    { href: "/admin/offline", label: "下线", icon: ShieldOff },
+    { href: "/admin/sample-audits", label: "抽审", icon: ListChecks },
+    { href: "/admin/rule-rechecks", label: "重检", icon: RotateCcw },
+    { href: "/admin/prompt-lab", label: "Prompt", icon: Sparkles },
+  ],
+};
+
+function getGroups(role: "AUTHOR" | "ADMIN" | undefined): NavGroup[] {
+  return role === "ADMIN" ? [...CREATOR_GROUPS, ADMIN_GROUP] : CREATOR_GROUPS;
+}
 
 // 顶部独立分组 — 引导回阅读端,做反向闭环。
 const BACK_TO_CONSUMER: NavItem = {
@@ -76,6 +83,8 @@ function isActive(pathname: string, href: string, exact?: boolean) {
 
 export function SidebarNav() {
   const pathname = usePathname();
+  const { user } = useAuthSnapshot();
+  const groups = getGroups(user?.role);
 
   return (
     <nav className="flex flex-col gap-1 py-2">
@@ -107,7 +116,7 @@ export function SidebarNav() {
           );
         })()}
       </SidebarSection>
-      {GROUPS.map((group) => (
+      {groups.map((group) => (
         <SidebarSection key={group.title} title={group.title}>
           {group.items.map((item) => {
             const Icon = item.icon;

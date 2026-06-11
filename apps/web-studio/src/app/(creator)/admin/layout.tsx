@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect } from "react";
 
 import { cn } from "@bytedance-aigc/ui/lib/utils";
+import { useAuthSnapshot } from "@bytedance-aigc/ui/lib/use-auth-snapshot";
 
 const NAV_ITEMS = [
   { href: "/admin", label: "总览" },
@@ -19,8 +21,31 @@ function isActive(pathname: string, href: string): boolean {
   return pathname.startsWith(href);
 }
 
+// 客户端守卫(RBAC mini, 2026-06-11):非 ADMIN hard-nav 回工作台。
+// 用 hard navigation(window.location.replace)而非 router.push 避免和 basePath 交互引发歧义,
+// basePath 自动加 /studio 前缀。这是深度防御的路由层 — 后端 AdminGuard 仍是最终兜底。
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { user, hasToken } = useAuthSnapshot();
+  const role = user?.role;
+  const isAdmin = role === "ADMIN";
+  // 加载中:有 token 但 user 还没解析(SSR→CSR hydrate 间隙) → 不判,显示骨架
+  const isLoading = hasToken && !user;
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (!isAdmin) {
+      window.location.replace("/me/dashboard");
+    }
+  }, [isLoading, isAdmin]);
+
+  if (isLoading || !isAdmin) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center text-sm text-muted-foreground">
+        正在校验权限...
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-0">

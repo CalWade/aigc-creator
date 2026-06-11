@@ -25,6 +25,7 @@ function readAuth(): AuthSnapshot {
   const hasToken = !!token;
   const userId = cachedSnap.user?.id ?? null;
   const userHandle = cachedSnap.user?.handle ?? null;
+  const userRole = cachedSnap.user?.role ?? null;
   let parsed: AuthUser | null = null;
   if (userRaw) {
     try {
@@ -36,7 +37,8 @@ function readAuth(): AuthSnapshot {
   if (
     cachedSnap.hasToken === hasToken &&
     userId === (parsed?.id ?? null) &&
-    userHandle === (parsed?.handle ?? null)
+    userHandle === (parsed?.handle ?? null) &&
+    userRole === (parsed?.role ?? null)
   ) {
     return cachedSnap;
   }

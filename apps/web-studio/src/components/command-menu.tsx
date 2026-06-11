@@ -50,7 +50,8 @@ export function CommandMenu() {
   const [open, setOpen] = React.useState(false);
   const router = useRouter();
   const { setTheme } = useTheme();
-  const { isLoggedIn } = useAuthSnapshot();
+  const { user, isLoggedIn } = useAuthSnapshot();
+  const isAdmin = user?.role === "ADMIN";
 
   // studio 内部跳转用 router.push,basePath 自动加 /studio 前缀
   const go = React.useCallback(
@@ -91,6 +92,7 @@ export function CommandMenu() {
     return () => window.removeEventListener("click", onClick);
   }, []);
 
+  // "管理"分组按 role 条件加入(RBAC mini, 2026-06-11):role !== "ADMIN" 时整组不出现。
   const groups: CmdGroup[] = [
     {
       heading: "工作台",
@@ -122,17 +124,26 @@ export function CommandMenu() {
         { label: "举报记录", icon: Flag, onSelect: () => go("/me/reports"), keywords: ["report"] },
       ],
     },
-    {
-      heading: "管理",
-      items: [
-        { label: "管理总览", icon: Shield, onSelect: () => go("/admin"), keywords: ["admin"] },
-        { label: "举报处理", icon: ShieldAlert, onSelect: () => go("/admin/reports") },
-        { label: "下线管理", icon: ShieldOff, onSelect: () => go("/admin/offline") },
-        { label: "抽样审核", icon: ListChecks, onSelect: () => go("/admin/sample-audits") },
-        { label: "规则重检", icon: RotateCcw, onSelect: () => go("/admin/rule-rechecks") },
-        { label: "Prompt 实验", icon: Sparkles, onSelect: () => go("/admin/prompt-lab") },
-      ],
-    },
+    ...(isAdmin
+      ? [
+          {
+            heading: "管理",
+            items: [
+              {
+                label: "管理总览",
+                icon: Shield,
+                onSelect: () => go("/admin"),
+                keywords: ["admin"],
+              },
+              { label: "举报处理", icon: ShieldAlert, onSelect: () => go("/admin/reports") },
+              { label: "下线管理", icon: ShieldOff, onSelect: () => go("/admin/offline") },
+              { label: "抽样审核", icon: ListChecks, onSelect: () => go("/admin/sample-audits") },
+              { label: "规则重检", icon: RotateCcw, onSelect: () => go("/admin/rule-rechecks") },
+              { label: "Prompt 实验", icon: Sparkles, onSelect: () => go("/admin/prompt-lab") },
+            ],
+          },
+        ]
+      : []),
     {
       heading: "阅读端",
       items: [
