@@ -17,7 +17,6 @@ import {
   SheetDescription,
 } from "@bytedance-aigc/ui/components/ui/sheet";
 import { Button } from "@bytedance-aigc/ui/components/ui/button";
-import { ScrollArea } from "@bytedance-aigc/ui/components/ui/scroll-area";
 
 /**
  * 独立「审核」侧边抽屉 — 用户主动调取，非发布拦截。
@@ -57,8 +56,11 @@ export function ReviewDrawer({
 
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-md flex flex-col">
-        <SheetHeader>
+      <SheetContent
+        side="right"
+        className="w-[400px] sm:w-[500px] sm:max-w-[500px] flex flex-col gap-0 p-0"
+      >
+        <SheetHeader className="border-b border-border">
           <SheetTitle className="flex items-center gap-2">
             <ShieldCheck className="h-5 w-5 text-primary" />
             内容审核
@@ -68,7 +70,7 @@ export function ReviewDrawer({
           </SheetDescription>
         </SheetHeader>
 
-        <ScrollArea className="flex-1 -mx-6 px-6">
+        <div className="flex-1 overflow-y-auto p-4">
           {!triggered && (
             <div className="flex flex-col items-center justify-center gap-4 py-16">
               <ShieldCheck className="h-12 w-12 text-muted-foreground/40" />
@@ -100,7 +102,7 @@ export function ReviewDrawer({
           )}
 
           {triggered && !running && data && (
-            <div className="flex flex-col gap-4 pt-2">
+            <div className="flex flex-col gap-4">
               <div className="flex items-center gap-2">
                 <RecommendationBadge value={data.recommendation} />
                 <span className="text-xs text-muted-foreground">预检结果 24 小时内有效</span>
@@ -135,10 +137,10 @@ export function ReviewDrawer({
               )}
             </div>
           )}
-        </ScrollArea>
+        </div>
 
         {triggered && !running && data && (
-          <div className="border-t pt-3 flex gap-2">
+          <div className="border-t border-border p-4 flex gap-2">
             <Button
               variant="outline"
               size="sm"
