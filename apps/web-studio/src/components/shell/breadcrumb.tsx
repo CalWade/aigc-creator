@@ -47,9 +47,10 @@ export function Breadcrumb() {
 
   return (
     <nav aria-label="Breadcrumb" className="flex items-center gap-1 text-[13px]">
-      <Link href="/" className="text-muted-foreground hover:text-foreground transition-colors">
+      {/* 跨 Multi-Zones 回 consumer 首页,必须用 <a> */}
+      <a href="/" className="text-muted-foreground hover:text-foreground transition-colors">
         首页
-      </Link>
+      </a>
       {crumbs.map((c) => (
         <React.Fragment key={c.href}>
           <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50" aria-hidden />

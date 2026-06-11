@@ -22,10 +22,11 @@ export function UserMenu() {
   if (!isLoggedIn || !user) {
     return (
       <Button asChild variant="default" size="sm" className="h-8">
-        <Link href="/login" aria-label="登录">
+        {/* 跨 Multi-Zones 到 consumer 的 /login,必须用 <a> 不能用 next/link */}
+        <a href="/login" aria-label="登录">
           <LogIn className="h-3.5 w-3.5" aria-hidden />
           登录
-        </Link>
+        </a>
       </Button>
     );
   }

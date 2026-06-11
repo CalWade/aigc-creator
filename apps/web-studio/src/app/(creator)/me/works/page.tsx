@@ -89,7 +89,7 @@ export default function MyWorksPage() {
 
   useEffect(() => {
     if (!getToken()) {
-      router.replace("/login");
+      window.location.replace("/login");
       return;
     }
     let cancelled = false;
@@ -98,7 +98,7 @@ export default function MyWorksPage() {
         if (cancelled) return;
         if (res.status === 401) {
           clearToken();
-          router.replace("/login");
+          window.location.replace("/login");
           return;
         }
         if (!res.ok) {

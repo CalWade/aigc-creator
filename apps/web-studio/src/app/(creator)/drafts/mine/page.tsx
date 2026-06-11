@@ -57,7 +57,7 @@ function MyDraftsPageInner() {
         });
         if (res.status === 401) {
           clearToken();
-          router.replace("/login");
+          window.location.replace("/login");
           return;
         }
         if (!res.ok) {
@@ -76,7 +76,7 @@ function MyDraftsPageInner() {
 
   useEffect(() => {
     if (!getToken()) {
-      router.replace("/login");
+      window.location.replace("/login");
       return;
     }
     const handle = getUser()?.handle ?? null;
@@ -86,7 +86,7 @@ function MyDraftsPageInner() {
         if (cancelled) return;
         if (res.status === 401) {
           clearToken();
-          router.replace("/login");
+          window.location.replace("/login");
           return;
         }
         if (!res.ok) {
@@ -125,7 +125,7 @@ function MyDraftsPageInner() {
       });
       if (res.status === 401) {
         clearToken();
-        router.replace("/login");
+        window.location.replace("/login");
         return;
       }
       if (!res.ok) {
@@ -143,7 +143,7 @@ function MyDraftsPageInner() {
 
   function onLogout() {
     clearToken();
-    router.replace("/login");
+    window.location.replace("/login");
   }
 
   return (

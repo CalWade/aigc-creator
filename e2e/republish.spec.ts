@@ -94,11 +94,11 @@ test.describe("二次编辑链路", () => {
       await route.fallback();
     });
 
-    await page.goto("/me/works");
+    await page.goto("/studio/me/works");
     await expect(page.getByText("已发布的稿")).toBeVisible({ timeout: 10_000 });
 
     await page.getByRole("button", { name: "继续编辑草稿" }).click();
-    await page.waitForURL(`**/drafts/${DRAFT_ID}`, { timeout: 10_000 });
+    await page.waitForURL(`**/studio/drafts/${DRAFT_ID}`, { timeout: 10_000 });
     expect(editCalls).toBe(1);
   });
 
@@ -133,7 +133,7 @@ test.describe("二次编辑链路", () => {
       await route.fallback();
     });
 
-    await page.goto(`/drafts/${DRAFT_ID}`);
+    await page.goto(`/studio/drafts/${DRAFT_ID}`);
 
     const banner = page.getByTestId("republish-banner");
     await expect(banner).toBeVisible({ timeout: 10_000 });

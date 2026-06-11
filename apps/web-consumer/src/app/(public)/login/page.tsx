@@ -96,7 +96,8 @@ export default function LoginPage() {
       const data = (await res.json()) as LoginResponse;
       setToken(data.accessToken);
       setUser(data.user);
-      router.push("/drafts/mine");
+      // 跨 Multi-Zones 跳到 studio,必须 hard navigation(Next 官方文档要求)
+      window.location.href = "/studio/drafts/mine";
     } catch (err) {
       setError(err instanceof Error ? err.message : "网络错误");
     } finally {

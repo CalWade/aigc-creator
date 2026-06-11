@@ -20,7 +20,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!getToken()) {
-      router.replace("/login");
+      window.location.replace("/login");
       return;
     }
     let cancelled = false;
@@ -29,7 +29,7 @@ export default function DashboardPage() {
         if (cancelled) return;
         if (res.status === 401) {
           clearToken();
-          router.replace("/login");
+          window.location.replace("/login");
           return;
         }
         if (!res.ok) {
@@ -132,12 +132,13 @@ function DashboardContent({ data }: { data: AnalyticsResponse }) {
                 {topPosts.map((p) => (
                   <tr key={p.id} className="border-t border-border hover:bg-accent/30">
                     <td className="px-3 py-2">
-                      <Link href={`/post/${p.id}`} className="hover:underline">
+                      {/* 跨 Multi-Zones 到 consumer 的 /post/:id,必须 <a> */}
+                      <a href={`/post/${p.id}`} className="hover:underline">
                         <span className="inline-flex items-center gap-2">
                           <span className="truncate">{p.title}</span>
                           <QualityBadge score={p.qualityOverall} size="sm" />
                         </span>
-                      </Link>
+                      </a>
                     </td>
                     <td className="px-3 py-2 text-right tabular-nums">
                       {p.qualityOverall.toFixed(0)}

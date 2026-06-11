@@ -36,7 +36,7 @@ export default function AdminOfflinePage() {
     e.preventDefault();
     if (!draftId.trim()) return;
     if (!getToken()) {
-      router.replace("/login");
+      window.location.replace("/login");
       return;
     }
     setState({ kind: "submitting" });
@@ -47,7 +47,7 @@ export default function AdminOfflinePage() {
       });
       if (res.status === 401) {
         clearToken();
-        router.replace("/login");
+        window.location.replace("/login");
         return;
       }
       if (!res.ok) {

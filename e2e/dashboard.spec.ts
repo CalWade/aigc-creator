@@ -67,7 +67,7 @@ test.describe("工作台数据看板", () => {
       });
     });
 
-    await page.goto("/me/dashboard");
+    await page.goto("/studio/me/dashboard");
     await expect(page.getByRole("heading", { name: "工作台" })).toBeVisible();
     await expect(page.getByText("作品总数")).toBeVisible();
     await expect(page.getByText("12", { exact: true })).toBeVisible();
@@ -83,7 +83,7 @@ test.describe("工作台数据看板", () => {
     await page.route("**/me/analytics", async (route) => {
       await route.fulfill({ status: 401, contentType: "application/json", body: "{}" });
     });
-    await page.goto("/me/dashboard");
+    await page.goto("/studio/me/dashboard");
     await page.waitForURL("**/login");
     const token = await page.evaluate(() =>
       window.localStorage.getItem("bytedance-aigc.accessToken"),

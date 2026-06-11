@@ -122,7 +122,7 @@ export default function AssetsPage() {
       if (thisLoad !== loadCountRef.current) return;
       if (res.status === 401) {
         clearToken();
-        router.replace("/login");
+        window.location.replace("/login");
         return;
       }
       if (!res.ok) {
@@ -140,7 +140,7 @@ export default function AssetsPage() {
 
   React.useEffect(() => {
     if (!getToken()) {
-      router.replace("/login");
+      window.location.replace("/login");
       return;
     }
     void loadAssets();
