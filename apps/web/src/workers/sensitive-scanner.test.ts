@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { handleScanRequest } from "./sensitive-scanner.worker";
-import type { SensitiveWordList } from "@bytedance-aigc/shared";
+import type { SensitiveWordList } from "@aigc-creator/shared";
 
 const wordList: SensitiveWordList = {
   version: "test",

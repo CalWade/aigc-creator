@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import type { CreateReportInput } from "@bytedance-aigc/shared";
+import type { CreateReportInput } from "@aigc-creator/shared";
 
 import { apiFetch } from "../lib/auth";
 

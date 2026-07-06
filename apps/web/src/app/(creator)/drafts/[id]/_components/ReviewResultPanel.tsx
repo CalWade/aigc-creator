@@ -1,6 +1,6 @@
 "use client";
 
-import type { SafetyKey } from "@bytedance-aigc/shared";
+import type { SafetyKey } from "@aigc-creator/shared";
 
 /* ── 常量映射 ── */
 

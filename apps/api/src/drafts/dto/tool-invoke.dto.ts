@@ -1,5 +1,5 @@
 import { IsIn, IsObject, IsOptional, IsString } from "class-validator";
-import { DRAFT_TOOL_TYPES, type DraftToolType } from "@bytedance-aigc/shared";
+import { DRAFT_TOOL_TYPES, type DraftToolType } from "@aigc-creator/shared";
 
 /**
  * 外壳 DTO。Plan D1:input 内层结构按 tool 各异,这里只校验外壳,

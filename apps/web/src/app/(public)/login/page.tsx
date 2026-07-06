@@ -4,11 +4,11 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { apiFetch, setToken, setUser, type AuthUser } from "@bytedance-aigc/ui/lib/auth";
-import { Button } from "@bytedance-aigc/ui/components/ui/button";
-import { Input } from "@bytedance-aigc/ui/components/ui/input";
-import { Label } from "@bytedance-aigc/ui/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@bytedance-aigc/ui/components/ui/tabs";
+import { apiFetch, setToken, setUser, type AuthUser } from "@aigc-creator/ui/lib/auth";
+import { Button } from "@aigc-creator/ui/components/ui/button";
+import { Input } from "@aigc-creator/ui/components/ui/input";
+import { Label } from "@aigc-creator/ui/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@aigc-creator/ui/components/ui/tabs";
 
 interface LoginResponse {
   accessToken: string;
@@ -305,7 +305,7 @@ export default function LoginPage() {
                 onChange={(e) => setHandle(e.target.value)}
               />
               <p className="text-[11px] text-muted-foreground">
-                训练营 demo 兼容入口，直接以 handle 登录已 seed 的用户。
+                demo 兼容入口，直接以 handle 登录已 seed 的用户。
               </p>
             </div>
           </TabsContent>

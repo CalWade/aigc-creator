@@ -13,9 +13,9 @@ import {
   TrendingUp,
   BarChart3,
 } from "lucide-react";
-import { cn } from "@bytedance-aigc/ui/lib/utils";
-import { apiFetch } from "@bytedance-aigc/ui/lib/auth";
-import { StatCard } from "@bytedance-aigc/ui/components/dashboard/stat-card";
+import { cn } from "@aigc-creator/ui/lib/utils";
+import { apiFetch } from "@aigc-creator/ui/lib/auth";
+import { StatCard } from "@aigc-creator/ui/components/dashboard/stat-card";
 
 interface AdminStats {
   totalUsers: number;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { OutlineItem } from "@bytedance-aigc/shared";
+import type { OutlineItem } from "@aigc-creator/shared";
 
 interface OutlinePanelProps {
   initial: OutlineItem[];

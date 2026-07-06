@@ -12,9 +12,9 @@ const DRAFT_ID = "draft-e2e-republish";
 
 async function seedAuth(page: import("@playwright/test").Page) {
   await page.addInitScript(() => {
-    window.localStorage.setItem("bytedance-aigc.accessToken", "tok-e2e-republish");
+    window.localStorage.setItem("aigc-creator.accessToken", "tok-e2e-republish");
     window.localStorage.setItem(
-      "bytedance-aigc.user",
+      "aigc-creator.user",
       JSON.stringify({ id: "u1", handle: "demo-author" }),
     );
   });

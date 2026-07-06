@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import type { SafeRewriteRequest } from "@bytedance-aigc/shared";
+import type { SafeRewriteRequest } from "@aigc-creator/shared";
 import { useSafeRewrite } from "@/hooks/use-safe-rewrite";
 
 interface Props {

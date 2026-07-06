@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import Link from "next/link";
-import { apiFetch } from "@bytedance-aigc/ui/lib/auth";
-import { cn } from "@bytedance-aigc/ui/lib/utils";
-import { Badge } from "@bytedance-aigc/ui/components/ui/badge";
-import { Button } from "@bytedance-aigc/ui/components/ui/button";
+import { apiFetch } from "@aigc-creator/ui/lib/auth";
+import { cn } from "@aigc-creator/ui/lib/utils";
+import { Badge } from "@aigc-creator/ui/components/ui/badge";
+import { Button } from "@aigc-creator/ui/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -14,17 +14,17 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@bytedance-aigc/ui/components/ui/dialog";
-import { Input } from "@bytedance-aigc/ui/components/ui/input";
-import { Label } from "@bytedance-aigc/ui/components/ui/label";
+} from "@aigc-creator/ui/components/ui/dialog";
+import { Input } from "@aigc-creator/ui/components/ui/input";
+import { Label } from "@aigc-creator/ui/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@bytedance-aigc/ui/components/ui/select";
-import { Tabs, TabsList, TabsTrigger } from "@bytedance-aigc/ui/components/ui/tabs";
+} from "@aigc-creator/ui/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@aigc-creator/ui/components/ui/tabs";
 
 interface SampleAuditItem {
   id: string;

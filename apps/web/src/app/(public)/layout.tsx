@@ -1,7 +1,7 @@
 import * as React from "react";
 import { SiteMasthead } from "@/components/site-masthead";
 import { SiteFooter } from "@/components/site-footer";
-import { Toaster } from "@bytedance-aigc/ui/components/ui/sonner";
+import { Toaster } from "@aigc-creator/ui/components/ui/sonner";
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   return (

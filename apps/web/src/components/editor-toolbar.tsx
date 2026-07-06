@@ -18,14 +18,14 @@ import {
   Settings2,
   Save,
 } from "lucide-react";
-import { Button } from "@bytedance-aigc/ui/components/ui/button";
+import { Button } from "@aigc-creator/ui/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@bytedance-aigc/ui/components/ui/dropdown-menu";
-import { Separator } from "@bytedance-aigc/ui/components/ui/separator";
+} from "@aigc-creator/ui/components/ui/dropdown-menu";
+import { Separator } from "@aigc-creator/ui/components/ui/separator";
 import { SaveStatus } from "./save-status";
 import type { AutosaveStatus } from "@/lib/use-autosave";
 

@@ -13,16 +13,16 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
 import { PromptDrawer } from "./PromptDrawer";
 
-vi.mock("@bytedance-aigc/ui/lib/auth", () => ({
+vi.mock("@aigc-creator/ui/lib/auth", () => ({
   apiFetch: vi.fn(),
 }));
 
 const setPromptIdMock = vi.fn();
-vi.mock("@bytedance-aigc/ui/hooks/use-active-prompt-id", () => ({
+vi.mock("@aigc-creator/ui/hooks/use-active-prompt-id", () => ({
   useActivePromptId: () => ({ promptId: null, setPromptId: setPromptIdMock }),
 }));
 
-import { apiFetch } from "@bytedance-aigc/ui/lib/auth";
+import { apiFetch } from "@aigc-creator/ui/lib/auth";
 
 const platformPrompt = {
   id: "plat-1",

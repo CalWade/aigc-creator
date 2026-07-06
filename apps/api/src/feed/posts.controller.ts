@@ -1,7 +1,7 @@
 import { Controller, Get, NotFoundException, Param, Query, Req } from "@nestjs/common";
 import type { Request } from "express";
-import type { PostDetailDto, PostDto } from "@bytedance-aigc/shared";
-import { hotnessMockBase, normalizeHotness } from "@bytedance-aigc/shared";
+import type { PostDetailDto, PostDto } from "@aigc-creator/shared";
+import { hotnessMockBase, normalizeHotness } from "@aigc-creator/shared";
 import { JwtService } from "@nestjs/jwt";
 import { Public } from "../auth/public.decorator";
 import type { JwtPayload } from "../auth/jwt-payload.interface";

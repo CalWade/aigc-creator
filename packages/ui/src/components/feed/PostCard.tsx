@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import type { PostDto } from "@bytedance-aigc/shared";
+import type { PostDto } from "@aigc-creator/shared";
 import { Card, CardContent } from "../ui/card";
 
 interface PostCardProps {

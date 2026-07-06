@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { JSONContent } from "@tiptap/react";
 
-import { apiFetch } from "@bytedance-aigc/ui/lib/auth";
+import { apiFetch } from "@aigc-creator/ui/lib/auth";
 import { VersionDiff } from "@/components/version-diff";
 import {
   Dialog,
@@ -11,8 +11,8 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@bytedance-aigc/ui/components/ui/dialog";
-import { Button } from "@bytedance-aigc/ui/components/ui/button";
+} from "@aigc-creator/ui/components/ui/dialog";
+import { Button } from "@aigc-creator/ui/components/ui/button";
 
 interface VersionDto {
   id: string;

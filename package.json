@@ -1,8 +1,8 @@
 {
-  "name": "bytedance-aigc",
+  "name": "aigc-creator",
   "version": "0.0.0",
   "private": true,
-  "description": "AI 创作者辅助生产与分发平台 — 字节头条 AI 前端训练营项目",
+  "description": "AI 创作者辅助生产与分发平台 — AI 创作者辅助生产与分发平台",
   "license": "MIT",
   "author": "CalvinWade",
   "engines": {
@@ -11,9 +11,9 @@
   },
   "packageManager": "pnpm@10.33.4",
   "scripts": {
-    "build": "pnpm --filter @bytedance-aigc/shared build && pnpm -r --parallel --filter=!@bytedance-aigc/shared build",
+    "build": "pnpm --filter @aigc-creator/shared build && pnpm -r --parallel --filter=!@aigc-creator/shared build",
     "dev": "pnpm build:deps && pnpm -r --parallel --stream run _dev",
-    "build:deps": "pnpm --filter @bytedance-aigc/shared build",
+    "build:deps": "pnpm --filter @aigc-creator/shared build",
     "lint": "pnpm -r --parallel lint",
     "test": "pnpm -r --parallel test",
     "typecheck": "pnpm build:deps && pnpm -r --parallel typecheck",
@@ -25,10 +25,10 @@
     "db:down": "docker compose down",
     "db:reset": "docker compose down -v && docker compose up -d",
     "db:logs": "docker compose logs -f",
-    "prisma:generate": "pnpm --filter @bytedance-aigc/api exec prisma generate",
-    "prisma:migrate": "pnpm --filter @bytedance-aigc/api exec prisma migrate dev",
-    "prisma:studio": "pnpm --filter @bytedance-aigc/api exec prisma studio",
-    "prisma:seed": "pnpm --filter @bytedance-aigc/api exec prisma db seed",
+    "prisma:generate": "pnpm --filter @aigc-creator/api exec prisma generate",
+    "prisma:migrate": "pnpm --filter @aigc-creator/api exec prisma migrate dev",
+    "prisma:studio": "pnpm --filter @aigc-creator/api exec prisma studio",
+    "prisma:seed": "pnpm --filter @aigc-creator/api exec prisma db seed",
     "prepare": "husky"
   },
   "pnpm": {

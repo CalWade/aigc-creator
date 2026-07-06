@@ -7,26 +7,26 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: bytedance-aigc-postgres
+    container_name: aigc-creator-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-bytedance_aigc}
+      POSTGRES_DB: ${POSTGRES_DB:-aigc_creator}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - pg_data:/var/lib/postgresql/data
     healthcheck:
       test:
-        ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-bytedance_aigc}"]
+        ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-aigc_creator}"]
       interval: 5s
       timeout: 5s
       retries: 10
 
   redis:
     image: redis:7-alpine
-    container_name: bytedance-aigc-redis
+    container_name: aigc-creator-redis
     restart: unless-stopped
     ports:
       - "${REDIS_PORT:-6379}:6379"
@@ -40,7 +40,7 @@ services:
 
   minio:
     image: minio/minio:latest
-    container_name: bytedance-aigc-minio
+    container_name: aigc-creator-minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:

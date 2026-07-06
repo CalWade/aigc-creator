@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import type { ReportResolution } from "@bytedance-aigc/shared";
+import type { ReportResolution } from "@aigc-creator/shared";
 
-import { Button } from "@bytedance-aigc/ui/components/ui/button";
+import { Button } from "@aigc-creator/ui/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -11,8 +11,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@bytedance-aigc/ui/components/ui/dialog";
-import { Input } from "@bytedance-aigc/ui/components/ui/input";
+} from "@aigc-creator/ui/components/ui/dialog";
+import { Input } from "@aigc-creator/ui/components/ui/input";
 import { useResolveReport } from "@/hooks/use-admin-reports";
 
 interface ResolveDialogProps {

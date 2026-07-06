@@ -1,5 +1,5 @@
 import { ConflictException } from "@nestjs/common";
-import { VERSION_CONFLICT } from "@bytedance-aigc/shared";
+import { VERSION_CONFLICT } from "@aigc-creator/shared";
 
 import { PrismaService } from "../prisma/prisma.service";
 import { NotificationsService } from "../notifications/notifications.service";

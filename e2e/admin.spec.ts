@@ -12,9 +12,9 @@ test.describe("admin 平台后台", () => {
   // RBAC mini:admin/layout.tsx 客户端守卫读 user.role,所有 case 都需要伪造 ADMIN user
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
-      window.localStorage.setItem("bytedance-aigc.accessToken", "tok-admin");
+      window.localStorage.setItem("aigc-creator.accessToken", "tok-admin");
       window.localStorage.setItem(
-        "bytedance-aigc.user",
+        "aigc-creator.user",
         JSON.stringify({ id: "u-admin", handle: "admin", role: "ADMIN" }),
       );
     });

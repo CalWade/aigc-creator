@@ -41,7 +41,7 @@ importers:
       '@aws-sdk/client-s3':
         specifier: 3.1063.0
         version: 3.1063.0
-      '@bytedance-aigc/shared':
+      '@aigc-creator/shared':
         specifier: workspace:*
         version: link:../../packages/shared
       '@nestjs/common':
@@ -189,10 +189,10 @@ importers:
 
   apps/web:
     dependencies:
-      '@bytedance-aigc/shared':
+      '@aigc-creator/shared':
         specifier: workspace:*
         version: link:../../packages/shared
-      '@bytedance-aigc/ui':
+      '@aigc-creator/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       '@radix-ui/react-avatar':
@@ -358,7 +358,7 @@ importers:
 
   packages/ui:
     dependencies:
-      '@bytedance-aigc/shared':
+      '@aigc-creator/shared':
         specifier: workspace:*
         version: link:../shared
       '@tiptap/pm':

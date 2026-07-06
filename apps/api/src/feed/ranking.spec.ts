@@ -7,7 +7,7 @@ import {
   timeDecayScore,
   type Scoreable,
   type ScoreContext,
-} from "@bytedance-aigc/shared";
+} from "@aigc-creator/shared";
 
 describe("timeDecayScore", () => {
   it("Δh=0 时返 100", () => {

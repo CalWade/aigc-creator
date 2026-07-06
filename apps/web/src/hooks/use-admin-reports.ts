@@ -1,8 +1,8 @@
 "use client";
 import { useState } from "react";
-import type { ReportDto, ReportStatus, ResolveReportInput } from "@bytedance-aigc/shared";
+import type { ReportDto, ReportStatus, ResolveReportInput } from "@aigc-creator/shared";
 
-import { apiFetch } from "@bytedance-aigc/ui/lib/auth";
+import { apiFetch } from "@aigc-creator/ui/lib/auth";
 
 export type AdminReportFilter = ReportStatus | "ALL";
 

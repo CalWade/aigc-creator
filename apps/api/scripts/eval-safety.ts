@@ -1,7 +1,7 @@
 /**
  * Phase 2.16 — 安全审核准确率评估脚本
  *
- * 用法:pnpm --filter @bytedance-aigc/api eval:safety
+ * 用法:pnpm --filter @aigc-creator/api eval:safety
  * 产物:docs/perf/safety-eval-YYYY-MM-DD.md
  * Exit code:Accuracy ≥ 0.90 → 0,否则 1
  */
@@ -11,7 +11,7 @@ import { join } from "node:path";
 import { NestFactory } from "@nestjs/core";
 import pLimit from "p-limit";
 
-import { SENSITIVE_CATEGORIES, type SensitiveCategory } from "@bytedance-aigc/shared";
+import { SENSITIVE_CATEGORIES, type SensitiveCategory } from "@aigc-creator/shared";
 import { AppModule } from "../src/app.module";
 import { ReviewService } from "../src/reviews/review.service";
 

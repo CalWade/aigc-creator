@@ -1,4 +1,4 @@
-import type { FeedResponse } from "@bytedance-aigc/shared";
+import type { FeedResponse } from "@aigc-creator/shared";
 import { PostCard } from "./PostCard";
 
 const PRIORITY_COUNT = 3;

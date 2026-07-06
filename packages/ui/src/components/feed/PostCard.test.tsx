@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
-import type { PostDto } from "@bytedance-aigc/shared";
+import type { PostDto } from "@aigc-creator/shared";
 import { PostCard } from "./PostCard";
 
 const mock: PostDto = {

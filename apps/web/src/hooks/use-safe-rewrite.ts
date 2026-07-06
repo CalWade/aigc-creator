@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import type { SafeRewriteFrame, SafeRewriteRequest } from "@bytedance-aigc/shared";
-import { streamFetch } from "@bytedance-aigc/ui/lib/sse";
+import type { SafeRewriteFrame, SafeRewriteRequest } from "@aigc-creator/shared";
+import { streamFetch } from "@aigc-creator/ui/lib/sse";
 
 type RouteStatus = "pending" | "streaming" | "done" | "error";
 

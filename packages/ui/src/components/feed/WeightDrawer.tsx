@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { DEFAULT_FEED_WEIGHTS, type FeedWeights } from "@bytedance-aigc/shared";
+import { DEFAULT_FEED_WEIGHTS, type FeedWeights } from "@aigc-creator/shared";
 
 import { Button } from "../ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "../ui/sheet";

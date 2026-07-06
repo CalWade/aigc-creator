@@ -1,5 +1,5 @@
 import { Controller, Get, Query } from "@nestjs/common";
-import type { FeedResponse } from "@bytedance-aigc/shared";
+import type { FeedResponse } from "@aigc-creator/shared";
 import { Public } from "../auth/public.decorator";
 import { FeedService } from "./feed.service";
 import { FeedQueryDto } from "./feed.dto";

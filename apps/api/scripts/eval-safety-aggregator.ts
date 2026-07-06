@@ -1,7 +1,7 @@
 /**
  * Phase 2.16 — eval-safety 聚合纯函数(便于单测)
  */
-import { SENSITIVE_CATEGORIES, type SensitiveCategory } from "@bytedance-aigc/shared";
+import { SENSITIVE_CATEGORIES, type SensitiveCategory } from "@aigc-creator/shared";
 
 export type Label = SensitiveCategory | "allow";
 export type SampleResult =

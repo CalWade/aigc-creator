@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import type { Editor } from "@tiptap/react";
-import { loadSensitiveWords } from "@bytedance-aigc/shared";
+import { loadSensitiveWords } from "@aigc-creator/shared";
 
 import { dispatchSetViolations, type Violation } from "@/lib/tiptap/review-decorations";
 import type { WorkerInbound, WorkerOutbound } from "../workers/sensitive-scanner.worker";

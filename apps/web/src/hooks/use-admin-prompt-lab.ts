@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { apiFetch } from "@bytedance-aigc/ui/lib/auth";
+import { apiFetch } from "@aigc-creator/ui/lib/auth";
 
 /**
  * Phase P1 — Prompt admin UI 数据层。

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { cn } from "@bytedance-aigc/ui/lib/utils";
+import { cn } from "@aigc-creator/ui/lib/utils";
 
 interface SidebarSectionProps {
   title?: string;

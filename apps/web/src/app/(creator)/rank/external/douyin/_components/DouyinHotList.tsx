@@ -3,12 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Badge } from "@bytedance-aigc/ui/components/ui/badge";
-import { Button } from "@bytedance-aigc/ui/components/ui/button";
-import { Card } from "@bytedance-aigc/ui/components/ui/card";
-import { apiFetch } from "@bytedance-aigc/ui/lib/auth";
-import { useAuthSnapshot } from "@bytedance-aigc/ui/lib/use-auth-snapshot";
-import type { DouyinTrendingResult } from "@bytedance-aigc/ui/components/feed/external-trending-types";
+import { Badge } from "@aigc-creator/ui/components/ui/badge";
+import { Button } from "@aigc-creator/ui/components/ui/button";
+import { Card } from "@aigc-creator/ui/components/ui/card";
+import { apiFetch } from "@aigc-creator/ui/lib/auth";
+import { useAuthSnapshot } from "@aigc-creator/ui/lib/use-auth-snapshot";
+import type { DouyinTrendingResult } from "@aigc-creator/ui/components/feed/external-trending-types";
 
 const LABEL_VARIANT: Record<string, "destructive" | "outline" | "secondary"> = {
   爆: "destructive",

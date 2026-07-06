@@ -5,15 +5,15 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 
 import MyWorksPage from "../page";
-import type { MeWorksItem } from "@bytedance-aigc/shared";
+import type { MeWorksItem } from "@aigc-creator/shared";
 
-vi.mock("@bytedance-aigc/ui/lib/auth", () => ({
+vi.mock("@aigc-creator/ui/lib/auth", () => ({
   apiFetch: vi.fn(),
   getToken: vi.fn(() => "fake-token"),
   clearToken: vi.fn(),
 }));
 
-import { apiFetch } from "@bytedance-aigc/ui/lib/auth";
+import { apiFetch } from "@aigc-creator/ui/lib/auth";
 
 const pushMock = vi.fn();
 const refreshMock = vi.fn();

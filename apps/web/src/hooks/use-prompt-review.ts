@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import type { PromptReviewResponse } from "@bytedance-aigc/shared";
+import type { PromptReviewResponse } from "@aigc-creator/shared";
 
-import { apiFetch } from "@bytedance-aigc/ui/lib/auth";
+import { apiFetch } from "@aigc-creator/ui/lib/auth";
 
 const DEBOUNCE_MS = 800;
 

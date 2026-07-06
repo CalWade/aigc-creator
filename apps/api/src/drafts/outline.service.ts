@@ -1,5 +1,5 @@
 import { BadGatewayException, Injectable } from "@nestjs/common";
-import type { OutlineItem } from "@bytedance-aigc/shared";
+import type { OutlineItem } from "@aigc-creator/shared";
 
 import { LlmClient } from "../llm/llm.client";
 import type { ChatMessage } from "../llm/dto/chat-message.dto";

@@ -4,11 +4,11 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { apiFetch, setToken, setUser, type AuthUser } from "@bytedance-aigc/ui/lib/auth";
-import { Button } from "@bytedance-aigc/ui/components/ui/button";
-import { Input } from "@bytedance-aigc/ui/components/ui/input";
-import { Label } from "@bytedance-aigc/ui/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@bytedance-aigc/ui/components/ui/tabs";
+import { apiFetch, setToken, setUser, type AuthUser } from "@aigc-creator/ui/lib/auth";
+import { Button } from "@aigc-creator/ui/components/ui/button";
+import { Input } from "@aigc-creator/ui/components/ui/input";
+import { Label } from "@aigc-creator/ui/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@aigc-creator/ui/components/ui/tabs";
 
 interface RegisterResponse {
   accessToken: string;

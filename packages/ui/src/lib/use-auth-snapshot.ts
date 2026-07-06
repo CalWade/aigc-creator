@@ -20,8 +20,8 @@ function subscribe(cb: () => void) {
 
 function readAuth(): AuthSnapshot {
   if (typeof window === "undefined") return EMPTY;
-  const token = window.localStorage.getItem("bytedance-aigc.accessToken");
-  const userRaw = window.localStorage.getItem("bytedance-aigc.user");
+  const token = window.localStorage.getItem("aigc-creator.accessToken");
+  const userRaw = window.localStorage.getItem("aigc-creator.user");
   const hasToken = !!token;
   const userId = cachedSnap.user?.id ?? null;
   const userHandle = cachedSnap.user?.handle ?? null;

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { Prisma, ReactionKind } from "@prisma/client";
-import type { PostReactionsDto } from "@bytedance-aigc/shared";
+import type { PostReactionsDto } from "@aigc-creator/shared";
 import { PrismaService } from "../prisma/prisma.service";
 
 @Injectable()

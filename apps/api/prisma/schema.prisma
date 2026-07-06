@@ -1,4 +1,4 @@
-// bytedance-aigc · apps/api · Prisma schema
+// aigc-creator · apps/api · Prisma schema
 // Phase 1.1 初始数据建模:User / Draft / DraftVersion
 // Phase 1.2 追加 Prompt 库:owner 区分平台 / 私人,9 个 AI 工具枚举锁 DB 层
 // 演化路线见 docs/architecture.md §4.1
@@ -64,13 +64,12 @@ enum DraftToolType {
 }
 
 enum ReportCategory {
-  POLITICS
   PORNOGRAPHY
   GAMBLING
   DRUGS
-  VULGARITY
+  ABUSE
   FRAUD
-  MEDICAL
+  ILLICIT_ADS
   OTHER
 }
 

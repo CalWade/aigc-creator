@@ -1,8 +1,8 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { load as yamlLoad } from "js-yaml";
-import type { SensitiveCategory } from "@bytedance-aigc/shared";
-import { SENSITIVE_CATEGORIES } from "@bytedance-aigc/shared";
+import type { SensitiveCategory } from "@aigc-creator/shared";
+import { SENSITIVE_CATEGORIES } from "@aigc-creator/shared";
 
 export const RULE_CATEGORIES = SENSITIVE_CATEGORIES;
 

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@bytedance-aigc/ui/components/theme-provider";
+import { ThemeProvider } from "@aigc-creator/ui/components/theme-provider";
 
 const sans = Inter({
   subsets: ["latin"],

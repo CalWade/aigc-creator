@@ -1,6 +1,6 @@
 import { INestApplication, ValidationPipe } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
-import { VERSION_CONFLICT } from "@bytedance-aigc/shared";
+import { VERSION_CONFLICT } from "@aigc-creator/shared";
 import request from "supertest";
 import { App } from "supertest/types";
 

@@ -3,13 +3,13 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
 import AssetsPage from "../page";
 
-vi.mock("@bytedance-aigc/ui/lib/auth", () => ({
+vi.mock("@aigc-creator/ui/lib/auth", () => ({
   apiFetch: vi.fn(),
   getToken: vi.fn(() => "fake-token"),
   clearToken: vi.fn(),
 }));
 
-import { apiFetch } from "@bytedance-aigc/ui/lib/auth";
+import { apiFetch } from "@aigc-creator/ui/lib/auth";
 
 // Mock next/navigation
 const pushMock = vi.fn();

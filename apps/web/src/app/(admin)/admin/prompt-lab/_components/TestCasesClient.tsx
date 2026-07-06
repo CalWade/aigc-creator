@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { Badge } from "@bytedance-aigc/ui/components/ui/badge";
-import { Button } from "@bytedance-aigc/ui/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@bytedance-aigc/ui/components/ui/card";
+import { Badge } from "@aigc-creator/ui/components/ui/badge";
+import { Button } from "@aigc-creator/ui/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@aigc-creator/ui/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -13,16 +13,16 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@bytedance-aigc/ui/components/ui/dialog";
-import { Input } from "@bytedance-aigc/ui/components/ui/input";
-import { Label } from "@bytedance-aigc/ui/components/ui/label";
+} from "@aigc-creator/ui/components/ui/dialog";
+import { Input } from "@aigc-creator/ui/components/ui/input";
+import { Label } from "@aigc-creator/ui/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@bytedance-aigc/ui/components/ui/select";
+} from "@aigc-creator/ui/components/ui/select";
 import { DRAFT_TOOL_TYPES, type DraftToolType, useTestCases } from "@/hooks/use-admin-prompt-lab";
 
 const ALL_TOOLS = "__all__";

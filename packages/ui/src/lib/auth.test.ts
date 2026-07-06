@@ -22,7 +22,7 @@ describe("lib/auth", () => {
     setUser({ id: "u1", handle: "demo" });
     expect(getUser()).toEqual({ id: "u1", handle: "demo" });
 
-    window.localStorage.setItem("bytedance-aigc.user", "{not json");
+    window.localStorage.setItem("aigc-creator.user", "{not json");
     expect(getUser()).toBeNull();
   });
 

@@ -14,10 +14,10 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { apiFetch, clearToken, getToken } from "@bytedance-aigc/ui/lib/auth";
-import { uploadImageWithReview } from "@bytedance-aigc/ui/lib/upload-image";
-import type { UploadReviewResult } from "@bytedance-aigc/ui/lib/upload-image";
-import { Button } from "@bytedance-aigc/ui/components/ui/button";
+import { apiFetch, clearToken, getToken } from "@aigc-creator/ui/lib/auth";
+import { uploadImageWithReview } from "@aigc-creator/ui/lib/upload-image";
+import type { UploadReviewResult } from "@aigc-creator/ui/lib/upload-image";
+import { Button } from "@aigc-creator/ui/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -25,17 +25,17 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@bytedance-aigc/ui/components/ui/dialog";
-import { Input } from "@bytedance-aigc/ui/components/ui/input";
-import { Label } from "@bytedance-aigc/ui/components/ui/label";
+} from "@aigc-creator/ui/components/ui/dialog";
+import { Input } from "@aigc-creator/ui/components/ui/input";
+import { Label } from "@aigc-creator/ui/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@bytedance-aigc/ui/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@bytedance-aigc/ui/components/ui/tabs";
+} from "@aigc-creator/ui/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@aigc-creator/ui/components/ui/tabs";
 
 interface AssetItem {
   id: string;
@@ -60,7 +60,7 @@ interface StockItem {
 }
 
 /**
- * 开放图库:训练营 demo 用站内 cover-{1..5}.webp 充当无版权素材库。
+ * 开放图库:demo 用站内 cover-{1..5}.webp 充当无版权素材库。
  * 生产可换 Unsplash / Pexels;接口形态保持 StockItem 即可。
  */
 const STOCK_LIBRARY: StockItem[] = [
@@ -216,7 +216,7 @@ export default function AssetsPage() {
 
   /**
    * 把开放图库里的图加到我的素材:抓 blob → 走 /assets/upload。
-   * 训练营 demo 阶段简化处理;生产应做 server-to-server。
+   * demo 阶段简化处理;生产应做 server-to-server。
    */
   async function adoptStock(item: StockItem) {
     setUploading(true);
@@ -426,7 +426,7 @@ export default function AssetsPage() {
 
         <TabsContent value="stock" className="mt-4">
           <p className="text-sm text-muted-foreground mb-3">
-            训练营 demo 内置图库,点击图片可加入「我的素材」。
+            demo 内置图库,点击图片可加入「我的素材」。
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             {STOCK_LIBRARY.map((item) => (

@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import type { MeWorksItem } from "@bytedance-aigc/shared";
-import { apiFetch, clearToken, getToken } from "@bytedance-aigc/ui/lib/auth";
+import type { MeWorksItem } from "@aigc-creator/shared";
+import { apiFetch, clearToken, getToken } from "@aigc-creator/ui/lib/auth";
 
 type LoadState =
   | { kind: "loading" }

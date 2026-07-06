@@ -21,8 +21,8 @@ import {
   LogIn,
   type LucideIcon,
 } from "lucide-react";
-import { cn } from "@bytedance-aigc/ui/lib/utils";
-import { useAuthSnapshot } from "@bytedance-aigc/ui/lib/use-auth-snapshot";
+import { cn } from "@aigc-creator/ui/lib/utils";
+import { useAuthSnapshot } from "@aigc-creator/ui/lib/use-auth-snapshot";
 import { SidebarSection } from "./sidebar-section";
 
 interface NavItem {

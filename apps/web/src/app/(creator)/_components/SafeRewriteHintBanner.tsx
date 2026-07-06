@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Button } from "@bytedance-aigc/ui/components/ui/button";
+import { Button } from "@aigc-creator/ui/components/ui/button";
 
 interface Hint {
   draftId: string;

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { PreflightResponse, SafetyKey } from "@bytedance-aigc/shared";
+import type { PreflightResponse, SafetyKey } from "@aigc-creator/shared";
 import { RefreshCw, ShieldCheck, Zap } from "lucide-react";
 
 import { usePreflight, usePublish } from "@/lib/use-preflight";
@@ -14,8 +14,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@bytedance-aigc/ui/components/ui/dialog";
-import { Button } from "@bytedance-aigc/ui/components/ui/button";
+} from "@aigc-creator/ui/components/ui/dialog";
+import { Button } from "@aigc-creator/ui/components/ui/button";
 import { RecommendationBadge } from "./RecommendationBadge";
 import {
   SAFETY_LABEL,

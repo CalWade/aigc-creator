@@ -3,10 +3,10 @@
 import * as React from "react";
 import Link from "next/link";
 import { LogOut, User as UserIcon, FileText, LayoutDashboard, LogIn } from "lucide-react";
-import { apiFetch, clearToken } from "@bytedance-aigc/ui/lib/auth";
-import { useAuthSnapshot } from "@bytedance-aigc/ui/lib/use-auth-snapshot";
-import { Button } from "@bytedance-aigc/ui/components/ui/button";
-import { Avatar, AvatarFallback } from "@bytedance-aigc/ui/components/ui/avatar";
+import { apiFetch, clearToken } from "@aigc-creator/ui/lib/auth";
+import { useAuthSnapshot } from "@aigc-creator/ui/lib/use-auth-snapshot";
+import { Button } from "@aigc-creator/ui/components/ui/button";
+import { Avatar, AvatarFallback } from "@aigc-creator/ui/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,7 +14,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@bytedance-aigc/ui/components/ui/dropdown-menu";
+} from "@aigc-creator/ui/components/ui/dropdown-menu";
 
 export function UserMenu() {
   const { user, isLoggedIn } = useAuthSnapshot();

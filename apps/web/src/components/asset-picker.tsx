@@ -3,17 +3,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CheckCircle2, ImagePlus, ShieldAlert, ShieldCheck, UploadCloud, X } from "lucide-react";
 
-import { apiFetch } from "@bytedance-aigc/ui/lib/auth";
-import { uploadImageWithReview } from "@bytedance-aigc/ui/lib/upload-image";
-import type { UploadReviewResult } from "@bytedance-aigc/ui/lib/upload-image";
+import { apiFetch } from "@aigc-creator/ui/lib/auth";
+import { uploadImageWithReview } from "@aigc-creator/ui/lib/upload-image";
+import type { UploadReviewResult } from "@aigc-creator/ui/lib/upload-image";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from "@bytedance-aigc/ui/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@bytedance-aigc/ui/components/ui/tabs";
+} from "@aigc-creator/ui/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@aigc-creator/ui/components/ui/tabs";
 
 interface AssetPickerProps {
   open: boolean;

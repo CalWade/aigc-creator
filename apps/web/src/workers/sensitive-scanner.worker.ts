@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 
-import type { SensitiveWordList } from "@bytedance-aigc/shared";
-import { flattenWords } from "@bytedance-aigc/shared";
+import type { SensitiveWordList } from "@aigc-creator/shared";
+import { flattenWords } from "@aigc-creator/shared";
 import { buildAC, search } from "./aho-corasick";
 import type { AC, ACHit } from "./aho-corasick";
 

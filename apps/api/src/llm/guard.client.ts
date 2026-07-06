@@ -5,7 +5,7 @@ import * as OpenApi from "@alicloud/openapi-client";
 import * as Util from "@alicloud/tea-util";
 
 import { getGuardConfig } from "../config/guard.config";
-import type { SensitiveCategory } from "@bytedance-aigc/shared";
+import type { SensitiveCategory } from "@aigc-creator/shared";
 
 // ── 响应类型 ──────────────────────────────────
 

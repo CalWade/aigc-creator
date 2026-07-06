@@ -4,9 +4,9 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { Plus } from "lucide-react";
-import { apiFetch, clearToken, getToken } from "@bytedance-aigc/ui/lib/auth";
-import { Button } from "@bytedance-aigc/ui/components/ui/button";
-import { Card } from "@bytedance-aigc/ui/components/ui/card";
+import { apiFetch, clearToken, getToken } from "@aigc-creator/ui/lib/auth";
+import { Button } from "@aigc-creator/ui/components/ui/button";
+import { Card } from "@aigc-creator/ui/components/ui/card";
 
 interface DraftItem {
   id: string;

@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import type { OutlineItem } from "@bytedance-aigc/shared";
+import type { OutlineItem } from "@aigc-creator/shared";
 
-import { streamFetch } from "@bytedance-aigc/ui/lib/sse";
+import { streamFetch } from "@aigc-creator/ui/lib/sse";
 
 interface FrameEnvelope {
   type: "section.start" | "token" | "section.end" | "done" | "error";

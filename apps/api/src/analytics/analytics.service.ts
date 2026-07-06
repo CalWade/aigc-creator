@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import type { AnalyticsResponse, AnalyticsTotals, AnalyticsTopPost } from "@bytedance-aigc/shared";
+import type { AnalyticsResponse, AnalyticsTotals, AnalyticsTopPost } from "@aigc-creator/shared";
 
 import { PrismaService } from "../prisma/prisma.service";
 

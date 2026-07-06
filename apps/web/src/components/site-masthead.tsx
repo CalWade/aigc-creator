@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { clearToken } from "@bytedance-aigc/ui/lib/auth";
-import { useAuthSnapshot } from "@bytedance-aigc/ui/lib/use-auth-snapshot";
-import { Button } from "@bytedance-aigc/ui/components/ui/button";
+import { clearToken } from "@aigc-creator/ui/lib/auth";
+import { useAuthSnapshot } from "@aigc-creator/ui/lib/use-auth-snapshot";
+import { Button } from "@aigc-creator/ui/components/ui/button";
 
 export function SiteMasthead() {
   const { user, isLoggedIn } = useAuthSnapshot();

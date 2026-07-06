@@ -1,5 +1,5 @@
-const TOKEN_KEY = "bytedance-aigc.accessToken";
-const USER_KEY = "bytedance-aigc.user";
+const TOKEN_KEY = "aigc-creator.accessToken";
+const USER_KEY = "aigc-creator.user";
 
 export interface AuthUser {
   id: string;

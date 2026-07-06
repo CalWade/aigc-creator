@@ -16,6 +16,7 @@ import { PrismaClient } from "@prisma/client";
 
 import { DEMO_DRAFTS } from "./drafts";
 import { DEMO_NOTIFICATIONS } from "./notifications";
+import { buildPostStatFixtures } from "./post-stats";
 import { PROMPT_STARTERS } from "./prompts";
 import { PROMPT_TEST_CASES } from "./prompt-test-cases";
 import { applyReportFixtures, DEMO_REPORTS } from "./reports";
@@ -69,6 +70,15 @@ export async function applyAllFixtures(prisma: PrismaClient): Promise<FixtureSum
   const prompts = await prisma.prompt.createMany({ data: PROMPT_STARTERS });
   const testCases = await prisma.promptTestCase.createMany({ data: PROMPT_TEST_CASES });
   const drafts = await prisma.draft.createMany({ data: DEMO_DRAFTS });
+
+  // Seed PostStat for published fixture drafts (hotness needs real data)
+  const publishedDraftIds = DEMO_DRAFTS.filter((d) => d.status === "PUBLISHED")
+    .map((d) => d.id)
+    .filter((id): id is string => !!id);
+  const postStats = await prisma.postStat.createMany({
+    data: buildPostStatFixtures(publishedDraftIds),
+  });
+
   const reviewCount = await applyReviews(prisma);
   const reportCount = await applyReportFixtures(prisma);
   const notifications = await prisma.notification.createMany({ data: DEMO_NOTIFICATIONS });

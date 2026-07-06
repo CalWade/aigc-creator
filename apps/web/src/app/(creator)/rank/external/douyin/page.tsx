@@ -1,8 +1,8 @@
 import { Suspense } from "react";
-import { Card } from "@bytedance-aigc/ui/components/ui/card";
-import { Skeleton } from "@bytedance-aigc/ui/components/ui/skeleton";
-import { serverFetchJson } from "@bytedance-aigc/ui/lib/server-fetch";
-import type { DouyinTrendingResult } from "@bytedance-aigc/ui/components/feed/external-trending-types";
+import { Card } from "@aigc-creator/ui/components/ui/card";
+import { Skeleton } from "@aigc-creator/ui/components/ui/skeleton";
+import { serverFetchJson } from "@aigc-creator/ui/lib/server-fetch";
+import type { DouyinTrendingResult } from "@aigc-creator/ui/components/feed/external-trending-types";
 import { DouyinHotList } from "./_components/DouyinHotList";
 
 /**

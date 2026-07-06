@@ -1,5 +1,5 @@
 import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from "@nestjs/common";
-import type { PromptReviewResponse, SectionReviewResponse } from "@bytedance-aigc/shared";
+import type { PromptReviewResponse, SectionReviewResponse } from "@aigc-creator/shared";
 
 import { CurrentUser } from "../auth/current-user.decorator";
 import type { JwtPayload } from "../auth/jwt-payload.interface";

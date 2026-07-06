@@ -2,9 +2,9 @@
 
 import { useEffect } from "react";
 
-import { Button } from "@bytedance-aigc/ui/components/ui/button";
-import { Card, CardContent } from "@bytedance-aigc/ui/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@bytedance-aigc/ui/components/ui/tabs";
+import { Button } from "@aigc-creator/ui/components/ui/button";
+import { Card, CardContent } from "@aigc-creator/ui/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@aigc-creator/ui/components/ui/tabs";
 import { useAdminReports, type AdminReportFilter } from "@/hooks/use-admin-reports";
 
 import { ReportRow } from "./ReportRow";

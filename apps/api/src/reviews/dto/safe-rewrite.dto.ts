@@ -1,5 +1,5 @@
 import { IsArray, IsIn, IsString, MaxLength, MinLength } from "class-validator";
-import { SENSITIVE_CATEGORIES, type SensitiveCategory } from "@bytedance-aigc/shared";
+import { SENSITIVE_CATEGORIES, type SensitiveCategory } from "@aigc-creator/shared";
 
 export class SafeRewriteDto {
   @IsString()

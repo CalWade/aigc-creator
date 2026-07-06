@@ -3,8 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { apiFetch, clearToken, getToken } from "@bytedance-aigc/ui/lib/auth";
-import { Button } from "@bytedance-aigc/ui/components/ui/button";
+import { apiFetch, clearToken, getToken } from "@aigc-creator/ui/lib/auth";
+import { Button } from "@aigc-creator/ui/components/ui/button";
 import {
   Card,
   CardContent,
@@ -12,8 +12,8 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
-} from "@bytedance-aigc/ui/components/ui/card";
-import { Input } from "@bytedance-aigc/ui/components/ui/input";
+} from "@aigc-creator/ui/components/ui/card";
+import { Input } from "@aigc-creator/ui/components/ui/input";
 
 interface ApiError {
   code?: string;

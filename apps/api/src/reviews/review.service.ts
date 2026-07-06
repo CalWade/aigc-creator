@@ -12,8 +12,8 @@ import type {
   SensitiveCategory,
   SafetyKey,
   Severity,
-} from "@bytedance-aigc/shared";
-import { SAFETY_KEYS, QUALITY_KEYS } from "@bytedance-aigc/shared";
+} from "@aigc-creator/shared";
+import { SAFETY_KEYS, QUALITY_KEYS } from "@aigc-creator/shared";
 
 import { LlmClient } from "../llm/llm.client";
 import {

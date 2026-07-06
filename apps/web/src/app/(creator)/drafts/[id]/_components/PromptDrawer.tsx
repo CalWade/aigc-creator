@@ -1,23 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PROMPT_DRAWER_TOOLS, DRAFT_TOOL_LABELS, type DraftToolType } from "@bytedance-aigc/shared";
+import { PROMPT_DRAWER_TOOLS, DRAFT_TOOL_LABELS, type DraftToolType } from "@aigc-creator/shared";
 
-import { apiFetch } from "@bytedance-aigc/ui/lib/auth";
-import { useActivePromptId } from "@bytedance-aigc/ui/hooks/use-active-prompt-id";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@bytedance-aigc/ui/components/ui/sheet";
+import { apiFetch } from "@aigc-creator/ui/lib/auth";
+import { useActivePromptId } from "@aigc-creator/ui/hooks/use-active-prompt-id";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@aigc-creator/ui/components/ui/sheet";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@bytedance-aigc/ui/components/ui/select";
+} from "@aigc-creator/ui/components/ui/select";
 
 interface PromptItem {
   id: string;

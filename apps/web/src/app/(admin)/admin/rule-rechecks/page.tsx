@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { apiFetch } from "@bytedance-aigc/ui/lib/auth";
-import { cn } from "@bytedance-aigc/ui/lib/utils";
-import { Badge } from "@bytedance-aigc/ui/components/ui/badge";
-import { Button } from "@bytedance-aigc/ui/components/ui/button";
+import { apiFetch } from "@aigc-creator/ui/lib/auth";
+import { cn } from "@aigc-creator/ui/lib/utils";
+import { Badge } from "@aigc-creator/ui/components/ui/badge";
+import { Button } from "@aigc-creator/ui/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -13,9 +13,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@bytedance-aigc/ui/components/ui/dialog";
-import { Input } from "@bytedance-aigc/ui/components/ui/input";
-import { Label } from "@bytedance-aigc/ui/components/ui/label";
+} from "@aigc-creator/ui/components/ui/dialog";
+import { Input } from "@aigc-creator/ui/components/ui/input";
+import { Label } from "@aigc-creator/ui/components/ui/label";
 
 interface RuleRecheckRun {
   id: string;

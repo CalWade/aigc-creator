@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Heart, Bookmark, Share2 } from "lucide-react";
 import { toast } from "sonner";
-import type { PostReactionsDto } from "@bytedance-aigc/shared";
+import type { PostReactionsDto } from "@aigc-creator/shared";
 
 import { apiFetch, getUser } from "../../lib/auth";
 import { Button } from "../ui/button";

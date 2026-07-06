@@ -12,8 +12,8 @@ import {
   Sparkles,
   type LucideIcon,
 } from "lucide-react";
-import { cn } from "@bytedance-aigc/ui/lib/utils";
-import { useAuthSnapshot } from "@bytedance-aigc/ui/lib/use-auth-snapshot";
+import { cn } from "@aigc-creator/ui/lib/utils";
+import { useAuthSnapshot } from "@aigc-creator/ui/lib/use-auth-snapshot";
 import { ThemeToggle } from "@/components/shell/theme-toggle";
 import { UserMenu } from "@/components/shell/user-menu";
 

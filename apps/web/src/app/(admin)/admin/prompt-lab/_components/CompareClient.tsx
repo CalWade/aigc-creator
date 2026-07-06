@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { Badge } from "@bytedance-aigc/ui/components/ui/badge";
-import { Button } from "@bytedance-aigc/ui/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@bytedance-aigc/ui/components/ui/card";
+import { Badge } from "@aigc-creator/ui/components/ui/badge";
+import { Button } from "@aigc-creator/ui/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@aigc-creator/ui/components/ui/card";
 import { useCompare } from "@/hooks/use-admin-prompt-lab";
 
 export function CompareClient({ evalRunId }: { evalRunId: string }) {

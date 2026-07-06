@@ -1,11 +1,19 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Search } from "lucide-react";
 import { Breadcrumb } from "./breadcrumb";
 import { ThemeToggle } from "./theme-toggle";
 import { UserMenu } from "./user-menu";
-import { Kbd } from "@bytedance-aigc/ui/components/ui/kbd";
-import { NotificationBell } from "@bytedance-aigc/ui/components/notification-bell";
+import { Kbd } from "@aigc-creator/ui/components/ui/kbd";
+
+const NotificationBell = dynamic(
+  () =>
+    import("@aigc-creator/ui/components/notification-bell").then((m) => ({
+      default: m.NotificationBell,
+    })),
+  { ssr: false },
+);
 
 export function TopBar() {
   return (

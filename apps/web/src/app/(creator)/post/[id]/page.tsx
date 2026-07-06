@@ -1,11 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import type { PostDetailDto } from "@bytedance-aigc/shared";
-import { serverFetchJson } from "@bytedance-aigc/ui/lib/server-fetch";
-import { ReactionBar } from "@bytedance-aigc/ui/components/post/ReactionBar";
-import { PostBody } from "@bytedance-aigc/ui/components/post/PostBody";
-import { QualityBadge } from "@bytedance-aigc/ui/components/feed/QualityBadge";
+import type { PostDetailDto } from "@aigc-creator/shared";
+import { serverFetchJson } from "@aigc-creator/ui/lib/server-fetch";
+import { ReactionBar } from "@aigc-creator/ui/components/post/ReactionBar";
+import { PostBody } from "@aigc-creator/ui/components/post/PostBody";
+import { QualityBadge } from "@aigc-creator/ui/components/feed/QualityBadge";
 
 export const dynamic = "force-dynamic";
 

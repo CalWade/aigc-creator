@@ -1,4 +1,4 @@
-import type { FeedWeights } from "@bytedance-aigc/shared";
+import type { FeedWeights } from "@aigc-creator/shared";
 
 /**
  * Cursor 表示「翻到候选池中第几条」+ 当时的权重快照。

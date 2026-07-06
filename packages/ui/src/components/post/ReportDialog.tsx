@@ -5,7 +5,7 @@ import {
   REPORT_CATEGORIES,
   REPORT_CATEGORY_LABELS,
   type ReportCategory,
-} from "@bytedance-aigc/shared";
+} from "@aigc-creator/shared";
 
 import { useCreateReport } from "../../hooks/use-report";
 
@@ -16,7 +16,7 @@ interface ReportDialogProps {
 }
 
 export function ReportDialog({ postId, open, onClose }: ReportDialogProps) {
-  const [category, setCategory] = useState<ReportCategory>("VULGARITY");
+  const [category, setCategory] = useState<ReportCategory>("ABUSE");
   const [reason, setReason] = useState("");
   const { loading, error, done, submit, reset } = useCreateReport(postId);
 

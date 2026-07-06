@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import type { Prompt } from "@prisma/client";
-import type { Candidate, DraftToolType } from "@bytedance-aigc/shared";
+import type { Candidate, DraftToolType } from "@aigc-creator/shared";
 
 import { LlmClient } from "../llm/llm.client";
 import type { ChatMessage } from "../llm/dto/chat-message.dto";

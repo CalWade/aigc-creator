@@ -1,4 +1,7 @@
-import { SENSITIVE_CATEGORIES as SENSITIVE_CATEGORIES_FOR_TEST } from "@bytedance-aigc/shared";
+import {
+  SENSITIVE_CATEGORIES as SENSITIVE_CATEGORIES_FOR_TEST,
+  type ReviewQuality,
+} from "@aigc-creator/shared";
 
 import { LlmClient } from "../llm/llm.client";
 import { GuardClient } from "../llm/guard.client";
@@ -146,7 +149,7 @@ function makeService(guardResult: GuardResult, qualityRaw: string, safetyRaw = S
     findDefaultByTool: jest.fn().mockImplementation((tool: string) => {
       if (tool === "QUALITY_REVIEW") {
         return Promise.resolve({
-          systemPrompt: "你是头条资深编辑。请对给定文章按 4 个维度打分",
+          systemPrompt: "你是资深编辑。请对给定文章按 4 个维度打分",
           params: {},
         });
       }

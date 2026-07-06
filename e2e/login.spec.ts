@@ -32,7 +32,7 @@ test.describe("登录流程", () => {
 
     await page.waitForURL("**/drafts/mine");
     const token = await page.evaluate(() =>
-      window.localStorage.getItem("bytedance-aigc.accessToken"),
+      window.localStorage.getItem("aigc-creator.accessToken"),
     );
     expect(token).toBe("tok-fake-12345");
   });

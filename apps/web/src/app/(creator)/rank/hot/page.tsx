@@ -1,11 +1,11 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import type { FeedResponse } from "@bytedance-aigc/shared";
-import { serverFetchJson } from "@bytedance-aigc/ui/lib/server-fetch";
-import { Card } from "@bytedance-aigc/ui/components/ui/card";
-import { FeedList } from "@bytedance-aigc/ui/components/feed/FeedList";
-import { FeedSkeleton } from "@bytedance-aigc/ui/components/feed/FeedSkeleton";
-import { LoadMore } from "@bytedance-aigc/ui/components/feed/LoadMore";
+import type { FeedResponse } from "@aigc-creator/shared";
+import { serverFetchJson } from "@aigc-creator/ui/lib/server-fetch";
+import { Card } from "@aigc-creator/ui/components/ui/card";
+import { FeedList } from "@aigc-creator/ui/components/feed/FeedList";
+import { FeedSkeleton } from "@aigc-creator/ui/components/feed/FeedSkeleton";
+import { LoadMore } from "@aigc-creator/ui/components/feed/LoadMore";
 
 export const revalidate = 30;
 

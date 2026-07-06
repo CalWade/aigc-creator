@@ -50,9 +50,9 @@ test.describe("工作台数据看板", () => {
   test.beforeEach(async ({ page }) => {
     // 必须先把 token 写进 localStorage,否则 useEffect 的 getToken() 会跳走 /login
     await page.addInitScript(() => {
-      window.localStorage.setItem("bytedance-aigc.accessToken", "tok-test-1");
+      window.localStorage.setItem("aigc-creator.accessToken", "tok-test-1");
       window.localStorage.setItem(
-        "bytedance-aigc.user",
+        "aigc-creator.user",
         JSON.stringify({ id: "u1", handle: "demo-author" }),
       );
     });

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import type { Editor } from "@tiptap/react";
-import type { DraftToolType } from "@bytedance-aigc/shared";
+import type { DraftToolType } from "@aigc-creator/shared";
 
 interface AiBubbleMenuProps {
   editor: Editor | null;

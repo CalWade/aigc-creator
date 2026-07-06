@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import type { OutlineItem } from "@bytedance-aigc/shared";
+import type { OutlineItem } from "@aigc-creator/shared";
 
-import { streamFetch } from "@bytedance-aigc/ui/lib/sse";
+import { streamFetch } from "@aigc-creator/ui/lib/sse";
 
 export interface StreamingHandlers {
   onSectionStart: (e: { index: number; heading: string }) => void;

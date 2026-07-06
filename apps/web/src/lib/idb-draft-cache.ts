@@ -8,7 +8,7 @@ export interface DraftSnapshot {
   localUpdatedAt: number;
 }
 
-const STORE = createStore("bytedance-aigc-drafts", "snapshots");
+const STORE = createStore("aigc-creator-drafts", "snapshots");
 
 const k = (id: string) => `draft:${id}`;
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Editor } from "@tiptap/react";
-import type { OutlineItem } from "@bytedance-aigc/shared";
+import type { OutlineItem } from "@aigc-creator/shared";
 
 import { useSectionReview } from "@/hooks/use-section-review";
 import { useRegenerateSection } from "@/hooks/use-section-regenerate";

@@ -1,5 +1,5 @@
 "use client";
-import type { Recommendation } from "@bytedance-aigc/shared";
+import type { Recommendation } from "@aigc-creator/shared";
 import { ShieldCheck, ShieldAlert, ShieldX } from "lucide-react";
 
 const STYLES: Record<Recommendation, string> = {

@@ -1,6 +1,6 @@
 "use client";
 
-import type { PromptReviewResponse } from "@bytedance-aigc/shared";
+import type { PromptReviewResponse } from "@aigc-creator/shared";
 
 interface Props {
   result: PromptReviewResponse;

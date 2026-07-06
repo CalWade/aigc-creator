@@ -1,4 +1,4 @@
-import type { SafetyKey, SensitiveCategory } from "@bytedance-aigc/shared";
+import type { SafetyKey, SensitiveCategory } from "@aigc-creator/shared";
 
 /**
  * Phase 2.3 ScorePanel 的 SafetyKey ↔ Phase 2.5 段落审核的 SensitiveCategory。

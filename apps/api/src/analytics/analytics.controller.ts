@@ -1,5 +1,5 @@
 import { Controller, Get } from "@nestjs/common";
-import type { AnalyticsResponse } from "@bytedance-aigc/shared";
+import type { AnalyticsResponse } from "@aigc-creator/shared";
 
 import { CurrentUser } from "../auth/current-user.decorator";
 import type { JwtPayload } from "../auth/jwt-payload.interface";

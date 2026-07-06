@@ -32,7 +32,7 @@ export const PROMPT_STARTERS: Prisma.PromptCreateManyInput[] = [
       {
         input: "AI 写作正在改变编辑工作流。",
         output:
-          "AI 写作正在改变编辑工作流:从前期选题、到中期初稿,再到后期质检,大量原本由人逐字处理的环节,正在被 LLM 与编辑工具的组合接管。例如,头条编辑团队反馈,引入 AI 协作后单篇平均成稿时间下降约 40%(数据示例,以实际为准)。",
+          "AI 写作正在改变编辑工作流:从前期选题、到中期初稿,再到后期质检,大量原本由人逐字处理的环节,正在被 LLM 与编辑工具的组合接管。例如,资深编辑团队反馈,引入 AI 协作后单篇平均成稿时间下降约 40%(数据示例,以实际为准)。",
       },
     ],
     designNote: `扩写最容易"造假",prompt 显式禁止引入未经验证事实,并要求示例标注。`,
@@ -58,7 +58,7 @@ export const PROMPT_STARTERS: Prisma.PromptCreateManyInput[] = [
     tool: "HEADLINE_SUB",
     name: "默认·副标题生成",
     systemPrompt:
-      "你是头条副标题写手。请基于正文生成 1 个不超过 25 字的副标题,要求点出核心信息差,不剧透结尾,不使用煽动性词汇(震惊、紧急等)。",
+      "你是副标题写手。请基于正文生成 1 个不超过 25 字的副标题,要求点出核心信息差,不剧透结尾,不使用煽动性词汇(震惊、紧急等)。",
     params: { temperature: 0.7, topP: 0.9, maxTokens: 80 },
     fewShots: [
       {
@@ -97,7 +97,7 @@ export const PROMPT_STARTERS: Prisma.PromptCreateManyInput[] = [
           "某平台 5 月底悄悄换了推荐算法,几名头部创作者的曝光量在一周内掉到不到原来的三成——这次改了什么?",
       },
     ],
-    designNote: "训练集开头质量决定打开率,prompt 显式禁用空洞时间词是直接来自头条编辑规范。",
+    designNote: "训练集开头质量决定打开率,prompt 显式禁用空洞时间词是直接来自编辑规范。",
     isStarter: true,
   },
   {
@@ -211,7 +211,7 @@ export const PROMPT_STARTERS: Prisma.PromptCreateManyInput[] = [
     tool: "HEADLINE_SUB",
     name: "风格款·疑问钩子",
     systemPrompt:
-      "你是头条副标题写手。请基于正文生成 1 个不超过 25 字的副标题,要求以疑问句收尾,制造信息差悬念。禁止使用煽动性词汇(震惊、紧急等)和标题党常见套路(「竟然」「万万没想到」)。疑问句必须指向正文实际回答了的问题。",
+      "你是副标题写手。请基于正文生成 1 个不超过 25 字的副标题,要求以疑问句收尾,制造信息差悬念。禁止使用煽动性词汇(震惊、紧急等)和标题党常见套路(「竟然」「万万没想到」)。疑问句必须指向正文实际回答了的问题。",
     params: { temperature: 0.7, topP: 0.9, maxTokens: 80 },
     fewShots: [
       {
@@ -384,7 +384,7 @@ export const PROMPT_STARTERS: Prisma.PromptCreateManyInput[] = [
     owner: "PLATFORM",
     tool: "QUALITY_REVIEW",
     name: "默认·发布前 4 维质量评分",
-    systemPrompt: `你是头条资深编辑。请对给定文章按 4 个维度打分(0-100 整数):内容价值(content_value)、表达质量(expression)、读者体验(reader_experience)、传播潜力(viral_potential)。
+    systemPrompt: `你是资深编辑。请对给定文章按 4 个维度打分(0-100 整数):内容价值(content_value)、表达质量(expression)、读者体验(reader_experience)、传播潜力(viral_potential)。
 
 ## 空内容/极短文本判定
 

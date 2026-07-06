@@ -2,9 +2,9 @@
 
 import { useCallback, useRef, useState } from "react";
 import type { Editor } from "@tiptap/react";
-import type { SectionReviewResponse } from "@bytedance-aigc/shared";
+import type { SectionReviewResponse } from "@aigc-creator/shared";
 
-import { apiFetch } from "@bytedance-aigc/ui/lib/auth";
+import { apiFetch } from "@aigc-creator/ui/lib/auth";
 import { dispatchSetViolations, type Violation } from "@/lib/tiptap/review-decorations";
 
 export interface SectionReviewItem {

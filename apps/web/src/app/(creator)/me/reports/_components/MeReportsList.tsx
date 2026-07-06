@@ -7,12 +7,12 @@ import {
   type ReportDto,
   type ReportResolution,
   type ReportStatus,
-} from "@bytedance-aigc/shared";
-import { apiFetch } from "@bytedance-aigc/ui/lib/auth";
-import { Badge } from "@bytedance-aigc/ui/components/ui/badge";
-import { Button } from "@bytedance-aigc/ui/components/ui/button";
-import { Card } from "@bytedance-aigc/ui/components/ui/card";
-import { cn } from "@bytedance-aigc/ui/lib/utils";
+} from "@aigc-creator/shared";
+import { apiFetch } from "@aigc-creator/ui/lib/auth";
+import { Badge } from "@aigc-creator/ui/components/ui/badge";
+import { Button } from "@aigc-creator/ui/components/ui/button";
+import { Card } from "@aigc-creator/ui/components/ui/card";
+import { cn } from "@aigc-creator/ui/lib/utils";
 
 interface MeReportsListProps {
   initialItems: ReportDto[];

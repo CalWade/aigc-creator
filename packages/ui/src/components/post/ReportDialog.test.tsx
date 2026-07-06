@@ -45,7 +45,7 @@ describe("ReportDialog", () => {
     expect(path).toBe("/posts/post-abc/reports");
     expect(init.method).toBe("POST");
     const body = JSON.parse(init.body as string) as { category: string; reason: string };
-    expect(body.category).toBe("VULGARITY");
+    expect(body.category).toBe("ABUSE");
     expect(body.reason).toBe("用词低俗");
   });
 

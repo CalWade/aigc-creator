@@ -13,7 +13,7 @@ import {
 } from "@nestjs/common";
 import { METHOD_METADATA } from "@nestjs/common/constants";
 import { Draft } from "@prisma/client";
-import type { OutlineItem } from "@bytedance-aigc/shared";
+import type { OutlineItem } from "@aigc-creator/shared";
 import { Observable } from "rxjs";
 
 import { CurrentUser } from "../auth/current-user.decorator";
@@ -29,7 +29,7 @@ import { SectionsStreamDto } from "./dto/sections-stream.dto";
 import { TakedownDto } from "./dto/takedown.dto";
 import { ToolInvokeDto } from "./dto/tool-invoke.dto";
 import { UpdateDraftDto } from "./dto/update-draft.dto";
-import type { Candidate } from "@bytedance-aigc/shared";
+import type { Candidate } from "@aigc-creator/shared";
 
 @Controller("drafts")
 @UseGuards(UserGuard)

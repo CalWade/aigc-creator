@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronRight } from "lucide-react";
-import { cn } from "@bytedance-aigc/ui/lib/utils";
+import { cn } from "@aigc-creator/ui/lib/utils";
 
 const LABELS: Record<string, string> = {
   "": "首页",

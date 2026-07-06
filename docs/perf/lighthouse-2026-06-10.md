@@ -58,11 +58,11 @@
 
 ```bash
 # 启动 API
-pnpm --filter @bytedance-aigc/api dev
+pnpm --filter @aigc-creator/api dev
 
 # 启动 Web (生产模式)
-pnpm --filter @bytedance-aigc/web build
-pnpm --filter @bytedance-aigc/web start
+pnpm --filter @aigc-creator/web build
+pnpm --filter @aigc-creator/web start
 
 # Chrome DevTools → Lighthouse → Mobile → Generate report
 # 或 CLI:

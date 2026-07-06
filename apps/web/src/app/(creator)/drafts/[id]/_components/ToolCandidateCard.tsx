@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Candidate } from "@bytedance-aigc/shared";
+import type { Candidate } from "@aigc-creator/shared";
 
 interface ToolCandidateCardProps {
   candidates: Candidate[];

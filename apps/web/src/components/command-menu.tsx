@@ -33,9 +33,9 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from "@bytedance-aigc/ui/components/ui/command";
-import { useAuthSnapshot } from "@bytedance-aigc/ui/lib/use-auth-snapshot";
-import { clearToken } from "@bytedance-aigc/ui/lib/auth";
+} from "@aigc-creator/ui/components/ui/command";
+import { useAuthSnapshot } from "@aigc-creator/ui/lib/use-auth-snapshot";
+import { clearToken } from "@aigc-creator/ui/lib/auth";
 
 interface CmdItem {
   label: string;

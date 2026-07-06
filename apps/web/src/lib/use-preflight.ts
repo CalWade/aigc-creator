@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
-import type { PreflightResponse } from "@bytedance-aigc/shared";
-import { apiFetch } from "@bytedance-aigc/ui/lib/auth";
+import type { PreflightResponse } from "@aigc-creator/shared";
+import { apiFetch } from "@aigc-creator/ui/lib/auth";
 
 export interface PreflightHookState {
   loading: boolean;

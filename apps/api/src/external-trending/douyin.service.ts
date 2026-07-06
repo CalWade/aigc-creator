@@ -1,6 +1,6 @@
 import { Injectable, Logger, ServiceUnavailableException } from "@nestjs/common";
 import { request as httpsRequest } from "node:https";
-import { computeExternalTrendScore } from "@bytedance-aigc/shared";
+import { computeExternalTrendScore } from "@aigc-creator/shared";
 
 /**
  * 抖音热榜对接服务。

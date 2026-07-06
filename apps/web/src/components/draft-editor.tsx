@@ -2,10 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { JSONContent, Editor } from "@tiptap/react";
-import { DRAFT_TOOL_TYPES } from "@bytedance-aigc/shared";
-import type { Candidate, DraftToolType, OutlineItem } from "@bytedance-aigc/shared";
+import { DRAFT_TOOL_TYPES } from "@aigc-creator/shared";
+import type { Candidate, DraftToolType, OutlineItem } from "@aigc-creator/shared";
 
-import { apiFetch, clearToken, getToken } from "@bytedance-aigc/ui/lib/auth";
+import { apiFetch, clearToken, getToken } from "@aigc-creator/ui/lib/auth";
 import { clearSnapshot, getSnapshot } from "@/lib/idb-draft-cache";
 import { useAutosave, type SaveResult } from "@/lib/use-autosave";
 import { useDraftPresence } from "@/lib/use-draft-presence";
@@ -300,7 +300,7 @@ export function DraftEditor({
           case "DATA_DIAGNOSIS":
             return;
         }
-        const active = window.localStorage.getItem(`bytedance-aigc:active-prompt:${tool}`);
+        const active = window.localStorage.getItem(`aigc-creator:active-prompt:${tool}`);
         const res = await apiFetch(`/drafts/${id}/tools/invoke`, {
           method: "POST",
           body: JSON.stringify({

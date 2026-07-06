@@ -9,7 +9,7 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import type { Review } from "@prisma/client";
-import type { PreflightResponse } from "@bytedance-aigc/shared";
+import type { PreflightResponse } from "@aigc-creator/shared";
 
 import { CurrentUser } from "../auth/current-user.decorator";
 import type { JwtPayload } from "../auth/jwt-payload.interface";

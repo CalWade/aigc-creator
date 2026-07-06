@@ -1,4 +1,5 @@
 import * as React from "react";
+import "./editor.css";
 
 /**
  * 编辑器沉浸式 layout。

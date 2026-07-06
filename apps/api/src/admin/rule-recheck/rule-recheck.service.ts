@@ -16,19 +16,31 @@ export class RuleRecheckService {
   ) {}
 
   /**
-   * 从 PUBLISHED Draft 中拉取所有在规则更新前最后修改的稿件,
-   * 串行(p-limit concurrency=2)调 ReviewService.reviewPostPublish 重新评估,
-   * 命中 BLOCK 时转 OFFLINE。
-   * 同步执行,无 worker。
+   * 异步规则复审:立即创建 run 记录并返回(status=RUNNING),
+   * 后台通过 setImmediate 逐步扫描 PUBLISHED 稿件。
+   * 命中 BLOCK 时转 OFFLINE。前端通过 GET /admin/rule-rechecks 轮询进度。
    */
   async recheckSinceRuleVersion(ruleVersion: string) {
     const run = await this.prisma.ruleRecheckRun.create({
       data: { ruleVersion, status: "RUNNING" },
     });
 
+    // Fire-and-forget:后台执行,不阻塞 HTTP 响应
+    setImmediate(() => {
+      this.runRecheck(run.id, ruleVersion).catch((err) => {
+        this.logger.error(
+          `recheckSinceRuleVersion failed: runId=${run.id} err=${(err as Error).message}`,
+          (err as Error).stack,
+        );
+      });
+    });
+
+    return run;
+  }
+
+  /** 后台执行规则复审(不阻塞 HTTP) */
+  private async runRecheck(runId: string, ruleVersion: string): Promise<void> {
     try {
-      // 拉所有 PUBLISHED 稿件(规则更新后不需要按时间过滤,
-      // 因为调用方知道哪些需要重审)
       const drafts = await this.prisma.draft.findMany({
         where: { status: "PUBLISHED" },
         select: { id: true, title: true, body: true },
@@ -65,7 +77,7 @@ export class RuleRecheckService {
       await Promise.all(tasks);
 
       await this.prisma.ruleRecheckRun.update({
-        where: { id: run.id },
+        where: { id: runId },
         data: {
           totalScanned,
           totalOffline,
@@ -75,16 +87,14 @@ export class RuleRecheckService {
       });
 
       this.logger.log(
-        `recheckSinceRuleVersion: version=${ruleVersion} scanned=${totalScanned} offline=${totalOffline}`,
+        `runRecheck: version=${ruleVersion} scanned=${totalScanned} offline=${totalOffline}`,
       );
-
-      return this.prisma.ruleRecheckRun.findUnique({ where: { id: run.id } });
     } catch (err) {
       await this.prisma.ruleRecheckRun.update({
-        where: { id: run.id },
+        where: { id: runId },
         data: { status: "FAILED", finishedAt: new Date() },
       });
-      throw err;
+      this.logger.error(`runRecheck failed: runId=${runId} err=${(err as Error).message}`);
     }
   }
 

@@ -46,7 +46,7 @@ describe("Phase 2.6 — POST /posts/:id/reports (e2e)", () => {
   it("未登录 → 401", async () => {
     await request(app.getHttpServer())
       .post(`/posts/${PUB_DRAFT_004}/reports`)
-      .send({ category: "VULGARITY" })
+      .send({ category: "ABUSE" })
       .expect(401);
   });
 
@@ -55,7 +55,7 @@ describe("Phase 2.6 — POST /posts/:id/reports (e2e)", () => {
     const res = await request(app.getHttpServer())
       .post(`/posts/${PUB_DRAFT_004}/reports`)
       .set("Authorization", `Bearer ${token}`)
-      .send({ category: "VULGARITY", reason: "用词低俗" })
+      .send({ category: "ABUSE", reason: "用词辱骂攻击" })
       .expect(201);
     const body = res.body as { reportId: string };
     expect(typeof body.reportId).toBe("string");

@@ -1,6 +1,6 @@
 import { BadRequestException, Body, Controller, Delete, Param, Post } from "@nestjs/common";
 import { ReactionKind } from "@prisma/client";
-import type { PostReactionsDto } from "@bytedance-aigc/shared";
+import type { PostReactionsDto } from "@aigc-creator/shared";
 import { CurrentUser } from "../auth/current-user.decorator";
 import type { JwtPayload } from "../auth/jwt-payload.interface";
 import { ReactionsService } from "./reactions.service";

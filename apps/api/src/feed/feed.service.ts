@@ -13,12 +13,13 @@ import {
   type MeWorksItem,
   type PostDto,
   type Scoreable,
-} from "@bytedance-aigc/shared";
+} from "@aigc-creator/shared";
 import { DouyinTrendingService } from "../external-trending/douyin.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { decodeCursor, encodeCursor, weightsEqual } from "./cursor";
 
 const DEFAULT_LIMIT = 10;
+const HOTNESS_CACHE_TTL_MS = 60_000; // 1 min cache for hotness raw scores
 
 interface GetFeedOpts {
   mode: FeedMode;
@@ -29,6 +30,9 @@ interface GetFeedOpts {
 
 @Injectable()
 export class FeedService {
+  // Hotness cache: draftId → { raw, expiry }. Avoids re-querying PostStat on every feed request.
+  private hotnessCache = new Map<string, { raw: number; expiry: number }>();
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly douyin: DouyinTrendingService,
@@ -91,8 +95,7 @@ export class FeedService {
     });
 
     const scoreables: (Scoreable & { draft: (typeof drafts)[number] })[] = drafts.map((d) => {
-      // Phase 2.5:hotness 接入 PostStat 多因子加权(替换 hotnessMockBase 哈希)
-      const hotnessRaw = computeHotnessRaw(d.stat);
+      const hotnessRaw = this.getHotnessRaw(d.id, d.stat);
       const q = readQualityOverall(d.lastReview?.quality);
       return {
         id: d.id,
@@ -181,7 +184,7 @@ export class FeedService {
       orderBy: { publishedAt: "desc" },
       take: limit,
     });
-    const hotnessPool = drafts.map((d) => computeHotnessRaw(d.stat));
+    const hotnessPool = drafts.map((d) => this.getHotnessRaw(d.id, d.stat));
     return drafts.map((d, i) => toPostDto(d, hotnessPool[i], hotnessPool, 0));
   }
 
@@ -239,6 +242,30 @@ export class FeedService {
         diagnosis,
       };
     });
+  }
+  /**
+   * Get hotness raw score with in-memory TTL cache (60s).
+   * Avoids re-querying PostStat on every feed/rank request.
+   */
+  private getHotnessRaw(
+    draftId: string,
+    stat: {
+      impression: number;
+      click: number;
+      like: number;
+      collect: number;
+      share: number;
+      report: number;
+    } | null,
+  ): number {
+    const now = Date.now();
+    const cached = this.hotnessCache.get(draftId);
+    if (cached && cached.expiry > now) {
+      return cached.raw;
+    }
+    const raw = computeHotnessRaw(stat);
+    this.hotnessCache.set(draftId, { raw, expiry: now + HOTNESS_CACHE_TTL_MS });
+    return raw;
   }
 }
 

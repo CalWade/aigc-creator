@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { ReportDto } from "@bytedance-aigc/shared";
-import { apiFetch, clearToken, getToken } from "@bytedance-aigc/ui/lib/auth";
+import type { ReportDto } from "@aigc-creator/shared";
+import { apiFetch, clearToken, getToken } from "@aigc-creator/ui/lib/auth";
 import { MeReportsList } from "./_components/MeReportsList";
 
 interface MeReportsResponse {

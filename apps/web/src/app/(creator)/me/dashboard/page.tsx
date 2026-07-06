@@ -3,11 +3,11 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import type { AnalyticsResponse } from "@bytedance-aigc/shared";
+import type { AnalyticsResponse } from "@aigc-creator/shared";
 
-import { apiFetch, clearToken, getToken } from "@bytedance-aigc/ui/lib/auth";
-import { QualityBadge } from "@bytedance-aigc/ui/components/feed/QualityBadge";
-import { StatCard } from "@bytedance-aigc/ui/components/dashboard/stat-card";
+import { apiFetch, clearToken, getToken } from "@aigc-creator/ui/lib/auth";
+import { QualityBadge } from "@aigc-creator/ui/components/feed/QualityBadge";
+import { StatCard } from "@aigc-creator/ui/components/dashboard/stat-card";
 
 type LoadState =
   | { kind: "loading" }

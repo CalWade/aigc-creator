@@ -6,11 +6,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
-import {
-  REPORT_CATEGORY_LABELS,
-  type ReportCategory,
-  type ReportDto,
-} from "@bytedance-aigc/shared";
+import { REPORT_CATEGORY_LABELS, type ReportCategory, type ReportDto } from "@aigc-creator/shared";
 
 import { PrismaService } from "../prisma/prisma.service";
 import { ReviewService } from "../reviews/review.service";

@@ -58,7 +58,9 @@ export class PromptLabService {
 
     try {
       const limit = pLimit(2);
+      const RUNS_PER_CASE = 3;
       let matchCount = 0;
+      const perCaseVariances: number[] = [];
 
       const tasks = testCases.map((tc) =>
         limit(async () => {
@@ -67,29 +69,41 @@ export class PromptLabService {
             { role: "user" as const, content: tc.input },
           ];
 
-          let raw = "";
-          try {
-            raw = await this.llm.chat(messages, { temperature: 0.0 });
-          } catch {
-            this.logger.warn(`runEval: LLM call failed for testCase ${tc.id}`);
-            return false;
+          // Run each test case RUNS_PER_CASE times to measure stability
+          const predictions: string[] = [];
+          for (let r = 0; r < RUNS_PER_CASE; r++) {
+            try {
+              const raw = await this.llm.chat(messages, { temperature: 0.0 });
+              predictions.push(this.extractSeverity(raw));
+            } catch {
+              this.logger.warn(`runEval: LLM call failed for testCase ${tc.id} run ${r}`);
+              predictions.push("low");
+            }
           }
 
-          const predicted = this.extractSeverity(raw);
-          return predicted === tc.expected;
+          // Majority vote as the final prediction
+          const finalPrediction = majorityVote(predictions);
+          const isMatch = finalPrediction === tc.expected;
+          if (isMatch) matchCount++;
+
+          // Stability: fraction of predictions that agree with the majority
+          const agreeCount = predictions.filter((p) => p === finalPrediction).length;
+          perCaseVariances.push(agreeCount / RUNS_PER_CASE);
+
+          return isMatch;
         }),
       );
 
-      const results = await Promise.all(tasks);
-      matchCount = results.filter(Boolean).length;
+      await Promise.all(tasks);
 
       const accuracy = matchCount / testCases.length;
+      const stability = perCaseVariances.reduce((a, b) => a + b, 0) / perCaseVariances.length;
 
       await this.prisma.promptEvalRun.update({
         where: { id: evalRun.id },
         data: {
           accuracy,
-          stability: 0, // 本期简化:只跑 1 次,stability=0
+          stability,
           totalCases: testCases.length,
           status: "DONE",
           finishedAt: new Date(),
@@ -317,4 +331,21 @@ export class PromptLabService {
     if (/medium/i.test(raw)) return "medium";
     return "low";
   }
+}
+
+/** 多数投票:返回出现次数最多的预测结果 */
+function majorityVote(predictions: string[]): string {
+  const counts = new Map<string, number>();
+  for (const p of predictions) {
+    counts.set(p, (counts.get(p) ?? 0) + 1);
+  }
+  let best = predictions[0] ?? "low";
+  let bestCount = 0;
+  for (const [k, v] of counts) {
+    if (v > bestCount) {
+      best = k;
+      bestCount = v;
+    }
+  }
+  return best;
 }

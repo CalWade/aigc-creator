@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useSyncExternalStore } from "react";
-import type { DraftToolType } from "@bytedance-aigc/shared";
+import type { DraftToolType } from "@aigc-creator/shared";
 
-const PREFIX = "bytedance-aigc:active-prompt:";
+const PREFIX = "aigc-creator:active-prompt:";
 
 const subscribe = (cb: () => void): (() => void) => {
   if (typeof window === "undefined") return () => {};

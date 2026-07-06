@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { PenLine } from "lucide-react";
-import { useAuthSnapshot } from "@bytedance-aigc/ui/lib/use-auth-snapshot";
-import { Button } from "@bytedance-aigc/ui/components/ui/button";
+import { useAuthSnapshot } from "@aigc-creator/ui/lib/use-auth-snapshot";
+import { Button } from "@aigc-creator/ui/components/ui/button";
 
 // 首页未登录引导横幅 — 告知用户可以创作，点击跳登录。
 // 登录后自动消失。

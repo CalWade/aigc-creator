@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { REPORT_CATEGORY_LABELS, type ReportDto } from "@bytedance-aigc/shared";
+import { REPORT_CATEGORY_LABELS, type ReportDto } from "@aigc-creator/shared";
 
-import { Badge } from "@bytedance-aigc/ui/components/ui/badge";
-import { Button } from "@bytedance-aigc/ui/components/ui/button";
-import { Card, CardContent } from "@bytedance-aigc/ui/components/ui/card";
+import { Badge } from "@aigc-creator/ui/components/ui/badge";
+import { Button } from "@aigc-creator/ui/components/ui/button";
+import { Card, CardContent } from "@aigc-creator/ui/components/ui/card";
 
 import { ResolveDialog } from "./ResolveDialog";
 
