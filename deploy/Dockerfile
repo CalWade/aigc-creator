@@ -1,5 +1,5 @@
 # ============================================================
-# bytedance-aigc API — production Docker image
+# aigc-creator API — production Docker image
 # Multi-stage: install → generate → build → runtime
 # ============================================================
 FROM node:22-alpine AS base
@@ -21,7 +21,7 @@ RUN cd apps/api && npx prisma@5 generate
 COPY packages/shared/ packages/shared/
 COPY packages/ui/ packages/ui/
 COPY apps/api/ apps/api/
-RUN pnpm --filter @bytedance-aigc/shared build \
+RUN pnpm --filter @aigc-creator/shared build \
  && cd apps/api && npx nest build
 
 # --- runtime stage ---
